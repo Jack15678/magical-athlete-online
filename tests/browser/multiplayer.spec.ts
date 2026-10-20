@@ -7,6 +7,9 @@ let app:ReturnType<typeof createApplication>,url:string;
 test.beforeAll(async()=>{app=createApplication(':memory:');await new Promise<void>(r=>app.http.listen(0,'127.0.0.1',r));const addr=app.http.address();if(!addr||typeof addr==='string')throw Error('no server');url=`http://127.0.0.1:${addr.port}`;mkdirSync('test-results/screenshots',{recursive:true});});
 test.afterAll(async()=>{await app.close();});
 for(const n of [2,6,8])test(`${n}独立BrowserContext完整四场、刷新断线恢复与原房间再来`,async({browser})=>{
+  // CI reached race four with 1,066 normal events at the old three-minute
+  // limit. Give eight isolated UIs time to finish; retain the action budget.
+  if(n===8)test.setTimeout(300_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[];const failures:string[]=[];
   try{
     for(let i=0;i<n;i++){const c=await browser.newContext({viewport:i===n-1?{width:390,height:844}:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(c);const p=await c.newPage();pages.push(p);p.on('pageerror',e=>failures.push(e.message));}

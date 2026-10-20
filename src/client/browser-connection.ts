@@ -97,7 +97,21 @@ export class BrowserRelayConnection implements RoomConnection {
     this.rejectReplies('页面已断开连接。'); this.releaseLock?.();
   }
   emit(event: 'sync') { if (event === 'sync' && this.authenticated) { this.syncRequestId = crypto.randomUUID(); this.send({ type: 'sync', requestId: this.syncRequestId }); } }
-  request(envelope: ActionEnvelope): Promise<ActionReply> {
+  async request(envelope: ActionEnvelope): Promise<ActionReply> {
+    let current = envelope;
+    for (let attempt = 0; ; attempt++) {
+      const reply = await this.requestOnce(current);
+      // Ready is an explicit, idempotent lobby preference. A different player's
+      // ready/roster update can overtake its snapshot on a higher-latency link.
+      // Rebase only after a definitive rejection and its fresh private snapshot;
+      // a new id is required because the rejected id already has a receipt.
+      const room = this.latestRoom;
+      if (current.action.type !== 'ready' || reply.ok || reply.error !== '画面已更新，请同步后重试。' || attempt >= 2 ||
+          reply.version === undefined || reply.version <= current.expectedVersion || !room || room.phase !== 'lobby' || room.version < reply.version) return reply;
+      current = { actionId: crypto.randomUUID(), expectedVersion: room.version, action: current.action };
+    }
+  }
+  private requestOnce(envelope: ActionEnvelope): Promise<ActionReply> {
     if (!this.connected) return Promise.reject(Error(this.authorityOnline ? '连接已中断，正在重新同步。' : HOST_OFFLINE));
     const requestId = crypto.randomUUID();
     return new Promise((resolve, reject) => {
