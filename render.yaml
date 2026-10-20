@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: magical-athlete-online
+    runtime: docker
+    plan: starter
+    region: singapore
+    healthCheckPath: /api/health
+    numInstances: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATA_DIR
+        value: /data
+      - key: TRUST_PROXY
+        value: 1
+      - key: ACTION_TIMEOUT_SECONDS
+        value: 120
+      - key: PUBLIC_ORIGIN
+        sync: false
+    disk:
+      name: game-state
+      mountPath: /data
+      sizeGB: 1

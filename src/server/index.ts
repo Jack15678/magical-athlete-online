@@ -1,0 +1,60 @@
+import express from 'express';
+import { createServer } from 'node:http';
+import { Server } from 'socket.io';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
+import { z } from 'zod';
+import { Store } from './store.js';
+import { Rooms } from './rooms.js';
+import type { ActionEnvelope, Identity } from '../shared/types.js';
+
+const action=z.discriminatedUnion('type',[
+  z.object({type:z.literal('ready'),ready:z.boolean()}).strict(),z.object({type:z.literal('start')}).strict(),
+  z.object({type:z.literal('draft'),characterId:z.string().max(50)}).strict(),z.object({type:z.literal('select'),characterIds:z.array(z.string().max(50)).min(1).max(2)}).strict(),
+  z.object({type:z.literal('roll')}).strict(),z.object({type:z.literal('choose'),choiceId:z.string().max(100),optionId:z.string().max(100)}).strict(),
+  z.object({type:z.literal('next')}).strict(),z.object({type:z.literal('rematch')}).strict(),z.object({type:z.literal('transfer'),playerId:z.string().uuid()}).strict()]);
+const envelope=z.object({actionId:z.string().uuid(),expectedVersion:z.number().int().nonnegative(),action}).strict();
+const identity=z.object({roomCode:z.string().regex(/^[A-Z2-9]{6}$/),playerId:z.string().uuid(),token:z.string().min(40).max(100)}).strict();
+const nickname=z.string().trim().min(1,'请输入昵称。').max(20,'昵称最多20个字。').refine(s=>!/[\p{Cc}\p{Cf}]/u.test(s),'昵称不能含控制字符。');
+class RateLimiter { map=new Map<string,{count:number;at:number}>(); constructor(readonly limit:number,readonly ms:number){} accept(key:string):boolean {const now=Date.now();let r=this.map.get(key); if(!r||now-r.at>this.ms){r={count:0,at:now};this.map.set(key,r);} if(this.map.size>10000) for(const [k,v]of this.map)if(now-v.at>this.ms)this.map.delete(k);return ++r.count<=this.limit;} }
+
+export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','rooms.sqlite')) {
+  const store=new Store(dbPath); const rooms=new Rooms(store,Number(process.env.ACTION_TIMEOUT_SECONDS??120),Number(process.env.ROOM_TTL_DAYS??30));
+  const app=express(); const http=createServer(app);
+  const allowedOrigin=(o:string|undefined)=>!o || o===process.env.PUBLIC_ORIGIN || (process.env.NODE_ENV!=='production'&&/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(o));
+  app.disable('x-powered-by'); if(process.env.TRUST_PROXY==='1') app.set('trust proxy',1);
+  app.use((req,res,next)=>{ res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"); if(req.method==='POST'&&!allowedOrigin(req.headers.origin)){res.status(403).json({error:'来源不被允许。'});return;}next();});
+  app.use(express.json({limit:'4kb'})); const apiRate=new RateLimiter(120,60000);
+  app.use('/api',(req,res,next)=>{res.setHeader('Cache-Control','no-store');if(!apiRate.accept(req.ip??'unknown')){res.status(429).json({error:'请求太频繁，请稍后再试。'});return;}next();});
+  const io=new Server(http,{maxHttpBufferSize:8192,serveClient:false,allowRequest:(req,cb)=>cb(null,allowedOrigin(req.headers.origin)),pingInterval:15000,pingTimeout:20000});
+  const broadcast=(code:string)=>{for(const socket of io.sockets.sockets.values()) if(socket.data.identity?.roomCode===code) socket.emit('snapshot',rooms.view(rooms.get(code),socket.data.identity.playerId));};
+  const resuming=new Set<string>();let closing=false;
+  const scheduleContinuation=(code:string)=>{if(closing||resuming.has(code)||!rooms.get(code).game.flags.continuation)return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing)return;const room=rooms.get(code);if(!room.game.flags.continuation)return;const result=rooms.act(code,room.hostId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'next'}});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
+  app.get('/api/health',(_req,res)=>res.json({ok:true,storage:'sqlite',version:'0.1.0'}));
+  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds));}catch(e){next(e);}});
+  app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
+  const connections=new Map<string,Set<string>>(); const socketRate=new RateLimiter(40,10000);
+  io.use((socket,next)=>{try{const i=identity.parse(socket.handshake.auth) as Identity;rooms.authenticate(i);if((connections.get(`${i.roomCode}:${i.playerId}`)?.size??0)>=5) throw Error('同一身份打开的页面过多。');socket.data.identity=i;next();}catch(e){next(Error(e instanceof Error?e.message:'身份无效。'));}});
+  io.on('connection',socket=>{
+    const i=socket.data.identity as Identity;const key=`${i.roomCode}:${i.playerId}`;let set=connections.get(key);if(!set){set=new Set();connections.set(key,set);}set.add(socket.id);
+    rooms.presence(i.roomCode,i.playerId,true);broadcast(i.roomCode);
+    socket.on('sync',()=>{if(socketRate.accept(key))socket.emit('snapshot',rooms.view(rooms.get(i.roomCode),i.playerId));});
+    socket.on('action',(input:unknown,ack:unknown)=>{let result;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。'); const a=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,a);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
+    socket.on('disconnect',()=>{const list=connections.get(key);list?.delete(socket.id);if(!list?.size){connections.delete(key);rooms.presence(i.roomCode,i.playerId,false);broadcast(i.roomCode);}});
+  });
+  const timer=setInterval(()=>{for(const code of rooms.tick()){broadcast(code);scheduleContinuation(code);}},1000);timer.unref();
+  for(const code of rooms.rooms.keys())scheduleContinuation(code);
+  const clientDir=resolve(fileURLToPath(new URL('../../../dist/client/',import.meta.url)));
+  // Compiled entry is dist/server/server/index.js; dev entry is src/server/index.ts.
+  const staticDir=existsSync(resolve('dist/client/index.html'))?resolve('dist/client'):clientDir;
+  app.use(express.static(staticDir,{index:false,maxAge:'1h'}));
+  app.get('/{*path}',(_req,res)=>{if(existsSync(resolve(staticDir,'index.html')))res.sendFile(resolve(staticDir,'index.html'));else res.status(503).send('前端尚未构建。请运行 pnpm build。');});
+  app.use((e:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{res.status(400).json({error:e instanceof z.ZodError?e.issues[0]?.message:e instanceof Error?e.message:'请求失败。'});});
+  return {app,http,io,rooms,store,close:async()=>{closing=true;clearInterval(timer);await new Promise<void>(r=>io.close(()=>r()));if(http.listening)await new Promise<void>(r=>http.close(()=>r()));store.close();}};
+}
+if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
+  const application=createApplication(); const port=Number(process.env.PORT??3000);
+  application.http.listen(port,process.env.HOST??'0.0.0.0',()=>console.log(`Magical Athlete listening on ${port}`));
+  for(const signal of ['SIGTERM','SIGINT'] as const)process.once(signal,()=>{void application.close().then(()=>process.exit(0));});
+}

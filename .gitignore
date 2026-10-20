@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+data/
+test-results/
+playwright-report/
+.local/
+*.sqlite*
+*.log
+.DS_Store
+docs/research-downloads/
+tmp/
