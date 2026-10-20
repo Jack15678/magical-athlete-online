@@ -10,3 +10,7 @@ playwright-report/
 .DS_Store
 docs/research-downloads/
 tmp/
+.wrangler/
+.dev.vars*
+.worker-config*
+playwright-report-relay/

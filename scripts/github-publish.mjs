@@ -12,6 +12,14 @@ async function api(path,method='GET',body){const r=await fetch(`https://api.gith
 const user=await api('/user');if(user.login!=='qiuh23')throw Error('Authenticated account differs from the connected account.');
 if(process.argv.includes('--check')) {console.log(JSON.stringify({login:user.login,plan:user.plan?.name??'unknown',credentialAvailable:true}));return;}
 const record='docs/github.json';let repo;
+const cancelArg=process.argv.find(x=>/^--cancel=\d+$/.test(x));
+if(cancelArg){const known=JSON.parse(readFileSync(record,'utf8'));const id=cancelArg.split('=')[1];const r=await fetch(`https://api.github.com/repos/${known.fullName}/actions/runs/${id}/cancel`,{method:'POST',headers});console.log(JSON.stringify({cancelRequested:r.ok,status:r.status,runId:id}));return;}
+if(process.argv.includes('--status')){
+  const known=JSON.parse(readFileSync(record,'utf8'));const runs=await api(`/repos/${known.fullName}/actions/runs?per_page=3`);
+  console.log(JSON.stringify(runs.workflow_runs.map(r=>({id:r.id,status:r.status,conclusion:r.conclusion,url:r.html_url,sha:r.head_sha})),null,2));
+  for(const r of runs.workflow_runs.filter(r=>r.conclusion==='failure').slice(0,1)){const jobs=await api(`/repos/${known.fullName}/actions/runs/${r.id}/jobs`);console.log(JSON.stringify(jobs.jobs.map(j=>({name:j.name,conclusion:j.conclusion,steps:j.steps.map(s=>({name:s.name,conclusion:s.conclusion}))})),null,2));}
+  return;
+}
 if(existsSync(record)) {const known=JSON.parse(readFileSync(record,'utf8'));repo=await api(`/repos/${known.fullName}`);}
 else {
   let name='magical-athlete-online';let suffix=1;

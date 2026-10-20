@@ -15,3 +15,4 @@ export interface PlayerView extends Omit<Player, 'hand' | 'selection'> { handCou
 export interface RoomView { code: string; version: number; hostId: string; selfId: string; maxPlayers: number; timeoutSeconds: number; deadline: number | null; phase: Phase; round: number; track: 'mild' | 'wild'; players: PlayerView[]; draft?: Draft; racers: Racer[]; currentRacerId?: string; pending?: Omit<PendingChoice, 'context'>; waitingFor?: string; logs: GameEvent[]; results: RaceResult[]; lastRoll?: GameState['lastRoll']; rulesStatus: string; }
 export interface Identity { roomCode: string; playerId: string; token: string; }
 export interface ActionReply { ok: boolean; error?: string; version?: number; duplicate?: boolean; }
+export interface RoomView { hosting?: 'browser' | 'local'; authorityId?: string; authorityOnline?: boolean; }

@@ -1,52 +1,68 @@
 # 胡闹运动会 · 好友联机
 
-基于 CMYK 2025《Magical Athlete》基础盒的非官方中文网页项目。2–6人按对应官方流程；7–8人明确标注网页扩展模式。36名基础角色、两人双角色、两批选秀、四场暗选/揭示、技能响应、累计分数和原房间再来一局。
+基于 CMYK 2025《Magical Athlete》基础盒的非官方中文网页项目。支持36名基础角色、两人双角色、两批选秀、四场暗选与揭示、技能响应、累计分数和原房间再来一局。2–6人按对应官方流程；7–8人为明确标注的网页扩展模式。
 
-## 使用方式与费用
+## 主路线：打开网页就能当房主
 
-本项目最终采用用户于2026-10-21明确选择的**零费用、本机当主机**方式：整站运行在房主电脑，通过 Tailscale Personal 的 Funnel HTTPS 地址提供给同学。只有房主需要首次安装并登录 Tailscale；同学只需浏览器打开同一个网址，输入昵称与房间码，或打开专属邀请链接。
+玩家使用同一个HTTPS网址，输入昵称创建房间，再把邀请链接或六位房间号发给朋友。**创建者的浏览器负责计算对局**；Cloudflare Workers Free提供网页与WebSocket房间中继。朋友无需安装软件、登录游戏账号或配置网络，房主也无需运行本机Node服务。
 
-电脑、游戏服务和连接通道需要在游玩时运行。关闭电脑后无法继续联机；SQLite 对局保存在本机，重启后原浏览器可恢复身份。无需购买域名或常驻云服务器。Funnel 的资格和限额以[当前官方文档](https://tailscale.com/docs/features/tailscale-funnel)及[Personal套餐](https://tailscale.com/pricing)为准；目前仍为beta、有带宽限制，不承诺商业SLA。大陆校园网和手机运营商访问质量需要对应网络实测。
+计算房主的网页需要保持打开和联网。关闭页面或设备休眠时对局暂停；回到原设备、原浏览器和同一网站后，可从IndexedDB中的存档恢复。其他玩家不会接管完整秘密状态。手机切到后台可能暂停网页，请在游玩时保持前台；清理站点数据或使用无痕窗口可能丢失恢复能力。这是熟人联机方案，计算房主可以访问完整对局状态。
 
-一键脚本与首次设置见 [本机主机说明](docs/local-host.md)。`render.yaml` 和 Dockerfile 保留为可移植部署配置，本次未创建付费云资源。GitHub Pages只能承载静态文件，不能代替实时游戏服务；本次不使用短期随机隧道地址冒充正式入口。
+**当前尚未发布公网网址。** 浏览器房主与中继已实现，2、6、8人本地完整四场网页验收通过；Cloudflare打包预演通过，但尚未登录账号、正式部署或完成公网HTTPS/WSS实测。免费部署需要站点维护者首次授权自己的Cloudflare账号；使用免费额度和`workers.dev`域名，无需购买域名或云服务器。当前状态、使用条件和首次部署步骤见 [浏览器房主说明](docs/browser-host.md)，证据见 [测试报告](docs/testing.md)。
 
-## 本地开发
+## 本地开发与检查
 
-需要 Node.js 24+、pnpm 11.25.0。
+需要Node.js 24+、pnpm 11.25.0。浏览器房主模式：
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
+pnpm build:browser
+pnpm dev:browser
+```
+
+打开`http://127.0.0.1:8787`，通过Wrangler本地运行静态网页和房间中继。`pnpm build:browser`生成浏览器房主专用的`dist/browser`。本地地址仅用于开发，不能当作朋友可访问的公网入口。检查部署包可运行`pnpm exec wrangler deploy --dry-run`；正式授权和部署见上述部署说明。
+
+前端资源均随项目提供，无境外CDN、外部字体、图片或音效依赖。
+
+## GitHub更新与网站同步
+
+代码仓库为私有的 [qiuh23/magical-athlete-online](https://github.com/qiuh23/magical-athlete-online)。GitHub Actions配置类型检查、自动化测试、两种生产构建、Worker打包预演及两种联机模式的浏览器测试；最新远端运行结果见仓库的Actions页，不能由本地通过推断远端已通过。
+
+Cloudflare Workers Builds可在授权该仓库和生产分支后，自动构建并部署固定网址。**目前尚未配置此授权和自动同步**，推送GitHub不会自行更新网站。具体构建与部署命令见 [GitHub自动同步步骤](docs/browser-host.md#github-自动同步)。
+
+## 备用：Node与本机Tailscale
+
+保留Node权威服务器、SQLite存档和Tailscale Funnel固定HTTPS入口，供需要独立服务器的场景使用。此模式由运行Node的电脑计算；网页管理房主退出不等于服务器停止。朋友仍只需浏览器，但服务电脑必须保持运行。首次安装、登录、启用Funnel、启动与停止脚本见 [本机主机说明](docs/local-host.md)。此备用入口尚未公开，不能视为已交付的公网服务。
+
+Node开发时在两个终端分别运行：
+
+```sh
 pnpm dev
-# 另一个终端
 pnpm dev:client
 ```
 
-开发前端默认在5173、后端3000。Vite代理API和Socket.IO，无境外CDN、外部字体、图片或音效依赖。
+前端默认5173、Node后端3000；Vite代理API和Socket.IO。生产运行：
 
 ```sh
-pnpm typecheck
-pnpm test
 pnpm build
 pnpm start
 ```
 
-生产入口 `dist/server/server/index.js` 同时提供前端和Socket.IO。按 `.env.example` 设置环境变量；启动脚本自动设置 `PUBLIC_ORIGIN` 为实际Funnel域名。默认每次操作120秒，0关闭自动选择。使用云部署时必须配置持久化磁盘并仅运行一个实例。
+入口`dist/server/server/index.js`同时提供网页与Socket.IO。按`.env.example`配置`PUBLIC_ORIGIN`等环境变量；云部署需要持久化磁盘且只运行一个实例。`Dockerfile`和`render.yaml`作为可移植配置保留，未创建付费资源。默认操作时限120秒，0关闭超时自动选择。
 
-## 规则与美术
+`DATA_DIR`默认`data/`，备份前停止服务并复制整个目录。不要将数据库、环境文件或身份信息提交仓库；当前没有跨不兼容规则版本的自动迁移。使用本机备用方案更新时，先结束对局并运行“停止游戏”，再双击`更新游戏.cmd`完成拉取、安装、检查和构建，成功后重新运行“启动游戏”。它更新的是本机Node网站，不会部署Cloudflare。
+
+## 规则、美术与状态安全
 
 - [规则来源、流程和赛道](docs/rules.md)：CMYK 2025基础盒、IELLO 2026-08-28 v2.0 FAQ明确整合的8月修订。
-- [36角色核验](docs/characters.md)、[结构化卡库](src/shared/characters.ts)、[两面赛道](src/shared/tracks.ts)。中文名均为本项目译名。
-- [网页房规](docs/house-rules.md)：7–8人两批2N蛇形选秀、Egg未分配牌堆补充流程、超时合法默认选项。没有宣称扩展人数与官方平衡相同。
-- [研究覆盖与缺口](docs/research-gaps.md)：新版CMYK PDF与BGG正文访问受限的实际边界、英法先手掷骰差异。
+- [36角色核验](docs/characters.md)、[结构化卡库](src/shared/characters.ts)、[两面赛道](src/shared/tracks.ts)。中文名为本项目译名。
+- [网页房规](docs/house-rules.md)：7–8人扩展、Egg补充流程和超时默认选项。
+- [研究覆盖与缺口](docs/research-gaps.md)：新版CMYK英文PDF正文访问受限等实际边界。
 - [美术方向](docs/art-direction.md)、[资产与许可](docs/assets.md)：36个原创SVG头像，不分发原作插画、商业字体或卡面PDF。
 
-## 架构和恢复
-
-`src/engine`独立于UI和网络。服务器统一生成骰子、处理合法动作及序列化事件队列；每人快照隔离暗选、手牌与待处理技能选项。浏览器只提交意图。Player、Racer、角色卡分别建模。
-
-`src/server/store.ts`使用Node内置SQLite，WAL与`synchronous=FULL`。房间状态、随机记录、待处理选择、事件队列、操作去重记录在同一事务提交后才确认成功。网络断开后主动全量同步，不依赖Socket.IO的临时恢复。每个动作有actionId和预期版本，重复请求只生效一次；昵称不作为身份。重连令牌仅存原浏览器本机，数据库只保存其哈希，邀请链接不带身份令牌。
-
-`DATA_DIR`默认`data/`，请保留整个目录。**不要把数据库、环境文件或身份信息提交到仓库。**备份时先停止游戏，再复制整个data目录；恢复时停止服务并还原同一目录。升级前备份，重新安装锁定依赖、执行检查并构建，再启动游戏。当前没有跨不兼容规则版本的自动数据库迁移。
+`src/engine`独立于界面和网络，两种模式共用规则。每个动作带操作ID和预期版本；重复请求仅生效一次。浏览器房主将状态、随机记录、技能队列和操作收据在同一IndexedDB事务完成后确认；Node备用模式使用SQLite事务。客人仅收到各自快照，不能看到其他人的手牌、未揭示选择或未来随机状态。身份凭据保留在各自浏览器，邀请链接不带身份令牌。
 
 ## 验收
 
@@ -55,20 +71,22 @@ pnpm test
 pnpm exec playwright install chromium
 pnpm build
 pnpm test:e2e
+pnpm build:browser
+pnpm test:relay
 ```
 
-Windows测试默认使用已安装Edge，Linux CI使用Playwright Chromium。实际执行结果、环境、截图与未完成项目见 [测试报告](docs/testing.md)。`tests/ability-specs.ts`记录独立预期和来源；测试数不等于穷尽全部角色组合。
-
-GitHub Actions运行类型检查、规则/网络测试、生产构建和独立BrowserContext测试。`scripts/github-publish.mjs`可通过本机Git Credential Manager推送；凭据仅在进程内，绝不写入远程URL、源码或日志。
+Windows浏览器测试使用已安装的Edge，Linux CI配置使用Playwright Chromium。已执行结果、截图、复现命令和公网待测项目见 [测试报告](docs/testing.md)。独立行为预期记录在`tests/ability-specs.ts`；通过测试不代表穷尽所有角色组合或真实设备、网络环境。
 
 ## 目录
 
 ```text
 src/client   React界面、原创SVG、网络恢复
-src/engine   纯规则、可持久化事件/选择
-src/shared   角色、赛道、协议类型
-src/server   权威服务、身份、事务存储
-tests        角色预期、组合、流程、联机、浏览器
-docs         来源、房规、美术、验收和部署
-scripts      本机启动与仓库发布
+src/browser  浏览器计算房主、IndexedDB原子存档
+src/worker   Cloudflare房间身份与WebSocket中继
+src/engine   纯规则、可持久化事件与选择
+src/shared   角色、赛道、房间投影、协议类型
+src/server   备用Node权威服务、身份、SQLite存储
+tests        角色、组合、流程、事务、网络与浏览器验收
+docs         来源、房规、美术、测试与部署
+scripts      构建、本机启动、更新与仓库发布
 ```

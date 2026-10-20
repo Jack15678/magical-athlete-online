@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import type { Socket } from 'socket.io-client';
 import type { GameAction, Identity, PlayerView, Racer, RoomView } from '../shared/types.js';
 import { CHARACTERS } from '../shared/characters.js';
 import { TRACKS } from '../shared/tracks.js';
 import { Avatar } from './avatars.js';
-import { connectRoom, enterRoom, forgetIdentity, readIdentity, sendAction, type ConnectionState } from './network.js';
+import { RulesContent } from './RulesContent.js';
+import { BROWSER_HOST_MODE, connectRoom, enterRoom, forgetIdentity, readIdentity, sendAction, type ConnectionState, type RoomConnection } from './network.js';
 
 const characters = CHARACTERS;
 const findCharacter = (id: string) => characters.find((character) => character.id === id);
@@ -44,7 +44,7 @@ export function App() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
-  const socket = useRef<Socket | null>(null);
+  const socket = useRef<RoomConnection | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [rules, setRules] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
@@ -86,14 +86,15 @@ export function App() {
   const resume = (saved: Identity) => { history.pushState({}, '', `/room/${saved.roomCode}`); setCode(saved.roomCode); setRoom(null); setIdentity(saved); setError(''); };
   const copy = async (value: string, label: string) => { try { await navigator.clipboard.writeText(value); setNotice(`${label}已复制`); } catch { setCopyFallback(value); } };
   const home = () => { history.pushState({}, '', '/'); setCode(''); setIdentity(null); setRoom(null); setError(''); };
-  const online = connection === 'online';
+  const online = connection === 'online' && room?.authorityOnline !== false;
   return <>
     <header className="site-header"><button className="wordmark" onClick={home} aria-label="胡闹运动会首页"><span className="logo-dice"><Icon kind="dice" size={28} /></span><span>胡闹运动会<small>Magical Athlete · 好友联机</small></span></button><nav><button className="header-link" onClick={() => setRules(true)}>怎么玩</button><button className="sound-toggle" onClick={() => setMuted(!muted)} aria-label={muted ? '开启提示音' : '关闭提示音'} aria-pressed={!muted}><Icon kind={muted ? 'mute' : 'sound'} /></button></nav></header>
-    {!identity ? <Home code={code} onEnter={enter} onResume={resume} onHome={home} onDetail={setDetail} /> : !room ? <main className="restore-screen"><div className="large-dice"><Icon kind="dice" size={68} /></div><h1>正在回到赛场…</h1><p>{connection === 'error' ? connectionError : '正在恢复你的座位与对局进度。'}</p>{connection === 'error' && <><Button onClick={() => socket.current?.connect()}>重新连接</Button><Button secondary onClick={() => { forgetIdentity(code); setIdentity(null); }}>重新输入昵称</Button></>}</main> : <>
+    {!identity ? <Home code={code} onEnter={enter} onResume={resume} onHome={home} onDetail={setDetail} /> : !room ? <main className="restore-screen"><div className="large-dice"><Icon kind="dice" size={68} /></div><h1>{connectionError.includes('计算房主网页离线') ? '等待计算房主返回' : '正在回到赛场…'}</h1><p>{connectionError || '正在恢复你的座位与对局进度。'}</p>{connection === 'offline' && <Button secondary onClick={() => socket.current?.connect()}>重新同步</Button>}{connection === 'error' && <><Button onClick={() => socket.current?.connect()}>重新连接</Button><Button secondary onClick={() => { forgetIdentity(code); setIdentity(null); }}>重新输入昵称</Button></>}</main> : <>
       <div className="room-bar"><div className="room-label">房间 <button onClick={() => void copy(room.code, '房间码')} title="复制房间码">{room.code}<Icon kind="copy" size={15} /></button><span className={`connection ${online ? 'is-online' : ''}`}><i />{online ? '已连接' : connection === 'connecting' ? '连接中' : '重连中'}</span></div><button className="invite-button" onClick={() => void copy(`${location.origin}/room/${room.code}`, '邀请链接')}><Icon kind="copy" size={17} />邀请朋友</button></div>
-      {!online && <div className="connection-banner" role="status">连接暂时中断，恢复后会自动同步。<button onClick={() => { socket.current?.connect(); socket.current?.emit('sync'); }}>立即重连</button>{connectionError && <small>{connectionError}</small>}</div>}
+      {!online && <div className="connection-banner" role="status">{connectionError || '连接暂时中断，恢复后会自动同步。'}<button onClick={() => { socket.current?.connect(); socket.current?.emit('sync'); }}>立即重连</button></div>}
       {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="关闭错误提示">×</button></div>}
-      <main className={`game-shell phase-${room.phase}`}>
+      <main className={`game-shell phase-${room.phase}`} data-room-version={room.version}>
+        {room.hosting === 'browser' && <div className="authority-notice"><strong>计算房主：{room.players.find(player => player.id === room.authorityId)?.name ?? '创建者'}</strong><span>{room.authorityId === room.selfId ? '请保持负责计算的原浏览器标签页打开。对局存档保存在这个浏览器中。' : '计算房主页面在线时对局继续；关闭后等待其用原浏览器返回。'}</span></div>}
         <div className="stage-heading"><div><p className="stage-kicker">{room.phase === 'lobby' ? '朋友到齐，就开跑' : room.phase === 'draft' ? `第 ${(room.draft?.batch ?? 0) + 1} 次选秀` : `第 ${Math.max(1, room.round)} / 4 场 · ${room.track === 'mild' ? '轻松赛道' : '狂野赛道'}`}</p><h1>{phaseLabels[room.phase]}</h1></div><span className="mode-tag">{room.players.length >= 7 ? '7～8 人扩展规则' : room.players.length === 2 ? '两人双角色模式' : '标准模式'}</span></div>
         {room.phase === 'lobby' ? <Lobby room={room} busy={busy || !online} act={act} copy={copy} /> : <>
           {room.phase === 'draft' && <Draft room={room} busy={busy || !online} act={act} onDetail={setDetail} />}
@@ -111,7 +112,7 @@ export function App() {
     {notice && <div className="toast" role="status">{notice}</div>}
     {detail && <CharacterModal id={detail} onClose={() => setDetail(null)} />}
     {copyFallback && <Modal title="手动复制" onClose={() => setCopyFallback(null)}><div className="manual-copy"><p>长按或选中下方内容，复制后发给朋友。</p><input aria-label="待复制的邀请内容" value={copyFallback} readOnly onFocus={event => event.target.select()} /><Button secondary onClick={() => setCopyFallback(null)}>完成</Button></div></Modal>}
-    {rules && <Modal title="怎么玩" onClose={() => setRules(false)}><div className="rules-copy"><p>挑选四位不太正经的运动员，参加四场比赛；两人模式每人八位、每场两位。每位运动员都有自己的特殊能力，后面的比赛奖分更多，选人时留一手。</p><ol><li><strong>邀请与准备</strong>：创建房间，复制邀请链接。朋友输入昵称入座，全员准备后由房主开局。</li><li><strong>两次蛇形选秀</strong>：轮到你时，从候选角色中选择一位，直到每人获得四位运动员；两人模式每人八位。</li><li><strong>暗选再揭示</strong>：每场各选一位未使用的角色。两人模式各控制两位；其他玩家只能看到你是否选好。</li><li><strong>掷骰与技能</strong>：轮流掷骰，按角色技能响应。有人需要做决定时，比赛会等待该玩家。点击角色查看中文能力。</li><li><strong>四场累计</strong>：每场出现第二位冲线者后结束，按当场名次计分，四场后比较总分。</li></ol><h3>好友房约定</h3><p>可配置操作时限。断线保留座位，刷新或重新打开相同浏览器可恢复。请勿清理浏览器数据，身份保存在本机；邀请链接只用于加入房间。</p><p>7～8 人为网页扩展规则。按人数扩展候选池，初始选牌不复制角色；特殊牌堆流程和超时裁定记录在项目 house-rules 文档。官方基础人数为 2～6 人。</p><p>本项目依据 CMYK 2025 基础盒与 2026 年 8 月修订建模；具体核验覆盖范围与仍待确认项以房间规则状态和源码 docs/rules.md 为准。</p></div></Modal>}
+    {rules && <Modal title="怎么玩" onClose={() => setRules(false)}><RulesContent browser={BROWSER_HOST_MODE} /></Modal>}
   </>;
 }
 
@@ -119,7 +120,7 @@ function Home({ code, onEnter, onResume, onHome, onDetail }: { code: string; onE
   const [name, setName] = useState(() => { try { return localStorage.getItem('magical-athlete:name') ?? ''; } catch { return ''; } });
   const [joinCode, setJoinCode] = useState(code);
   const [maxPlayers, setMaxPlayers] = useState(6);
-  const [timeoutSeconds, setTimeoutSeconds] = useState(90);
+  const [timeoutSeconds, setTimeoutSeconds] = useState(120);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'create' | 'join'>(code ? 'join' : 'create');
@@ -133,7 +134,8 @@ function Home({ code, onEnter, onResume, onHome, onDetail }: { code: string; onE
   const heroIds = ['banana', 'rocket-scientist', 'egg', 'huge-baby', 'centaur'];
   return <main className="home">
     <section className="hero"><div className="hero-title"><span>各就各位，</span><h1>胡闹<br />运动会<span className="title-star">✦</span></h1><p>选个怪咖，掷个骰子。<br />和朋友一起，认真地胡闹一场。</p></div><div className="hero-art" aria-hidden="true"><div className="hero-orbit" /><div className="hero-finish"><Icon kind="flag" size={58} /></div>{heroIds.map((id, index) => <div className={`hero-racer hero-racer-${index}`} key={id}><Avatar id={id} /></div>)}<div className="hero-stamp">2～8 人<br /><strong>好友开跑!</strong></div></div></section>
-    <section className="entry-panel"><div className="entry-tabs" role="tablist" aria-label="进入游戏方式"><button id="create-tab" role="tab" aria-controls="entry-form" aria-selected={mode === 'create'} onClick={() => { setMode('create'); setError(''); }}>创建房间</button><button id="join-tab" role="tab" aria-controls="entry-form" aria-selected={mode === 'join'} onClick={() => { setMode('join'); setError(''); }}>加入朋友</button></div><form id="entry-form" aria-labelledby={`${mode}-tab`} onSubmit={submit}><h2>{mode === 'create' ? '这场运动会，你来召集。' : code ? `朋友在 ${code} 等你` : '朋友的赛场在哪儿？'}</h2><label>你的昵称<input name="name" placeholder="比如：跑不动同学" autoComplete="nickname" maxLength={20} value={name} onChange={event => setName(event.target.value)} required /></label>{mode === 'join' ? <label>房间码<input name="roomCode" className="room-code-input" placeholder="输入房间码" autoCapitalize="characters" maxLength={12} value={joinCode} onChange={event => setJoinCode(event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))} required /></label> : <div className="form-split"><label>房间人数上限<select value={maxPlayers} onChange={event => setMaxPlayers(Number(event.target.value))}>{Array.from({ length: 7 }, (_, i) => i + 2).map(n => <option key={n} value={n}>{n} 人{n >= 7 ? ' · 扩展规则' : n === 2 ? ' · 双角色' : ' · 标准'}</option>)}</select></label><label>每次操作时限<select value={timeoutSeconds} onChange={event => setTimeoutSeconds(Number(event.target.value))}><option value={0}>不限时</option><option value={60}>60 秒</option><option value={90}>90 秒</option><option value={180}>180 秒</option></select></label></div>}{maxPlayers >= 7 && mode === 'create' && <p className="form-note">7～8 人使用本项目扩展规则，初始选牌唯一；平衡性未经官方验证。</p>}{error && <p className="form-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? '正在进入…' : mode === 'create' ? '创建房间，召集朋友' : '加入这场胡闹'}<Icon kind="arrow" /></Button><p className="form-note">无需注册 · 链接邀请 · 电脑手机都能玩</p>{code && <button type="button" className="text-button" onClick={onHome}>返回首页</button>}</form></section>
+    {BROWSER_HOST_MODE && <div className="browser-host-intro"><strong>打开网页，就能当房主。</strong><p>任意电脑无需安装即可开房。创建房间的浏览器负责实时计算，请保持这个标签页打开；完整对局存档保存在房主浏览器中。朋友只需相同网址和房间号。</p></div>}
+    <section className="entry-panel"><div className="entry-tabs" role="tablist" aria-label="进入游戏方式"><button id="create-tab" role="tab" aria-controls="entry-form" aria-selected={mode === 'create'} onClick={() => { setMode('create'); setError(''); }}>创建房间</button><button id="join-tab" role="tab" aria-controls="entry-form" aria-selected={mode === 'join'} onClick={() => { setMode('join'); setError(''); }}>加入朋友</button></div><form id="entry-form" aria-labelledby={`${mode}-tab`} onSubmit={submit}><h2>{mode === 'create' ? '这场运动会，你来召集。' : code ? `朋友在 ${code} 等你` : '朋友的赛场在哪儿？'}</h2><label>你的昵称<input name="name" placeholder="比如：跑不动同学" autoComplete="nickname" maxLength={20} value={name} onChange={event => setName(event.target.value)} required /></label>{mode === 'join' ? <label>房间码<input name="roomCode" className="room-code-input" placeholder="输入房间码" autoCapitalize="characters" maxLength={12} value={joinCode} onChange={event => setJoinCode(event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))} required /></label> : <div className="form-split"><label>房间人数上限<select value={maxPlayers} onChange={event => setMaxPlayers(Number(event.target.value))}>{Array.from({ length: 7 }, (_, i) => i + 2).map(n => <option key={n} value={n}>{n} 人{n >= 7 ? ' · 扩展规则' : n === 2 ? ' · 双角色' : ' · 标准'}</option>)}</select></label><label>每次操作时限<select value={timeoutSeconds} onChange={event => setTimeoutSeconds(Number(event.target.value))}><option value={0}>不限时</option><option value={60}>60 秒</option><option value={90}>90 秒</option><option value={120}>120 秒</option><option value={180}>180 秒</option></select></label></div>}{maxPlayers >= 7 && mode === 'create' && <p className="form-note">7～8 人使用本项目扩展规则，初始选牌唯一；平衡性未经官方验证。</p>}{error && <p className="form-error" role="alert">{error}</p>}<Button type="submit" disabled={busy}>{busy ? '正在进入…' : mode === 'create' ? '创建房间，召集朋友' : '加入这场胡闹'}<Icon kind="arrow" /></Button><p className="form-note">无需注册 · 链接邀请 · 电脑手机都能玩</p>{code && <button type="button" className="text-button" onClick={onHome}>返回首页</button>}</form></section>
     <section className="meet-racers"><div className="section-intro"><h2>谁说运动员<br />一定要会运动？</h2><p>36 位各怀绝技的怪咖。<br />点开头像，先认识几位。</p></div><div className="sample-racers">{characters.slice(0, 6).map(character => <button key={character.id} onClick={() => onDetail(character.id)}><Avatar id={character.id} /><strong>{character.nameZh}</strong></button>)}</div></section>
   </main>;
 }
@@ -185,7 +187,7 @@ function Track({ room, onDetail }: { room: RoomView; onDetail: (id: string) => v
     const row = Math.floor(position / columns); const offset = position % columns; const column = row % 2 ? columns - offset : offset + 1; const special = track.specials[position];
     const occupants = room.racers.filter(racer => Math.min(track.finish, Math.max(0, racer.position)) === position && !racer.eliminated);
     const end = position === track.finish; const start = position === 0; const rowEnd = offset === columns - 1;
-    return <div className={`track-cell ${start ? 'start-cell' : ''} ${end ? 'finish-cell' : ''} ${occupants.length ? 'occupied' : ''} ${special ? `special-${special.kind}` : ''}`} key={position} style={{ gridColumn: column, gridRow: row + 1 }}>
+    return <div className={`track-cell ${start ? 'start-cell' : ''} ${end ? 'finish-cell' : ''} ${occupants.length ? 'occupied' : ''} ${occupants.length > 3 ? 'crowded-cell' : ''} ${special ? `special-${special.kind}` : ''}`} key={position} style={{ gridColumn: column, gridRow: row + 1 }}>
       <div className="cell-label"><span>{start ? '起点' : end ? '终点' : position}</span>{!end && <span className="cell-arrow" aria-hidden="true">{rowEnd ? '↓' : row % 2 ? '←' : '→'}</span>}</div>
       {special && <span className="special-label">{special.kind === 'star' ? '★ ＋1分' : special.kind === 'trip' ? '绊倒' : `${(special.move ?? 0) > 0 ? '＋' : ''}${special.move ?? 0}格`}</span>}
       {end && <div className="finish-checkers" aria-hidden="true" />}

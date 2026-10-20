@@ -159,7 +159,7 @@ function motion(s:GameState,t:Work) {
     const departures=moving.filter(p=>p.distance!==0).map(p=>p.racerId);
     for(const f of fish){const lead=moving.find(p=>!p.follow&&racer(s,p.racerId)!.position===f.position&&previewMove(s,racer(s,p.racerId)!,p.distance??0,departures).end!==f.position);if(lead){
       const next={...t,plans:moving,fishAsked:[...(t.fishAsked??[]),f.id]};
-      ask(s,f,'suckerfish',`${name(f)}要随${name(racer(s,lead.racerId)!)}一起移动吗？`,yesNo,{motion:next,lead:lead.racerId});return;
+      ask(s,f,'suckerfish',`${name(f)}要随${name(racer(s,lead.racerId)!)}一起移动吗？`,yesNo,{motion:next,lead:lead.racerId},true);return;
     }}
   }
   const before=Object.fromEntries(active(s).map(r=>[r.id,r.position]));
@@ -433,7 +433,10 @@ export function resolveTasks(s:GameState):void {
     if(s.flags.awaitRoll)break;
   }
   s.flags.continuation=false;
-  delete s.flags.resolutionSeen;
+  // A choice suspends the same causal branch. In particular, declining a Fish
+  // prompt must not erase the loop history for a mandatory Baby/Scoocher loop.
+  if(s.pending)s.flags.resolutionSeen=[...seen];
+  else delete s.flags.resolutionSeen;
 }
 export function applyGameAction(s:GameState,playerId:string,action:GameAction):void {
   const p=s.players.find(x=>x.id===playerId);if(!p)throw Error('你不在本局参赛席位中');

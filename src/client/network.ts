@@ -1,5 +1,16 @@
 import { io, type Socket } from 'socket.io-client';
 import type { ActionEnvelope, ActionReply, GameAction, Identity, RoomView } from '../shared/types.js';
+import type { RelayJoinReply } from '../shared/relay.js';
+import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
+
+export const BROWSER_HOST_MODE = import.meta.env?.VITE_HOST_MODE === 'browser';
+export interface RoomConnection {
+  readonly connected: boolean;
+  connect(): void;
+  disconnect(): void;
+  emit(event: 'sync'): unknown;
+  request(envelope: ActionEnvelope): Promise<ActionReply>;
+}
 
 const identityKey = (code: string) => `magical-athlete:identity:${code.toUpperCase()}`;
 export function readIdentity(code: string): Identity | null {
@@ -12,29 +23,33 @@ export function saveIdentity(identity: Identity) { localStorage.setItem(identity
 export function forgetIdentity(code: string) { localStorage.removeItem(identityKey(code)); }
 export interface JoinReply { identity: Identity; room: RoomView }
 export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number }): Promise<JoinReply> {
-  const response = await fetch(code ? `/api/rooms/${encodeURIComponent(code)}/join` : '/api/rooms', {
+  const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
+  const response = await fetch(code ? `${prefix}/${encodeURIComponent(code)}/join` : prefix, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(code ? { name: data.name } : data),
   });
   const reply = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(reply.error || '暂时无法进入房间，请稍后重试。');
   saveIdentity(reply.identity);
+  if (BROWSER_HOST_MODE && !code) await prepareBrowserRoom((reply as RelayJoinReply).meta);
   return reply;
 }
 export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error';
-export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => void, onStatus: (state: ConnectionState, message?: string) => void) {
+export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => void, onStatus: (state: ConnectionState, message?: string) => void): RoomConnection {
+  if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
   socket.on('connect', () => { onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', onSnapshot);
   socket.on('disconnect', () => onStatus('offline'));
   socket.on('connect_error', (error: Error) => onStatus('error', error.message));
-  return socket;
+  return { get connected() { return socket.connected; }, connect() { socket.connect(); }, disconnect() { socket.disconnect(); }, emit(event) { socket.emit(event); }, request(envelope) { return socketRequest(socket, envelope); } };
 }
-export async function sendAction(socket: Socket, room: RoomView, action: GameAction): Promise<ActionReply> {
+function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {
+  return new Promise((resolve, reject) => socket.timeout(6500).emit('action', envelope, (error: Error | null, reply: ActionReply) => error ? reject(error) : resolve(reply)));
+}
+export async function sendAction(socket: RoomConnection, room: RoomView, action: GameAction): Promise<ActionReply> {
   const envelope: ActionEnvelope = { actionId: crypto.randomUUID(), expectedVersion: room.version, action };
   // Retrying uses the same id so a lost acknowledgement cannot apply an action twice.
-  const attempt = () => new Promise<ActionReply>((resolve, reject) => {
-    socket.timeout(6500).emit('action', envelope, (error: Error | null, reply: ActionReply) => error ? reject(error) : resolve(reply));
-  });
+  const attempt = () => socket.request(envelope);
   try { return await attempt(); }
   catch {
     if (!socket.connected) throw new Error('连接已中断。恢复连接后会同步对局。');

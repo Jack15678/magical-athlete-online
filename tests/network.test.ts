@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApplication } from '../src/server/index.js';
 import type { Identity, RoomView, ActionReply, GameAction } from '../src/shared/types.js';
-import { automaticAction } from '../src/engine/index.js';
+import { automaticAction,applyGameAction } from '../src/engine/index.js';
 
 async function running(db=':memory:') {const a=createApplication(db);await new Promise<void>(r=>a.http.listen(0,'127.0.0.1',r));const addr=a.http.address();assert(addr&&typeof addr==='object');return {...a,url:`http://127.0.0.1:${addr.port}`};}
 async function post(url:string,path:string,data:unknown) {const r=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
@@ -47,7 +47,9 @@ test('持久化、重连认证、待处理选择、去重在服务重启后仍�
     let budget=0;while(!app.rooms.get(identity.roomCode).game.pending){assert(++budget<1000);const a=automaticAction(app.rooms.get(identity.roomCode).game);assert(a);apply(a.playerId,a.action);}
     const before=structuredClone(app.rooms.get(identity.roomCode));await app.close();app=await running(join(dir,'rooms.sqlite'));
     const restored=app.rooms.authenticate(identity);assert.deepEqual(restored.game.players.map(p=>p.score),before.game.players.map(p=>p.score));assert.equal(restored.version,before.version);assert.equal(restored.game.players[0]!.ready,true);assert(app.rooms.act(identity.roomCode,identity.playerId,env).duplicate);
-    assert.deepEqual(restored.game.pending,before.game.pending);assert.deepEqual(restored.game.queue,before.game.queue);assert.deepEqual(restored.game.randomLog,before.game.randomLog);
+    const json=(v:unknown)=>JSON.parse(JSON.stringify(v));
+    assert.deepEqual(restored.game.pending,json(before.game.pending));assert.deepEqual(restored.game.queue,json(before.game.queue));assert.deepEqual(restored.game.randomLog,before.game.randomLog);
+    const expectedGame=structuredClone(before.game),actualGame=structuredClone(restored.game);expectedGame.players.forEach(p=>p.connected=false);const a=automaticAction(actualGame);assert(a);applyGameAction(expectedGame,a.playerId,a.action);applyGameAction(actualGame,a.playerId,a.action);assert.deepEqual(json(actualGame),json(expectedGame));
     assert.throws(()=>app.rooms.authenticate({...identity,token:'x'.repeat(43)}),/凭据/);
     const client=await connect(app.url,identity);assert.equal(client.view.selfId,identity.playerId);client.socket.disconnect();
   }finally{await app.close();rmSync(dir,{recursive:true,force:true});}

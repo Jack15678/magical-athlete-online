@@ -1,0 +1,204 @@
+import { BrowserAuthority } from '../browser/authority.js';
+import type { RelayMetadata, RelayServerMessage, RelayClientMessage } from '../shared/relay.js';
+import type { ActionEnvelope, ActionReply, Identity, RoomView } from '../shared/types.js';
+import type { ConnectionState, RoomConnection } from './network.js';
+
+const lockName = (code: string) => `magical-athlete:authority:${code}`;
+const HOST_OFFLINE = '计算房主网页离线，等待其返回。';
+
+export async function prepareBrowserRoom(meta: RelayMetadata): Promise<void> {
+  if (!navigator.locks) throw Error('当前浏览器不支持安全的计算页面锁。请使用新版Chrome、Edge或Firefox，并通过HTTPS打开网站。');
+  await navigator.locks.request(lockName(meta.code), { ifAvailable: true }, async lock => {
+    if (!lock) throw Error('本房间已有计算页面，请回到原标签页。');
+    const authority = await BrowserAuthority.create(meta);
+    authority.dispose();
+  });
+}
+
+interface AwaitingReply { resolve: (reply: ActionReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }
+
+/** Relay transport plus the creator's exclusively locked, durable browser authority. */
+export class BrowserRelayConnection implements RoomConnection {
+  private ws: WebSocket | null = null;
+  private generation = 0;
+  private disposed = false;
+  private blocked = false;
+  private authenticated = false;
+  private synchronized = false;
+  private syncRequestId: string | null = null;
+  private authorityOnline = false;
+  private authorityRole = false;
+  private requestedRole = false;
+  private metadata: RelayMetadata | null = null;
+  private authority: BrowserAuthority | null = null;
+  private tryingLock = false;
+  private unavailableAuthority = false;
+  private releaseLock: (() => void) | null = null;
+  private latestRoom: RoomView | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectDelay = 700;
+  private hostQueue: Promise<void> = Promise.resolve();
+  private tickBusy = false;
+  private replies = new Map<string, AwaitingReply>();
+  private upkeep: ReturnType<typeof setInterval>;
+
+  constructor(private identity: Identity, private onSnapshot: (room: RoomView) => void, private onStatus: (status: ConnectionState, message?: string) => void) {
+    this.upkeep = setInterval(() => {
+      if (!this.disposed && !this.blocked && this.authenticated && !this.authorityOnline) void this.tryAuthority();
+      if (this.authorityRole && this.authenticated && this.ws?.readyState === WebSocket.OPEN && this.authority && !this.tickBusy) {
+        this.tickBusy = true;
+        this.enqueueHost(async () => { try { if (await this.authority!.tick()) this.broadcast(); } finally { this.tickBusy = false; } });
+      }
+    }, 1000);
+    this.open(false);
+  }
+  get connected() { return !this.disposed && !this.blocked && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
+  connect() {
+    if (this.disposed) return;
+    this.blocked = false; this.unavailableAuthority = false;
+    if (this.ws?.readyState === WebSocket.OPEN) { this.emit('sync'); void this.tryAuthority(); }
+    else this.open(!!this.authority);
+  }
+  disconnect() {
+    if (this.disposed) return;
+    this.disposed = true; this.generation++;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    clearInterval(this.upkeep); this.ws?.close(1000, 'page closed'); this.ws = null;
+    this.rejectReplies('页面已断开连接。'); this.releaseLock?.();
+  }
+  emit(event: 'sync') { if (event === 'sync' && this.authenticated) { this.syncRequestId = crypto.randomUUID(); this.send({ type: 'sync', requestId: this.syncRequestId }); } }
+  request(envelope: ActionEnvelope): Promise<ActionReply> {
+    if (!this.connected) return Promise.reject(Error(this.authorityOnline ? '连接已中断，正在重新同步。' : HOST_OFFLINE));
+    const requestId = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { this.replies.delete(requestId); reject(Error('操作确认超时。')); }, 6500);
+      this.replies.set(requestId, { resolve, reject, timer });
+      if (!this.send({ type: 'action', requestId, envelope })) { clearTimeout(timer); this.replies.delete(requestId); reject(Error('连接已中断。')); }
+    });
+  }
+  private send(message: RelayClientMessage) {
+    if (this.disposed || this.ws?.readyState !== WebSocket.OPEN) return false;
+    this.ws.send(JSON.stringify(message)); return true;
+  }
+  private open(authority: boolean) {
+    if (this.disposed || this.blocked) return;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    const generation = ++this.generation;
+    this.authenticated = false; this.synchronized = false; this.syncRequestId = null; this.authorityRole = false; this.requestedRole = authority;
+    this.ws?.close(1000, 'reconnecting');
+    const url = new URL(`/api/browser/ws/${encodeURIComponent(this.identity.roomCode)}`, location.origin); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = this.ws = new WebSocket(url);
+    this.onStatus('connecting');
+    ws.addEventListener('open', () => { if (generation === this.generation) this.send({ type: 'auth', identity: this.identity, authority }); });
+    ws.addEventListener('message', event => {
+      if (generation !== this.generation || this.disposed) return;
+      try { this.receive(JSON.parse(String(event.data)) as RelayServerMessage); }
+      catch { this.fail('收到无法读取的中继消息，请重新连接。'); }
+    });
+    ws.addEventListener('error', () => { if (generation === this.generation && !this.disposed) this.onStatus('offline', '与联机中继的连接暂时中断，正在重连。'); });
+    ws.addEventListener('close', event => {
+      if (generation !== this.generation || this.disposed) return;
+      this.authenticated = false; this.synchronized = false; this.authorityRole = false; this.rejectReplies('连接已中断。');
+      if ([4401, 4404, 4409, 4429].includes(event.code)) {
+        this.blocked = true; this.releaseLock?.();
+        this.onStatus('error', event.code === 4409 ? '另一标签页已接管计算。可关闭本页，或点击重连作为普通页面返回。' : event.reason || '房间或身份已失效，请检查邀请链接。');
+        return;
+      }
+      this.onStatus('offline', '与联机中继的连接暂时中断，正在重连。');
+      if (!this.blocked) {
+        this.reconnectTimer = setTimeout(() => this.open(!!this.authority), this.reconnectDelay);
+        this.reconnectDelay = Math.min(5000, this.reconnectDelay * 1.7);
+      }
+    });
+  }
+  private receive(message: RelayServerMessage) {
+    if (message.type === 'auth-ok') {
+      this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
+      this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
+      if (this.requestedRole && (!message.authority || !this.authority)) { this.fail('中继未确认本页的计算资格，已停止计算。'); return; }
+      this.reportStatus();
+      if (this.authorityRole) this.enqueueHost(async () => { await this.authority!.roster(message.meta); this.broadcast(); });
+      else void this.tryAuthority();
+      this.emit('sync');
+    } else if (message.type === 'roster') {
+      this.metadata = message.meta;
+      if (this.authorityRole && this.authority) this.enqueueHost(async () => { await this.authority!.roster(message.meta); this.broadcast(); });
+    } else if (message.type === 'host-status') {
+      const wasOnline = this.authorityOnline;
+      this.authorityOnline = message.online;
+      if (!message.online) this.synchronized = false;
+      this.reportStatus();
+      if (message.online && (!wasOnline || !this.synchronized)) this.emit('sync');
+      if (!message.online) void this.tryAuthority();
+    } else if (message.type === 'snapshot') {
+      if (message.room.selfId !== this.identity.playerId || message.room.code !== this.identity.roomCode) { this.fail('中继快照身份不匹配，已停止显示。'); return; }
+      if (this.latestRoom && message.room.version < this.latestRoom.version) return;
+      const snapshotRequestId = (message as typeof message & { requestId?: string }).requestId;
+      if (snapshotRequestId && snapshotRequestId === this.syncRequestId) this.synchronized = true;
+      this.latestRoom = { ...message.room, hosting: 'browser', authorityId: this.metadata?.authorityId, authorityOnline: this.authorityOnline };
+      this.onSnapshot(this.latestRoom);
+      this.reportStatus();
+    } else if (message.type === 'ack') {
+      const pending = this.replies.get(message.requestId); if (!pending) return;
+      clearTimeout(pending.timer); this.replies.delete(message.requestId); pending.resolve(message.result);
+    } else if (message.type === 'error') {
+      if (!this.authorityOnline && message.requestId === this.syncRequestId) { this.reportStatus(); return; }
+      const pending = message.requestId ? this.replies.get(message.requestId) : undefined;
+      if (pending && message.requestId) { clearTimeout(pending.timer); this.replies.delete(message.requestId); pending.resolve({ ok: false, error: message.message }); }
+      else this.onStatus('error', message.message);
+    } else if (message.type === 'request' && this.authorityRole && this.authority) {
+      this.enqueueHost(async () => {
+        if (message.operation === 'sync') { this.deliver(message.playerId, message.requestId); return; }
+        if (!message.envelope) return;
+        let result: ActionReply;
+        try { result = await this.authority!.action(message.playerId, message.envelope); }
+        catch (error) { result = { ok: false, error: error instanceof Error ? error.message : '操作未提交，请稍后重试。' }; }
+        this.deliver(message.playerId, message.requestId, result);
+        if (result.ok) this.broadcast();
+      });
+    }
+  }
+  private reportStatus() {
+    this.onStatus(!this.authorityOnline ? 'offline' : this.synchronized ? 'online' : 'connecting', !this.authorityOnline ? HOST_OFFLINE : this.synchronized ? undefined : '正在同步已保存的最新对局…');
+    if (this.latestRoom && this.latestRoom.authorityOnline !== this.authorityOnline) { this.latestRoom = { ...this.latestRoom, authorityOnline: this.authorityOnline }; this.onSnapshot(this.latestRoom); }
+  }
+  private enqueueHost(operation: () => Promise<void>) {
+    this.hostQueue = this.hostQueue.then(async () => { if (!this.disposed && !this.blocked && this.authority) await operation(); }).catch(error => this.fail(error instanceof Error ? error.message : '计算存档失败，请回到原计算房主页面。'));
+  }
+  private deliver(playerId: string, requestId?: string, result?: ActionReply) {
+    if (!this.authorityRole || !this.authority) return;
+    const room = this.authority.view(playerId);
+    this.send({ type: 'deliver', to: playerId, room, requestId, result, phase: room.phase, adminHostId: room.hostId });
+  }
+  private broadcast() {
+    if (!this.metadata) return;
+    for (const member of this.metadata.members) if (member.connected) this.deliver(member.id);
+  }
+  private async tryAuthority() {
+    const meta = this.metadata;
+    if (this.disposed || this.blocked || this.unavailableAuthority || this.authority || this.tryingLock || !this.authenticated || meta?.authorityId !== this.identity.playerId) return;
+    if (!navigator.locks) { this.unavailableAuthority = true; this.onStatus('error', '当前浏览器不支持计算页面锁，请回到原计算房主浏览器。'); return; }
+    this.tryingLock = true;
+    try {
+      await navigator.locks.request(lockName(meta.code), { ifAvailable: true }, async lock => {
+        if (!lock || this.disposed || this.blocked) return;
+        let authority: BrowserAuthority;
+        try { authority = await BrowserAuthority.load(meta); }
+        catch (error) {
+          this.unavailableAuthority = true;
+          if (!this.authorityOnline) this.onStatus('error', error instanceof Error ? error.message : '本浏览器没有房主存档，请回到原浏览器。');
+          return;
+        }
+        if (this.disposed || this.blocked) { authority.dispose(); return; }
+        this.authority = authority;
+        try {
+          await new Promise<void>(release => { this.releaseLock = release; this.open(true); });
+          await this.hostQueue;
+        } finally { authority.dispose(); if (this.authority === authority) this.authority = null; this.authorityRole = false; this.releaseLock = null; }
+      });
+    } catch (error) { if (!this.disposed) this.fail(error instanceof Error ? error.message : '无法取得计算页面锁。'); }
+    finally { this.tryingLock = false; }
+  }
+  private rejectReplies(message: string) { for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
+  private fail(message: string) { this.blocked = true; this.authenticated = false; this.authorityRole = false; this.onStatus('error', message); this.ws?.close(1011, 'authority unavailable'); this.releaseLock?.(); this.rejectReplies(message); }
+}
