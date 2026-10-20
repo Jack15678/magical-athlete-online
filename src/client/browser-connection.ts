@@ -5,6 +5,8 @@ import type { ConnectionState, RoomConnection } from './network.js';
 
 const lockName = (code: string) => `magical-athlete:authority:${code}`;
 const HOST_OFFLINE = '计算房主网页离线，等待其返回。';
+const PING_INTERVAL_MS = 10_000;
+const PONG_TIMEOUT_MS = 25_000;
 
 export async function prepareBrowserRoom(meta: RelayMetadata): Promise<void> {
   if (!navigator.locks) throw Error('当前浏览器不支持安全的计算页面锁。请使用新版Chrome、Edge或Firefox，并通过HTTPS打开网站。');
@@ -37,13 +39,39 @@ export class BrowserRelayConnection implements RoomConnection {
   private latestRoom: RoomView | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = 700;
+  private lastPingAt = 0;
+  private lastPongAt = 0;
   private hostQueue: Promise<void> = Promise.resolve();
   private tickBusy = false;
   private replies = new Map<string, AwaitingReply>();
   private upkeep: ReturnType<typeof setInterval>;
+  private readonly offline = () => {
+    if (this.disposed || this.blocked) return;
+    this.generation++;
+    this.authenticated = false; this.synchronized = false; this.authorityRole = false;
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    this.ws?.close(1000, 'network offline'); this.ws = null;
+    this.rejectReplies('网络已断开，恢复后将重新同步。');
+    this.onStatus('offline', '网络已断开，恢复后将重新同步。');
+  };
+  private readonly online = () => { if (!this.disposed && !this.blocked) this.open(!!this.authority); };
 
   constructor(private identity: Identity, private onSnapshot: (room: RoomView) => void, private onStatus: (status: ConnectionState, message?: string) => void) {
+    window.addEventListener('offline', this.offline);
+    window.addEventListener('online', this.online);
     this.upkeep = setInterval(() => {
+      if (this.disposed || this.blocked) return;
+      if (this.authenticated && this.ws?.readyState === WebSocket.OPEN) {
+        const now = Date.now();
+        if (now - this.lastPongAt >= PONG_TIMEOUT_MS) {
+          // A disconnected network can leave the browser's WebSocket OPEN indefinitely.
+          // Replace its generation directly instead of waiting for a close handshake.
+          this.rejectReplies('联机连接暂时中断，正在重新同步。');
+          this.open(!!this.authority);
+          return;
+        }
+        if (now - this.lastPingAt >= PING_INTERVAL_MS) this.ping(now);
+      }
       if (!this.disposed && !this.blocked && this.authenticated && !this.authorityOnline) void this.tryAuthority();
       if (this.authorityRole && this.authenticated && this.ws?.readyState === WebSocket.OPEN && this.authority && !this.tickBusy) {
         this.tickBusy = true;
@@ -62,6 +90,8 @@ export class BrowserRelayConnection implements RoomConnection {
   disconnect() {
     if (this.disposed) return;
     this.disposed = true; this.generation++;
+    window.removeEventListener('offline', this.offline);
+    window.removeEventListener('online', this.online);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     clearInterval(this.upkeep); this.ws?.close(1000, 'page closed'); this.ws = null;
     this.rejectReplies('页面已断开连接。'); this.releaseLock?.();
@@ -82,9 +112,11 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private open(authority: boolean) {
     if (this.disposed || this.blocked) return;
+    if (!navigator.onLine) { this.onStatus('offline', '网络已断开，恢复后将重新同步。'); return; }
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     const generation = ++this.generation;
     this.authenticated = false; this.synchronized = false; this.syncRequestId = null; this.authorityRole = false; this.requestedRole = authority;
+    this.lastPingAt = 0; this.lastPongAt = 0;
     this.ws?.close(1000, 'reconnecting');
     const url = new URL(`/api/browser/ws/${encodeURIComponent(this.identity.roomCode)}`, location.origin); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = this.ws = new WebSocket(url);
@@ -92,6 +124,7 @@ export class BrowserRelayConnection implements RoomConnection {
     ws.addEventListener('open', () => { if (generation === this.generation) this.send({ type: 'auth', identity: this.identity, authority }); });
     ws.addEventListener('message', event => {
       if (generation !== this.generation || this.disposed) return;
+      if (event.data === 'pong') { this.lastPongAt = Date.now(); return; }
       try { this.receive(JSON.parse(String(event.data)) as RelayServerMessage); }
       catch { this.fail('收到无法读取的中继消息，请重新连接。'); }
     });
@@ -114,10 +147,11 @@ export class BrowserRelayConnection implements RoomConnection {
   private receive(message: RelayServerMessage) {
     if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
+      this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
       this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
       if (this.requestedRole && (!message.authority || !this.authority)) { this.fail('中继未确认本页的计算资格，已停止计算。'); return; }
       this.reportStatus();
-      if (this.authorityRole) this.enqueueHost(async () => { await this.authority!.roster(message.meta); this.broadcast(); });
+      if (this.authorityRole) this.enqueueHost(async () => { await this.authority!.resume(message.meta); this.broadcast(); });
       else void this.tryAuthority();
       this.emit('sync');
     } else if (message.type === 'roster') {
@@ -157,6 +191,11 @@ export class BrowserRelayConnection implements RoomConnection {
         if (result.ok) this.broadcast();
       });
     }
+  }
+  private ping(now: number) {
+    if (this.ws?.readyState !== WebSocket.OPEN) return;
+    // The relay answers these frames without waking its hibernating Durable Object.
+    this.ws.send('ping'); this.lastPingAt = now;
   }
   private reportStatus() {
     this.onStatus(!this.authorityOnline ? 'offline' : this.synchronized ? 'online' : 'connecting', !this.authorityOnline ? HOST_OFFLINE : this.synchronized ? undefined : '正在同步已保存的最新对局…');

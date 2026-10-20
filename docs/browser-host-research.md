@@ -63,6 +63,8 @@ Cloudflare Worker → 房间 Durable Object（认证、路由、连接信息）
 
 中继已配置 `ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))`；客户端若发送应用层 `ping`，由平台回复并保持休眠，DO 内没有发送心跳的 `setInterval`。自动回复适用于所有连接，故它只证明网络存活，不能被视为认证成功或房主在线。[DurableObjectState auto response](https://developers.cloudflare.com/durable-objects/api/state/#setwebsocketautoresponse)
 
+为识别断网后仍显示 OPEN 的幽灵连接，客户端每10秒发送原始 `ping`，25秒没有 `pong` 就换代重连。DO 通过 `getWebSocketAutoResponseTimestamp()` 取得该主持连接最后回复时间，与认证时刻取较新者后计算35秒租约；持久化 alarm 到期后检查，仍健康则安排下一次，过期则撤销角色并广播暂停。该 alarm 同时处理10秒认证超时和30天房间清理，不使用普通 DO 定时器。首次认证无法安排租约检查时不授予主持角色；之后排程写失败则撤销现有主持角色并让平台重试清理，保持失败时暂停。
+
 部署或平台重启仍可能导致 WebSocket 关闭；客户端已实现退避间隔有上限的重连和独立认证。
 
 ## 仓库当前部署配置

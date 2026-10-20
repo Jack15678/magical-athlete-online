@@ -102,11 +102,21 @@ export class BrowserAuthority {
     });
   }
   roster(meta: RelayMetadata): Promise<void> {
+    return this.updateRoster(meta,false);
+  }
+  /** Call once after the authority socket authenticates, including reconnects
+   * that retain this instance. Disconnected host time never consumes a turn. */
+  resume(meta: RelayMetadata): Promise<void> {
+    return this.updateRoster(meta,true);
+  }
+  private updateRoster(meta: RelayMetadata, resume: boolean): Promise<void> {
     return this.serial(async() => {
       validateMetadata(meta);
       if(meta.code!==this.meta.code||meta.authorityId!==this.meta.authorityId)throw Error('不能将另一房间的成员写入本局。');
       await this.commit<void>((record,_receipts,save) => {
-        const next=reconcileRoster(record.room,meta,this.now()).room;
+        const now=this.now();
+        const next=reconcileRoster(record.room,meta,now).room;
+        if(resume)setRoomDeadline(next,now);
         save({...record,room:next},undefined);
       });
       this.meta=structuredClone(meta);

@@ -11,7 +11,7 @@ interface RoomRecord {
   joiningLockId?:string;
 }
 interface Connection {
-  connectionId:string; acceptedAt:number; playerId?:string; authority?:boolean;
+  connectionId:string; acceptedAt:number; playerId?:string; authority?:boolean; authorityLeaseAt?:number;
   windowAt:number; count:number;
 }
 const CODE = /^[A-Z2-9]{6}$/;
@@ -19,6 +19,7 @@ const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const PHASES = new Set<Phase>(['lobby','draft','selection','race','results','finished','paused']);
 const AUTH_TIMEOUT_MS = 10_000;
+const AUTHORITY_LEASE_MS = 35_000;
 const ROOM_TTL_MS = 30 * 86_400_000;
 const CLIENT_BYTES = 8_192;
 const HOST_BYTES = 262_144;
@@ -130,7 +131,25 @@ export class RoomRelay extends DurableObject<Env> {
   private run<T>(operation:()=>Promise<T>):Promise<T>{const next=this.serial.then(operation,operation);this.serial=next.catch(()=>{});return next;}
   private attachment(socket:WebSocket):Connection|null { try{return socket.deserializeAttachment() as Connection|null;}catch{return null;} }
   private sockets():WebSocket[]{return this.ctx.getWebSockets().filter(socket=>socket.readyState===WebSocket.OPEN);}
-  private authority():WebSocket|undefined {return this.sockets().find(socket=>this.attachment(socket)?.authority===true);}
+  private authorityDeadline(socket:WebSocket,state:Connection):number {
+    // Platform-maintained auto-response timestamps survive hibernation. Raw
+    // ping/pong therefore renews liveness without waking this object to write.
+    const ping=this.ctx.getWebSocketAutoResponseTimestamp(socket)?.getTime()??0;
+    return Math.max(state.authorityLeaseAt??state.acceptedAt,ping)+AUTHORITY_LEASE_MS;
+  }
+  private retireAuthority(socket:WebSocket,code:number,reason:string):void {
+    const state=this.attachment(socket);if(!state?.authority)return;
+    state.authority=false;delete state.playerId;socket.serializeAttachment(state);
+    try{socket.close(code,reason);}catch{}
+    this.notify({type:'roster',meta:this.metadata()});this.notify({type:'host-status',online:false});
+  }
+  private authority():WebSocket|undefined {
+    const socket=this.sockets().find(socket=>this.attachment(socket)?.authority===true);
+    if(socket&&this.authorityDeadline(socket,this.attachment(socket)!)<=Date.now()){
+      this.retireAuthority(socket,4408,'主持网页心跳已超时，等待重连');return undefined;
+    }
+    return socket;
+  }
   private online(playerId:string):boolean {return this.sockets().some(socket=>this.attachment(socket)?.playerId===playerId);}
   private send(socket:WebSocket,message:RelayServerMessage):void {try{socket.send(JSON.stringify(message));}catch{try{socket.close(1011,'连接已失效');}catch{}}}
   private notify(message:RelayServerMessage):void {for(const socket of this.sockets())if(this.attachment(socket)?.playerId)this.send(socket,message);}
@@ -151,7 +170,7 @@ export class RoomRelay extends DurableObject<Env> {
     return this.record;
   }
   private async save(next:RoomRecord):Promise<void> {await this.ctx.storage.put('room',next);this.record=next;}
-  private async scheduleAuthTimeout(at:number):Promise<void> {
+  private async ensureAlarmNoLaterThan(at:number):Promise<void> {
     const scheduled=await this.ctx.storage.getAlarm();if(scheduled===null||at<scheduled)await this.ctx.storage.setAlarm(at);
   }
   async fetch(request:Request):Promise<Response>{
@@ -186,7 +205,7 @@ export class RoomRelay extends DurableObject<Env> {
           const now=Date.now();
           // Persist the authentication deadline before accepting the socket. A
           // quota/storage failure must not leave an unreachable accepted peer.
-          await this.scheduleAuthTimeout(now+AUTH_TIMEOUT_MS);
+          await this.ensureAlarmNoLaterThan(now+AUTH_TIMEOUT_MS);
           const pair=new WebSocketPair(),[client,server]=Object.values(pair) as [WebSocket,WebSocket];
           this.ctx.acceptWebSocket(server);server.serializeAttachment({connectionId:crypto.randomUUID(),acceptedAt:now,windowAt:now,count:0} satisfies Connection);
           return new Response(null,{status:101,webSocket:client});
@@ -219,6 +238,13 @@ export class RoomRelay extends DurableObject<Env> {
           if(parsed.authority===true&&member.id!==room.authorityId){socket.close(4401,'只有创建者可主持');return;}
           const own=this.sockets().filter(s=>this.attachment(s)?.playerId===member.id);
           if(own.length>=5&&(!parsed.authority||!own.some(s=>this.attachment(s)?.authority))){socket.close(4429,'同一身份页面过多');return;}
+          if(parsed.authority){
+            // Never acknowledge an authority role whose expiry check could not
+            // be persisted (for example, when the Free write quota is spent).
+            try{await this.ensureAlarmNoLaterThan(now+AUTHORITY_LEASE_MS);}
+            catch{this.send(socket,{type:'error',message:'中继暂时无法维护主持连接，请稍后重试。'});socket.close(1013,'主持租约保存失败');return;}
+            connection.authorityLeaseAt=now;
+          }
           // New valid authority replaces a stale connection left by a refresh/network loss.
           if(parsed.authority)for(const previous of own)if(this.attachment(previous)?.authority){const old=this.attachment(previous)!;old.authority=false;old.playerId=undefined;previous.serializeAttachment(old);previous.close(4409,'主持已在另一页面恢复');}
           connection.playerId=member.id;connection.authority=parsed.authority===true;socket.serializeAttachment(connection);
@@ -295,8 +321,23 @@ export class RoomRelay extends DurableObject<Env> {
       if(!this.record)return;
       const now=Date.now();if(this.record.expiresAt<=now){await this.expire();return;}
       let next=this.record.expiresAt;
-      for(const socket of this.sockets()){const state=this.attachment(socket);if(!state||state.playerId)continue;const deadline=state.acceptedAt+AUTH_TIMEOUT_MS;if(deadline<=now)socket.close(4401,'认证超时');else next=Math.min(next,deadline);}
-      await this.ctx.storage.setAlarm(next);
+      for(const socket of this.sockets()){
+        const state=this.attachment(socket);if(!state)continue;
+        if(state.authority){
+          const deadline=this.authorityDeadline(socket,state);
+          if(deadline<=now)this.retireAuthority(socket,4408,'主持网页心跳已超时，等待重连');
+          else next=Math.min(next,deadline);
+        } else if(!state.playerId){
+          const deadline=state.acceptedAt+AUTH_TIMEOUT_MS;
+          if(deadline<=now)socket.close(4401,'认证超时');else next=Math.min(next,deadline);
+        }
+      }
+      try{await this.ctx.storage.setAlarm(next);}
+      catch(error){
+        const host=this.sockets().find(socket=>this.attachment(socket)?.authority);
+        if(host)this.retireAuthority(host,1013,'中继无法维护主持租约，请稍后重连');
+        throw error; // Let the platform retry cleanup; no unguarded authority remains.
+      }
     });
   }
 }

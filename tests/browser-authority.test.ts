@@ -142,6 +142,26 @@ test('Timeout defaults are durable, unlimited rooms stay still, and execution co
   assert.equal(await resumed.tick(),true);assert.equal(resumed.view('p0').players[0]!.score,1);assert.equal(resumed.view('p0').logs.slice(logs).some(e=>e.type==='timeout'),false);resumed.dispose();
 });
 
+test('Same-instance authority reconnect grants a fresh durable deadline, while ordinary roster changes never extend it',async()=>{
+  const env=environment();const meta=metadata();const a=await BrowserAuthority.create(meta,env.options);await readyAndStart(a,meta);
+  const before=await raw(env);assert.equal(before.room.deadline,env.clock.now+120_000);
+  env.clock.now+=900_000;
+  const connected={...meta,phase:before.room.game.phase};
+  await a.resume(connected);
+  const after=await raw(env),deadline=env.clock.now+120_000;
+  assert.equal(after.room.deadline,deadline);assert.equal(a.view('p0').deadline,deadline);
+  assert.equal(after.room.version,before.room.version);assert.deepEqual(after.room.game,before.room.game);
+  assert.equal(await a.tick(),false);assert.equal((await raw(env)).room.version,before.room.version);
+  env.clock.now+=20_000;
+  await a.roster({...connected,members:connected.members.map(m=>({...m,connected:m.id!=='p1'}))});
+  env.clock.now+=20_000;await a.roster(connected);
+  assert.equal((await raw(env)).room.deadline,deadline);assert.equal(a.view('p0').deadline,deadline);
+  env.clock.now=deadline-1;assert.equal(await a.tick(),false);
+  env.clock.now=deadline;const version=a.view('p0').version;
+  assert.equal(await a.tick(),true);assert.equal(a.view('p0').version,version+1);
+  assert.ok(a.view('p0').logs.some(e=>e.type==='timeout'));a.dispose();
+});
+
 test('Pure room projection returns independent objects and never exposes pending context or another hand',()=>{
   const room=createBrowserRoom(metadata(),123,10_000);room.game.phase='race';room.game.players[1]!.hand=['egg'];
   room.game.pending={id:'c1',playerId:'p1',racerId:'r1',title:'私有选择',options:[{id:'egg',label:'蛋'}],optional:true,kind:'egg',context:{futureSecret:'do not reveal'}};

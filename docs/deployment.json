@@ -1,0 +1,10 @@
+{
+  "url": "https://magical-athlete.qiuh23.workers.dev",
+  "provider": "Cloudflare Workers Free",
+  "mode": "browser-authority",
+  "workerName": "magical-athlete",
+  "firstVersion": "329ab155-6bd6-43f3-82c7-3763f7e022ab",
+  "deployedAt": "2026-10-21",
+  "planVerification": "User confirmed Workers Free in dashboard",
+  "githubAutoDeploy": false
+}

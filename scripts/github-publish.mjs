@@ -18,6 +18,7 @@ if(process.argv.includes('--status')){
   const known=JSON.parse(readFileSync(record,'utf8'));const runs=await api(`/repos/${known.fullName}/actions/runs?per_page=3`);
   console.log(JSON.stringify(runs.workflow_runs.map(r=>({id:r.id,status:r.status,conclusion:r.conclusion,url:r.html_url,sha:r.head_sha})),null,2));
   for(const r of runs.workflow_runs.filter(r=>r.conclusion==='failure').slice(0,1)){const jobs=await api(`/repos/${known.fullName}/actions/runs/${r.id}/jobs`);console.log(JSON.stringify(jobs.jobs.map(j=>({name:j.name,conclusion:j.conclusion,steps:j.steps.map(s=>({name:s.name,conclusion:s.conclusion}))})),null,2));}
+  for(const r of runs.workflow_runs.filter(r=>r.status==='in_progress').slice(0,1)){const jobs=await api(`/repos/${known.fullName}/actions/runs/${r.id}/jobs`);console.log(JSON.stringify(jobs.jobs.map(j=>({name:j.name,startedAt:j.started_at,status:j.status,steps:j.steps.filter(s=>s.status!=='queued').map(s=>({name:s.name,status:s.status,conclusion:s.conclusion}))})),null,2));}
   return;
 }
 if(existsSync(record)) {const known=JSON.parse(readFileSync(record,'utf8'));repo=await api(`/repos/${known.fullName}`);}

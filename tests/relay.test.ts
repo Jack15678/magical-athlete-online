@@ -15,7 +15,7 @@ const worker=await import(workerPath);
 (globalThis as Record<string,unknown>).WebSocketRequestResponsePair=class { constructor(readonly request:string,readonly response:string){} };
 
 class Socket {
-  readyState=1; attachment:unknown; sent:any[]=[]; closeCode?:number;
+  readyState=1; attachment:unknown; sent:any[]=[]; closeCode?:number;lastAutoResponseAt:Date|null=null;
   serializeAttachment(value:unknown){this.attachment=structuredClone(value);}
   deserializeAttachment(){return structuredClone(this.attachment);}
   send(value:string){if(this.readyState!==1)throw Error('socket closed');this.sent.push(JSON.parse(value));}
@@ -43,6 +43,7 @@ class Context {
   getWebSockets(){return this.sockets;}
   acceptWebSocket(socket:Socket){this.sockets.push(socket);}
   setWebSocketAutoResponse(value:unknown){this.autoResponse=value;}
+  getWebSocketAutoResponseTimestamp(socket:Socket){return socket.lastAutoResponseAt;}
   async ready(){await Promise.all(this.pending);}
 }
 async function instance(storage=new Storage(),sockets:Socket[]=[]){const ctx=new Context(storage);ctx.sockets=sockets;const relay=new worker.RoomRelay(ctx,{});await ctx.ready();return {ctx,relay};}
@@ -161,4 +162,29 @@ test('worker rejects cross-origin access and oversized or invalid room parameter
   assert.equal((await worker.default.fetch(post({name:'玩家',timeoutSeconds:1}),env)).status,400);
   assert.equal((await worker.default.fetch(post({name:'a'.repeat(5000)}),env)).status,413);
   assert.equal((await worker.default.fetch(new Request('https://game.test/room/ABC234'),env)).status,200);
+});
+test('relay retires a ghost authority and broadcasts pause when its heartbeat lease expires',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),socket=await authenticate(env,guest.identity);
+  const state=host.deserializeAttachment() as any;state.authorityLeaseAt=Date.now()-40_000;host.serializeAttachment(state);socket.clear();
+  await env.relay.alarm();assert.equal(host.closeCode,4408);assert.equal(socket.sent.find(m=>m.type==='host-status').online,false);
+  const response=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"稍候"}'}));assert.equal(response.status,409);
+  await env.relay.webSocketMessage(socket,JSON.stringify({type:'action',requestId:'ghost',envelope:act()}));assert.match(socket.sent.at(-1).message,/主持网页离线/);
+});
+test('relay uses platform auto-response timestamps after hibernation to preserve a healthy authority lease',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);
+  const state=host.deserializeAttachment() as any;state.authorityLeaseAt=Date.now()-40_000;host.serializeAttachment(state);host.lastAutoResponseAt=new Date(Date.now()-5_000);
+  const restored=await instance(env.ctx.storage,env.ctx.sockets);await restored.relay.alarm();
+  assert.equal(host.readyState,1);assert.ok(env.ctx.storage.alarmAt!>Date.now()+29_000);assert.ok(env.ctx.storage.alarmAt!<=Date.now()+30_000);
+  const next=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"在线加入"}'}));assert.equal(next.status,201);
+});
+test('relay refuses authority authentication if its lease expiry cannot be scheduled',async()=>{
+  const env=await create();env.ctx.storage.failAlarm=true;const host=await authenticate(env,env.created.identity,true);
+  assert.equal(host.closeCode,1013);assert.ok(!host.sent.some(m=>m.type==='auth-ok'));
+  const response=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"不能加入"}'}));assert.equal(response.status,409);
+});
+test('relay alarm storage failure cannot leave an authority online with an unguarded lease',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),socket=await authenticate(env,guest.identity);
+  socket.clear();host.lastAutoResponseAt=new Date();env.ctx.storage.failAlarm=true;
+  await assert.rejects(env.relay.alarm(),/simulated alarm write failure/);
+  assert.equal(host.closeCode,1013);assert.equal(socket.sent.find(m=>m.type==='host-status').online,false);
 });
