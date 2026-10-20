@@ -79,17 +79,21 @@ pnpm test:e2e
 
 该套测试自行创建隔离的Node服务与测试房间，不依赖Tailscale公网。仓库的GitHub Actions配置上述检查；最新远端运行结果以仓库Actions页为准，本报告中的本地结果不能替代远端结果。
 
-Cloudflare已按用户确认的Workers Free正式部署到 https://magical-athlete.qiuh23.workers.dev ，首次Worker版本为`329ab155-6bd6-43f3-82c7-3763f7e022ab`。HTTPS证书校验、首页200、`/api/browser/health`已通过。最终Worker包29.81 KiB，启动时间2ms。公网2/6/8完整对局验收正在进行，尚不以健康检查代替联机验收。
+Cloudflare已按用户确认的Workers Free正式部署到 https://magical-athlete.qiuh23.workers.dev ，首次Worker版本为`329ab155-6bd6-43f3-82c7-3763f7e022ab`。HTTPS证书校验、首页200、`/api/browser/health`已通过。最终Worker包29.81 KiB，启动时间2ms，完整公网验收如下。
+
+正式网站完整对局现已全部通过：2人1.6分钟，准备同步修复后6人2.3分钟、8人2.7分钟。每组均为独立Edge BrowserContext，经过实际HTTPS/WSS、四场终局、房主页关闭返回恢复、客人离线重连、私有快照检查及原房间再来；0页面脚本错误、无横向溢出。公开环境八人截图：[移动赛道](qa/public-race-mobile-8.png)、[四场总成绩](qa/public-final-8.png)。本机模拟器停止后正式health仍正常，网址不依赖本机服务。
+
+GitHub自动发布已实证：提交`46f407118f35668f95dcc38c19c11b71778871ed`触发Cloudflare GitHub App检查成功，Build ID为`b40b3c4f-2e44-4482-b046-00a51b392b9a`，正式部署版本为`a91e63c0-f1c8-4a50-8022-0a1ea872a21b`，公开脚本与验收构建`index-x7MX-wCO.js`相符。本次推送之后没有手动CLI发布夹杂。此前首次自动构建失败是面板`pnpm build`仅生成本机版本；现默认构建同时生成`dist/browser`，已构建并自动发布成功。GitHub Actions完整验收也已全部通过。
+
+最终代码的[远端CI](https://github.com/qiuh23/magical-athlete-online/actions/runs/39468302305)在Linux环境通过：122/122单元与集成检查、双类型检查、默认生产构建和Worker打包预演；Node网页2/6/8人分别约1.2/2.4/4.2分钟，浏览器房主本地Worker网页2/6/8人分别约1.0/2.1/3.4分钟，6/6全部通过。官方job总计15分38秒，日志保存在本地忽略的`tmp/`。仅报告和截图的后续提交不重跑这些完整对局，网页房规等会进入运行时的文档仍会触发CI。
 
 最终弱网短流程在真实本地Worker与Edge中执行：双向丢包且保留TCP连接，客户端25秒后换代重连，DO在35.1秒后撤销失联计算页面并让访客等待；网络恢复后保留原选秀游标和私有手牌。操作系统离线事件会立即停止操作，回连后重新同步；全程0页面脚本错误。
 
-## 尚未完成
+## 验证边界
 
-- 正式网址完整四场、刷新恢复、私密信息隔离与再来一局的多人验收正在运行。
-- 用户已连接Cloudflare Workers Builds与私有GitHub仓库，待下一次推送核验线上资源和部署版本确实自动更新。
-- 公网环境下不同设备、真实手机浏览器、校园网和运营商网络联机；本地独立Context不等同于独立物理设备。
-- 免费额度边界下的实际生产运行验证；已确认Workers Free，未创建付费托管资源或启用自动付费升级。
-- Tailscale备用Funnel入口尚未公开，未进行该入口的外网多人验收。
+- 已对公网网址进行独立浏览器联机，但未获得真实手机、不同物理设备、校园网和运营商网络的实测条件；独立Context不等同于独立物理设备。
+- 未故意耗尽账号的每日配额。费用与超限行为依据官方Free文档，账号方案由用户在控制台确认；没有创建付费资源或调用升级接口。
+- Tailscale本机备用入口保持关闭，主方案通过Cloudflare正式网址提供，不把备用入口视为另一个已公开服务。
 
 计算房主主动关闭、设备休眠或移动浏览器被系统暂停时，对局等待原浏览器恢复；不承诺后台常驻或客人接管。IndexedDB事务测试使用`fake-indexeddb`验证原子性，真实Edge网页验收验证实际存档与返回恢复；两者均不代表断电等硬件故障下已经完成所有存储耐久性验证。
 
