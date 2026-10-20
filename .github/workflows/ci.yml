@@ -1,5 +1,19 @@
 name: Checks
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - README.md
+      - docs/testing.md
+      - docs/progress.md
+      - docs/deployment.json
+      - docs/qa/**
+  pull_request:
+    paths-ignore:
+      - README.md
+      - docs/testing.md
+      - docs/progress.md
+      - docs/deployment.json
+      - docs/qa/**
 permissions:
   contents: read
 concurrency:
@@ -21,7 +35,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm build:browser
       - run: pnpm exec wrangler deploy --dry-run
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

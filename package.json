@@ -11,7 +11,7 @@
     "dev": "tsx watch src/server/index.ts",
     "dev:client": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
-    "build": "vite build && tsc -p tsconfig.server.json",
+    "build": "vite build && tsc -p tsconfig.server.json && node scripts/build-browser.mjs",
     "start": "node dist/server/server/index.js",
     "test": "tsx --test tests/*.test.ts tests/host.test.mjs",
     "test:e2e": "playwright test",

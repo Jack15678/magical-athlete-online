@@ -12,6 +12,12 @@ async function api(path,method='GET',body){const r=await fetch(`https://api.gith
 const user=await api('/user');if(user.login!=='qiuh23')throw Error('Authenticated account differs from the connected account.');
 if(process.argv.includes('--check')) {console.log(JSON.stringify({login:user.login,plan:user.plan?.name??'unknown',credentialAvailable:true}));return;}
 const record='docs/github.json';let repo;
+if(process.argv.includes('--checks')){
+  const known=JSON.parse(readFileSync(record,'utf8'));const head=spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true});if(head.status!==0)throw Error('Cannot resolve local HEAD.');const sha=head.stdout.trim();
+  const checks=await api(`/repos/${known.fullName}/commits/${sha}/check-runs`);
+  console.log(JSON.stringify(checks.check_runs.map(c=>({name:c.name,app:c.app?.slug,status:c.status,conclusion:c.conclusion,url:c.details_url,title:c.output?.title,summary:c.output?.summary?.slice(0,3000),text:c.output?.text?.slice(-5000),annotations:c.output?.annotations_count})),null,2));
+  const statuses=await api(`/repos/${known.fullName}/commits/${sha}/status`);console.log(JSON.stringify(statuses.statuses.map(s=>({context:s.context,state:s.state,description:s.description,url:s.target_url})),null,2));return;
+}
 const cancelArg=process.argv.find(x=>/^--cancel=\d+$/.test(x));
 if(cancelArg){const known=JSON.parse(readFileSync(record,'utf8'));const id=cancelArg.split('=')[1];const r=await fetch(`https://api.github.com/repos/${known.fullName}/actions/runs/${id}/cancel`,{method:'POST',headers});console.log(JSON.stringify({cancelRequested:r.ok,status:r.status,runId:id}));return;}
 if(process.argv.includes('--status')){
