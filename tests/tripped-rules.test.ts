@@ -98,7 +98,7 @@ test('an externally moved tripped racer follows a wild arrow without recovering'
 
 test('a tripped Duelist can roll and win a duel before using its main action to stand', () => {
   const game = fixture(['duelist', 'lackey', 'inchworm', 'skipper'], [5, 5, 12, 18]); game.racers[0]!.tripped = true; game.flags.testDice = [6, 1]; begin(game);
-  assert.equal(game.pending?.kind, 'duelist'); choose(game, 'r1');
+  assert.equal(game.pending?.kind, 'duelist'); choose(game, 'r1'); choose(game, 'roll'); choose(game, 'roll');
   assert.equal(game.racers[0]!.position, 7); assert.equal(game.racers[0]!.tripped, false);
   assert.deepEqual(game.racers.slice(1).map(racer => racer.position), [5, 12, 18]);
   assert.ok(game.logs.some(event => event.type === 'duel')); noMainDie(game);
@@ -106,7 +106,7 @@ test('a tripped Duelist can roll and win a duel before using its main action to 
 });
 
 test('a tripped duel opponent can roll a winning six, move two, and remain tripped outside its own turn', () => {
-  const game = fixture(['duelist', 'lackey', 'inchworm', 'skipper'], [5, 5, 12, 18]); game.racers[1]!.tripped = true; game.flags.testDice = [1, 6]; begin(game); choose(game, 'r1');
+  const game = fixture(['duelist', 'lackey', 'inchworm', 'skipper'], [5, 5, 12, 18]); game.racers[1]!.tripped = true; game.flags.testDice = [1, 6]; begin(game); choose(game, 'r1'); choose(game, 'roll'); choose(game, 'roll');
   assert.equal(game.racers[1]!.position, 7); assert.equal(game.racers[1]!.tripped, true);
   assert.deepEqual(game.racers.slice(2).map(racer => racer.position), [12, 18]); noMainDie(game);
   assert.equal(game.flags.awaitRoll, true); // Duelist still has its ordinary main action.

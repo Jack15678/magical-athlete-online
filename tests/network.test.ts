@@ -134,3 +134,17 @@ test('Node关闭：SQLite提交失败不确认、不通知、不断线，重试�
     assert.equal(app.store.receipt(host.roomCode,host.playerId,envelope.actionId)?.result.ok,true);assert.equal(typeof app.rooms.get(host.roomCode).closedAt,'number');
   } finally {for(const socket of sockets)socket.disconnect();await app.close();}
 });
+
+test('Node public event backfill is authenticated, byte-bounded and independent from private room state',async()=>{
+  const app=await running();let socket:Socket|undefined;
+  try{
+    const created=await post(app.url,'/api/rooms',{name:'房主',maxPlayers:2,timeoutSeconds:0});const identity=created.body.identity as Identity;
+    const client=await connect(app.url,identity);socket=client.socket;const room=app.rooms.get(identity.roomCode);
+    room.game.players[0]!.hand=['private-hand'];room.game.pending={id:'secret',playerId:identity.playerId,title:'选择',kind:'test',optional:false,options:[],context:{secret:'private-context'}};
+    room.game.logs=Array.from({length:500},(_,index)=>({id:index+1,type:'power',text:'公开技能说明'.repeat(200)}));
+    const read=(query:unknown)=>new Promise<any>((resolve,reject)=>socket!.timeout(4000).emit('events',query,(error:Error|null,reply:unknown)=>error?reject(error):resolve(reply)));
+    const reply=await read({afterId:0});assert.equal(reply.ok,true);assert(reply.batch.events.length>0&&reply.batch.events.length<500);
+    assert(Buffer.byteLength(JSON.stringify(reply.batch))<=96*1024);assert(!JSON.stringify(reply).match(/private-hand|private-context|rngState/));
+    assert.equal((await read({afterId:0,playerId:'outsider'})).ok,false);assert.equal((await read({afterId:-1})).ok,false);
+  }finally{socket?.disconnect();await app.close();}
+});

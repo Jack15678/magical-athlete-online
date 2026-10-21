@@ -1,5 +1,6 @@
+import { PresentationEventClient } from './presentation-events.js';
 import { io, type Socket } from 'socket.io-client';
-import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, PublicEventReply, RoomView } from '../shared/types.js';
 import type { RelayJoinReply } from '../shared/relay.js';
 import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
 
@@ -10,6 +11,7 @@ export interface RoomConnection {
   disconnect(): void;
   emit(event: 'sync'): unknown;
   request(envelope: ActionEnvelope): Promise<ActionReply>;
+  acknowledgeEvents?(cursor:number):void;
 }
 
 const identityKey = (code: string) => `magical-athlete:identity:${code.toUpperCase()}`;
@@ -38,13 +40,17 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
   if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
   let closed = false;
+  const eventClient=new PresentationEventClient(async afterId=>{
+    const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
+    if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
+  },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
   const finishClosed = () => { closed = true; socket.io.reconnection(false); socket.disconnect(); onStatus('closed', '房间已解散，请创建或加入其他房间。'); };
-  socket.on('connect', () => { if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
-  socket.on('snapshot', (room: RoomView) => { onSnapshot(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
+  socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
+  socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
   socket.on('room-closed', (event: { code: string }) => { if (event.code === identity.roomCode) finishClosed(); });
   socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
   socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_CLOSED' || error.message.includes('房间已解散')) finishClosed(); else onStatus('error', error.message); });
-  return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) socket.connect(); }, disconnect() { socket.disconnect(); }, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
+  return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
 }
 function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {
   return new Promise((resolve, reject) => socket.timeout(6500).emit('action', envelope, (error: Error | null, reply: ActionReply) => error ? reject(error) : resolve(reply)));

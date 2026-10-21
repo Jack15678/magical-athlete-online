@@ -102,9 +102,15 @@ test('practice starts with one human and no waiting room, plays skills and movem
 });
 
 test('three AI complete all four official races with autonomous draft, deployment, throws and choices', async ({ browser }) => {
-  test.setTimeout(600_000); mkdirSync(output, { recursive: true });
+  test.setTimeout(900_000); mkdirSync(output, { recursive: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const page = await context.newPage(), errors: string[] = []; page.on('pageerror', error => errors.push(error.stack ?? error.message));
+  await page.addInitScript(()=>{
+    const qa={animationSkipClicks:0,phases:[] as string[],renderedEvents:[] as number[]};
+    (window as typeof window&{__soloQA:typeof qa}).__soloQA=qa;
+    document.addEventListener('click',event=>{if((event.target as Element|null)?.closest('[data-testid="skip-animation"]'))qa.animationSkipClicks++;},true);
+    new MutationObserver(()=>{const board=document.querySelector('[data-testid="board-3d"]');if(!board)return;const phase=board.getAttribute('data-phase')??'idle';if(qa.phases.at(-1)!==phase)qa.phases.push(phase);for(const id of (board.getAttribute('data-event-ids')??'').split(',').map(Number).filter(Boolean))if(!qa.renderedEvents.includes(id))qa.renderedEvents.push(id);}).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['data-phase','data-event-ids']});
+  });
   const started = Date.now();
   try {
     const { code, selfId } = await setup(page, 'ai', 3);
@@ -129,12 +135,19 @@ test('three AI complete all four official races with autonomous draft, deploymen
       if (!acted) aiAdvances++;
     }
     const final = await saved(page, code);
+    // Authority completion may precede the final local dice/skill/finish beats.
+    // Keep the page open until the sequential presentation reaches its result.
+    await expect(page.getByTestId('board-3d')).toHaveAttribute('data-phase','idle',{timeout:120000});
+    await expect(page.locator('.race-results-overlay .results-panel')).toBeVisible({timeout:120000});
     expect(final.game.results).toHaveLength(4); expect(aiAdvances).toBeGreaterThan(0); expect(captured).toBe(true);
     expect(observedAI.draft).toBeGreaterThan(0); expect(observedAI.roll).toBeGreaterThan(0);
     const aiIds = final.game.players.filter(player => player.id !== selfId).map(player => player.id);
     for (const result of final.game.results) expect(result.placements.some(place => aiIds.includes(place.playerId))).toBe(true);
     expect(final.game.randomLog.length).toBeGreaterThan(0); expect(errors).toEqual([]);
+    const playback=await page.evaluate(()=>(window as typeof window&{__soloQA:{animationSkipClicks:number;phases:string[];renderedEvents:number[]}}).__soloQA);
+    expect(playback.animationSkipClicks).toBe(0);expect(playback.phases).toContain('dice');
+    expect(playback.phases.at(-1)).toBe('idle');
     await page.screenshot({ path: `${output}/ai-four-race-final.png` });
-    writeFileSync(`${output}/ai-four-race-result.json`, JSON.stringify({ elapsedMs: Date.now() - started, actions, aiAdvances, observedAI, errors, results: final.game.results, scores: final.game.players.map(({ id, name, score }) => ({ id, name, score })) }, null, 2));
+    writeFileSync(`${output}/ai-four-race-result.json`, JSON.stringify({ elapsedMs: Date.now() - started, actions, aiAdvances, observedAI, errors, finalPlaybackPhase:await page.getByTestId('board-3d').getAttribute('data-phase'),playback, results: final.game.results, scores: final.game.players.map(({ id, name, score }) => ({ id, name, score })) }, null, 2));
   } finally { await context.close(); }
 });

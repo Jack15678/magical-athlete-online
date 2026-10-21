@@ -4,7 +4,7 @@ import { Rooms } from '../src/server/rooms.js';
 import { Store } from '../src/server/store.js';
 import { CHARACTERS } from '../src/shared/characters.js';
 import { IDBFactory } from 'fake-indexeddb';
-import { automaticAction, applyGameAction, createGame, startGame, systemAction } from '../src/engine/index.js';
+import { automaticAction, applyGameAction, createGame, enqueueMove, resolveTasks, startGame, systemAction } from '../src/engine/index.js';
 import { decideAI } from '../src/engine/ai.js';
 import { BrowserAuthority } from '../src/browser/authority.js';
 import { immediateRoomAction } from '../src/shared/automation.js';
@@ -108,6 +108,35 @@ test('AI declines a publicly predictable no-progress duel on the wild backward a
   room.game.racers=room.game.players.map((p,i)=>({id:`r${i}`,playerId:p.id,characterId:i===1?'duelist':'coach',position:i===0?20:22,finished:false,eliminated:false,tripped:false,flags:{}}));
   room.game.pending={id:'c1',playerId:'p1',racerId:'r1',title:'决斗',kind:'duelist',optional:true,options:[{id:'r2',label:'教练'},{id:'skip',label:'不决斗'}],context:{}};
   assert.deepEqual(decideAI(projectRoom(room,'p1',{authorityId:'p0',authorityOnline:true})),{type:'choose',choiceId:'c1',optionId:'skip'});
+});
+
+test('AI breaks a copied Fish / Scoocher backward-arrow loop using public repeated movements',()=>{
+  const room=createBrowserRoom(metadata(4),9,2000),s=room.game;
+  s.phase='race';s.round=4;s.track='wild';s.queue=[];s.logs=[];
+  s.racers=s.players.map((p,i)=>({id:`r${i}`,playerId:p.id,characterId:['huge-baby','twin','scoocher','heckler'][i]!,position:i===1||i===2?12:0,finished:false,eliminated:false,tripped:i===1||i===2,flags:i===1?{power:'suckerfish'}:{}}));
+  s.currentRacerId='r3';enqueueMove(s,'r2',1,'scoocher');resolveTasks(s);
+  let choices=0,declined=false;
+  while(s.pending){
+    assert(++choices<30,'AI kept following the same public backward-arrow journey');
+    const intent=decideAI(projectRoom(room,s.pending.playerId,{authorityId:'p0',authorityOnline:true}));assert(intent);
+    if(intent.type==='choose'&&intent.optionId==='skip')declined=true;
+    applyGameAction(s,s.pending.playerId,intent);
+  }
+  assert(declined);assert.equal(s.queue.length,0);
+  assert(s.logs.some(e=>e.type==='move'&&e.before?.includes(16)&&e.after?.includes(12)));
+  assert(s.logs.filter(e=>e.type==='move').length>5,'valid earlier movements were retained');
+  // A genuinely new turn clears the strategic memory. The same public board
+  // can be worth following again; the policy does not disable the character.
+  const view=projectRoom(room,'p1',{authorityId:'p0',authorityOnline:true});
+  view.logs.push({id:(view.logs.at(-1)?.id??0)+1,type:'turn',text:'新回合',source:'r3'});
+  view.pending={id:'fresh',playerId:'p1',racerId:'r1',kind:'suckerfish',title:'再次随行？',optional:true,options:[{id:'use',label:'使用技能'},{id:'skip',label:'不使用'}]};
+  assert.deepEqual(decideAI(view),{type:'choose',choiceId:'fresh',optionId:'use'});
+  // A long existing continuation can age the bot's own followed movements out
+  // of the public 120-event window. Its companion's repeated arrow journey is
+  // still public evidence that joining it again would restart the cycle.
+  view.racers.find(r=>r.id==='r1')!.position=12;view.racers.find(r=>r.id==='r2')!.position=12;
+  view.logs=Array.from({length:120},(_,i)=>({id:i+1,type:'move',text:'公开移动',source:'r2',targets:['r2'],before:[i%5===4?16:12+i%5],after:[i%5===4?12:13+i%5],cause:i%5===4?'board':'scoocher'}));
+  assert.deepEqual(decideAI(view),{type:'choose',choiceId:'fresh',optionId:'skip'});
 });
 
 test('Node authority completes a full AI match, owns bot identities and pauses unattended bot play',()=>{

@@ -1,6 +1,7 @@
+import { PresentationEventClient } from './presentation-events.js';
 import { BrowserAuthority } from '../browser/authority.js';
 import type { RelayMetadata, RelayServerMessage, RelayClientMessage } from '../shared/relay.js';
-import type { ActionEnvelope, ActionReply, Identity, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, Identity, PublicEventBatch, RoomView } from '../shared/types.js';
 import type { ConnectionState, RoomConnection } from './network.js';
 
 const lockName = (code: string) => `magical-athlete:authority:${code}`;
@@ -46,12 +47,15 @@ export class BrowserRelayConnection implements RoomConnection {
   private hostQueue: Promise<void> = Promise.resolve();
   private tickBusy = false;
   private replies = new Map<string, AwaitingReply>();
+  private readonly eventReplies=new Map<string,{resolve:(batch:PublicEventBatch)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
+  private readonly eventClient:PresentationEventClient;
   private upkeep: ReturnType<typeof setInterval>;
   private readonly offline = () => {
     if (this.disposed || this.blocked || this.roomClosed) return;
     this.generation++;
     this.authenticated = false; this.synchronized = false; this.authorityRole = false;
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    this.eventClient.reset();
     this.ws?.close(1000, 'network offline'); this.ws = null;
     this.rejectReplies('网络已断开，恢复后将重新同步。');
     this.onStatus('offline', '网络已断开，恢复后将重新同步。');
@@ -59,6 +63,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private readonly online = () => { if (!this.disposed && !this.blocked && !this.roomClosed) this.open(!!this.authority); };
 
   constructor(private identity: Identity, private onSnapshot: (room: RoomView) => void, private onStatus: (status: ConnectionState, message?: string) => void) {
+    this.eventClient=new PresentationEventClient(afterId=>this.readEvents(afterId),room=>this.onSnapshot(room),error=>this.fail(error instanceof Error?error.message:'未能补齐动画记录，请重新连接。'));
     window.addEventListener('offline', this.offline);
     window.addEventListener('online', this.online);
     this.upkeep = setInterval(() => {
@@ -82,6 +87,15 @@ export class BrowserRelayConnection implements RoomConnection {
     }, 250);
     this.open(false);
   }
+  acknowledgeEvents(cursor:number){this.eventClient.acknowledge(cursor);}
+  private readEvents(afterId:number):Promise<PublicEventBatch>{
+    const requestId=crypto.randomUUID();
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{this.eventReplies.delete(requestId);reject(Error('动画记录同步超时，请重新连接。'));},10_000);
+      this.eventReplies.set(requestId,{resolve,reject,timer});
+      if(!this.send({type:'events',requestId,afterId})){clearTimeout(timer);this.eventReplies.delete(requestId);reject(Error('连接已中断，正在等待动画记录。'));}
+    });
+  }
   get connected() { return !this.disposed && !this.blocked && !this.roomClosed && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
   connect() {
     if (this.disposed || this.roomClosed) return;
@@ -91,7 +105,7 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   disconnect() {
     if (this.disposed) return;
-    this.disposed = true; this.generation++;
+    this.disposed = true; this.generation++;this.eventClient.reset();
     window.removeEventListener('offline', this.offline);
     window.removeEventListener('online', this.online);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
@@ -130,6 +144,7 @@ export class BrowserRelayConnection implements RoomConnection {
     if (this.disposed || this.blocked || this.roomClosed) return;
     if (!navigator.onLine) { this.onStatus('offline', '网络已断开，恢复后将重新同步。'); return; }
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    this.eventClient.reset();
     const generation = ++this.generation;
     this.authenticated = false; this.synchronized = false; this.syncRequestId = null; this.authorityRole = false; this.requestedRole = authority;
     this.lastPingAt = 0; this.lastPongAt = 0;
@@ -189,19 +204,27 @@ export class BrowserRelayConnection implements RoomConnection {
       const snapshotRequestId = (message as typeof message & { requestId?: string }).requestId;
       if (snapshotRequestId && snapshotRequestId === this.syncRequestId) this.synchronized = true;
       this.latestRoom = { ...message.room, hosting: 'browser', authorityId: this.metadata?.authorityId, authorityOnline: this.authorityOnline };
-      this.onSnapshot(this.latestRoom);
+      if(message.room.closedAt)this.onSnapshot(this.latestRoom);else this.eventClient.receive(this.latestRoom);
       if (message.room.closedAt) { this.roomClosed = true; this.onStatus('closed', ROOM_CLOSED); return; }
       this.reportStatus();
+    } else if(message.type==='events'){
+      const pending=this.eventReplies.get(message.requestId);if(!pending)return;clearTimeout(pending.timer);this.eventReplies.delete(message.requestId);pending.resolve(message.batch);
     } else if (message.type === 'ack') {
       const pending = this.replies.get(message.requestId); if (!pending) return;
       clearTimeout(pending.timer); this.replies.delete(message.requestId); pending.resolve(message.result);
     } else if (message.type === 'error') {
+      const eventReply=message.requestId?this.eventReplies.get(message.requestId):undefined;
+      if(eventReply&&message.requestId){clearTimeout(eventReply.timer);this.eventReplies.delete(message.requestId);eventReply.reject(Error(message.message));return;}
       if (!this.authorityOnline && message.requestId === this.syncRequestId) { this.reportStatus(); return; }
       const pending = message.requestId ? this.replies.get(message.requestId) : undefined;
       if (pending && message.requestId) { clearTimeout(pending.timer); this.replies.delete(message.requestId); pending.resolve({ ok: false, error: message.message }); }
       else this.onStatus('error', message.message);
     } else if (message.type === 'request' && this.authorityRole && this.authority) {
       this.enqueueHost(async () => {
+        if(message.operation==='events'){
+          try{this.send({type:'deliver-events',to:message.playerId,requestId:message.requestId,batch:this.authority!.events(message.playerId,message.afterId!)});}
+          catch(error){this.send({type:'deliver-events',to:message.playerId,requestId:message.requestId,error:error instanceof Error?error.message:'无法读取动画记录。'});}return;
+        }
         if (message.operation === 'sync') { this.deliver(message.playerId, message.requestId); return; }
         if (!message.envelope) return;
         let result: ActionReply;
@@ -259,7 +282,7 @@ export class BrowserRelayConnection implements RoomConnection {
     } catch (error) { if (!this.disposed) this.fail(error instanceof Error ? error.message : '无法取得计算页面锁。'); }
     finally { this.tryingLock = false; }
   }
-  private rejectReplies(message: string) { for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
+  private rejectReplies(message: string) { for(const reply of this.eventReplies?.values()??[]){clearTimeout(reply.timer);reply.reject(Error(message));}this.eventReplies?.clear(); for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
   private finishClosed() {
     this.roomClosed = true;
     for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }

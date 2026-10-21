@@ -1,3 +1,4 @@
+import { publicEventBatch } from '../shared/public-events.js';
 import { immediateRoomAction } from '../shared/automation.js';
 import { automaticAction } from '../engine/index.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
@@ -160,6 +161,7 @@ export class BrowserAuthority {
   view(playerId: string): RoomView {
     return projectRoom(this.record.room,playerId,{authorityId:this.meta.authorityId,authorityOnline:!this.disposed&&this.meta.members.some(m=>m.id===this.meta.authorityId&&m.connected)});
   }
+  events(playerId:string,afterId:number){return publicEventBatch(this.record.room,playerId,afterId);}
   tick(now = this.now()): Promise<boolean> {
     return this.serial(async() => {
       if(!this.meta.members.some(m=>m.id===this.meta.authorityId&&m.connected))return false;

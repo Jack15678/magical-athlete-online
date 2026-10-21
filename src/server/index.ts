@@ -1,3 +1,4 @@
+import { publicEventBatch } from '../shared/public-events.js';
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
@@ -42,6 +43,11 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
     const i=socket.data.identity as Identity;if(rooms.rooms.get(i.roomCode)?.closedAt!==undefined){notifyClosed(i.roomCode);return;}const key=`${i.roomCode}:${i.playerId}`;let set=connections.get(key);if(!set){set=new Set();connections.set(key,set);}set.add(socket.id);
     rooms.presence(i.roomCode,i.playerId,true);broadcast(i.roomCode);
     socket.on('sync',()=>{const room=rooms.rooms.get(i.roomCode);if(room?.closedAt!==undefined){notifyClosed(i.roomCode);return;}if(room&&socketRate.accept(key))socket.emit('snapshot',rooms.view(room,i.playerId));});
+    socket.on('events',(input:unknown,ack:unknown)=>{
+      if(typeof ack!=='function')return;
+      try{if(!socketRate.accept(key))throw Error('动画记录请求太频繁。');const query=z.object({afterId:z.number().int().nonnegative()}).strict().parse(input);ack({ok:true,batch:publicEventBatch(rooms.get(i.roomCode),i.playerId,query.afterId)});}
+      catch(error){ack({ok:false,error:error instanceof z.ZodError?'动画记录请求格式不正确。':error instanceof Error?error.message:'无法读取动画记录。'});}
+    });
     socket.on('action',(input:unknown,ack:unknown)=>{let result;let parsed:ActionEnvelope|undefined;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。');parsed=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,parsed);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);if(result.ok&&parsed?.action.type==='close'&&rooms.rooms.get(i.roomCode)?.closedAt!==undefined){notifyClosed(i.roomCode);return;}broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
     socket.on('disconnect',()=>{const list=connections.get(key);list?.delete(socket.id);if(!list?.size){connections.delete(key);rooms.presence(i.roomCode,i.playerId,false);broadcast(i.roomCode);}});
   });

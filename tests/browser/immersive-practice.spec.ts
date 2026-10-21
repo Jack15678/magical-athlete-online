@@ -178,7 +178,7 @@ test('immersive desktop follows a complete remote skill chain once and returns; 
   }
 });
 
-test('immersive mobile fills the viewport; next-turn skill appears automatically and choices take camera priority', async ({ browser }) => {
+test('immersive mobile fills the viewport; next-turn skill opens automatically after the preceding action completes', async ({ browser }) => {
   const room = await pair(browser, true);
   try {
     await seed(room, ['alchemist', 'coach', 'flip-flop', 'legs'], [24, 9, 2, 15], 1, [1], 'wild');
@@ -187,13 +187,14 @@ test('immersive mobile fills the viewport; next-turn skill appears automatically
     const before = application.rooms.get(room.code).version;
     await room.guest.getByRole('button', { name: '掷骰子', exact: true }).click();
     await expect.poll(() => application.rooms.get(room.code).version).toBeGreaterThan(before);
-    // Human never presses roll: the preceding authoritative action must already
-    // expose its start-of-turn exchange/normal-roll decision. The unrelated
-    // guest's queued 2.5-second dice movie must yield to this new own decision.
+    // Human never presses roll: the authority advances the start of the next
+    // turn. The prompt waits until the preceding confirmed action is shown.
     await expect.poll(() => application.rooms.get(room.code).game.pending?.kind).toBe('flip-flop');
     const pending = application.rooms.get(room.code).game.pending!;
     expect(pending.playerId).toBe(room.ids[0]);
-    await expect(room.host.getByRole('region', { name: '待处理技能' })).toBeVisible({ timeout: 1500 });
+    await expect.poll(async () => (await samples(room.host)).some(sample => sample.phase === 'dice')).toBe(true);
+    await expect(room.host.getByRole('region', { name: '待处理技能' })).toHaveCount(0);
+    await expect(room.host.getByRole('region', { name: '待处理技能' })).toBeVisible();
     await expect(room.host.getByTestId('board-3d')).toHaveAttribute('data-camera-state', 'choice');
     await expect(room.host.getByTestId('board-3d')).toHaveAttribute('data-phase', 'idle');
     expect(await room.host.getByTestId('roll-button').count()).toBe(0);

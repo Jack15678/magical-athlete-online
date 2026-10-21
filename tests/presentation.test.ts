@@ -118,14 +118,19 @@ test('reconnect, skipped animation, and missing event windows restore identical 
   assert.equal(confirmed.racers[0]?.position, 6);
 });
 
-test('race reveal reconstructs the start before fresh pre-race abilities and a new round resets old work', () => {
+test('race reveal reconstructs the start; a new round waits for the current board to finish', () => {
   const selection = { ...view(1), phase: 'selection' as const, racers: [] };
   const raced = view(2, [{ id: 1, type: 'reveal', text: '运动员揭示' }, { id: 2, type: 'power', text: '技能发动', source: 'a' }, motion(3, ['a'], [0], [3])], [racer('a', 3), racer('b')]);
   let state = receiveRoom(createPlayback(selection), raced);
   assert.equal(state.racers[0]?.position, 0);
   assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
   state = receiveRoom(state, { ...raced, version: 3, round: 2, phase: 'selection' });
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.equal(state.round, 1);
+  while (state.queue.length) state = completeBeat(state);
   assert.equal(state.queue.length, 0);
+  assert.equal(state.round, 2);
+  assert.equal(state.confirmed.phase, 'selection');
 });
 
 test('simultaneous groups remain one beat while later groups and abilities stay ordered', () => {
@@ -180,25 +185,33 @@ test('long chains and incoming AI turns keep readable steps without discarding c
   assert.deepEqual(state.racers, state.confirmed.racers);
 });
 
-test('my turn-start choice skips unrelated backlog and restores the complete confirmed board immediately', () => {
+test('my turn-start choice waits behind every other racer dice and movement beat', () => {
   const initial = view();
   const pending = { id: 'my-start', playerId: initial.selfId, racerId: 'a', kind: 'hypnotist', title: '选择召唤对象', optional: true, options: [{ id: 'b', label: '对手' }] };
   const events: GameEvent[] = [{ id: 1, type: 'die', source: 'b', text: '对手掷出6' }, motion(2, ['b'], [0], [6]), { id: 3, type: 'turn', source: 'a', text: '轮到我' }];
   const confirmed = { ...view(2, events, [racer('a', 2), { ...racer('b', 6), tripped: true }]), pending };
-  const state = receiveRoom(createPlayback(initial), confirmed);
-  assert.equal(state.queue.length, 0);
+  let state = receiveRoom(createPlayback(initial), confirmed);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['dice', 'move']);
+  assert.deepEqual(state.racers.map(racer => racer.position), [0, 0]);
+  assert.equal(state.confirmed.pending?.id, pending.id);
+  state = completeBeat(state);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['move']);
+  assert.equal(state.racers[1]!.position, 0);
+  state = completeBeat(state);
   assert.deepEqual(state.racers, confirmed.racers);
   assert.equal(state.confirmed.pending?.id, pending.id);
   assert.deepEqual(confirmed.logs, events, 'prioritizing a prompt cannot change server events');
 });
 
-test('my own die settles before its resulting skill choice and later unrelated beats do not delay it', () => {
+test('my own die and every resulting skill finish before its choice is displayed', () => {
   const initial = view();
   const pending = { id: 'after-die', playerId: initial.selfId, racerId: 'a', kind: 'alchemist', title: '炼金加速？', optional: true, options: [{ id: 'use', label: '使用' }] };
   const confirmed = { ...view(2, [die(1, 2), { id: 2, type: 'power', source: 'b', text: '其他人的技能' }]), pending };
   let state = receiveRoom(createPlayback(initial), confirmed);
   assert.equal(state.queue[0]?.kind, 'dice');
   assert.equal(state.queue[0]?.durationMs, 2500);
+  state = completeBeat(state);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill']);
   state = completeBeat(state);
   assert.equal(state.queue.length, 0);
   assert.deepEqual(state.racers, confirmed.racers);
@@ -211,7 +224,7 @@ test('my own die settles before its resulting skill choice and later unrelated b
 test('normal skill, movement and reactions leave enough time to read the cause and see the change',()=>{
   const events:GameEvent[]=[{id:1,type:'power',source:'a',cause:'centaur',text:'半人马发动后蹄踢击'},motion(2,['b'],[6],[4]),{id:3,type:'trip',source:'a',targets:['b'],text:'对手绊倒'},{id:4,type:'score',source:'a',text:'玩家+1分'},{id:5,type:'recover',source:'b',targets:['b'],text:'对手起身'}];
   const state=receiveRoom(createPlayback(view()),view(2,events));
-  assert.deepEqual(state.queue.map(beat=>[beat.kind,beat.durationMs]),[['skill',1100],['move',800],['trip',850],['score',850],['recover',850]]);
+  assert.deepEqual(state.queue.map(beat=>[beat.kind,beat.durationMs]),[['skill',1800],['move',800],['trip',850],['score',850],['recover',850]]);
   assert(state.queue.every(beat=>beat.durationMs===beat.naturalDurationMs));
 });
 
@@ -220,7 +233,7 @@ test('repeated incoming snapshots never compound gentle pacing or retime the cur
   let state=receiveRoom(createPlayback(view()),view(2,events));
   const active=state.queue[0]!,durations=state.queue.map(beat=>beat.durationMs),natural=state.queue.map(beat=>beat.naturalDurationMs);
   assert.equal(state.queue.length,100,'separate activations each retain a visible beat');
-  assert(state.queue.every(beat=>beat.durationMs>=900));
+  assert(state.queue.every(beat=>beat.durationMs>=1500));
   for(let version=3;version<=20;version++){
     state=receiveRoom(state,view(version,events));
     assert.equal(state.queue[0],active,'unchanged active beat identity prevents a restarted timer');
@@ -257,11 +270,11 @@ test('a real progressing Scoocher and Suckerfish chain preserves readable causes
   let state=receiveRoom(createPlayback(initial),confirmed);
   const expected=game.logs.filter(event=>['die','move','warp','place','power','copy','prediction','duel','cancel','reroll','skip','trip','recover','score','finish','eliminate'].includes(event.type));
   assert.deepEqual(state.queue.flatMap(beat=>beat.events.map(event=>event.id)),expected.map(event=>event.id));
-  assert(state.queue.filter(beat=>beat.kind==='skill').every(beat=>beat.durationMs>=900));
+  assert(state.queue.filter(beat=>beat.kind==='skill').every(beat=>beat.durationMs>=1500));
   assert(state.queue.filter(beat=>beat.kind==='move').every(beat=>beat.durationMs>=700));
   assert(state.queue.every(beat=>beat.durationMs>=(beat.naturalDurationMs??0)*.7));
   const skillCount=state.queue.filter(beat=>beat.kind==='skill').length,movementCount=state.queue.filter(beat=>beat.kind==='move').length;
-  assert(state.queue.reduce((sum,beat)=>sum+beat.durationMs,0)>=skillCount*900+movementCount*700);
+  assert(state.queue.reduce((sum,beat)=>sum+beat.durationMs,0)>=skillCount*1500+movementCount*700);
   for(const options of [{},{speed:2},{speed:4},{speed:4,reducedMotion:true}]){
     let playback=state;
     while(playback.queue.length){assert(beatDuration(playback.queue[0]!,options)>0);playback=completeBeat(playback);}
@@ -276,13 +289,100 @@ test('reduced motion retains skill reading time and explicit 2x or 4x only chang
   const events:GameEvent[]=[die(1,3),roll(2,3),{id:3,type:'power',source:'a',text:'技能说明'},motion(4,['a'],[0],[3]),{id:5,type:'trip',source:'a',targets:['b'],text:'绊倒'},{id:6,type:'recover',source:'b',targets:['b'],text:'起身'},{id:7,type:'score',source:'a',text:'获得1分'},{id:8,type:'finish',source:'a',text:'冲线'}];
   const confirmed=view(2,events,[{...racer('a',30),finished:true,rank:1},racer('b')]);
   const state=receiveRoom(createPlayback(view()),confirmed),snapshot=JSON.stringify(confirmed);
-  assert.deepEqual(state.queue.map(beat=>[beat.kind,beatDuration(beat,{reducedMotion:true})]),[['dice',400],['skill',900],['move',400],['trip',500],['recover',500],['score',500],['finish',650]]);
+  assert.deepEqual(state.queue.map(beat=>[beat.kind,beatDuration(beat,{reducedMotion:true})]),[['dice',400],['skill',1800],['move',400],['trip',500],['recover',500],['score',500],['finish',650]]);
   const skill=state.queue.find(beat=>beat.kind==='skill')!;
-  assert.equal(beatDuration(skill,{reducedMotion:true,speed:2}),450);
-  assert.equal(beatDuration(skill,{reducedMotion:true,speed:4}),225);
+  assert.equal(beatDuration(skill,{reducedMotion:true,speed:2}),1500);
+  assert.equal(beatDuration(skill,{reducedMotion:true,speed:4}),1500);
   for(const speed of [1,2,4]){
     let playback=state;
-    while(playback.queue.length){const beat=playback.queue[0]!;assert.equal(beatDuration(beat,{reducedMotion:true,speed}),Math.round(beatDuration(beat,{reducedMotion:true})/speed));playback=completeBeat(playback);}
+    while(playback.queue.length){const beat=playback.queue[0]!;assert.equal(beatDuration(beat,{reducedMotion:true,speed}),Math.max(beat.kind==='skill'?1500:0,Math.round(beatDuration(beat,{reducedMotion:true})/speed)));playback=completeBeat(playback);}
     assert.deepEqual(playback.racers,confirmed.racers);assert.equal(JSON.stringify(confirmed),snapshot);
   }
+});
+
+test('AI turn-start choices never discard an earlier dice, ability, reaction or movement across snapshots', () => {
+  const initial = view();
+  const first: GameEvent[] = [{ ...die(1, 4), source: 'b' }, { id: 2, type: 'power', source: 'b', text: '发动技能' }, motion(3, ['b'], [0], [4])];
+  let state = receiveRoom(createPlayback(initial), view(2, first, [racer('a'), racer('b', 4)]));
+  const later: GameEvent[] = [...first, { id: 4, type: 'trip', source: 'b', targets: ['a'], text: '绊倒' }, { id: 5, type: 'turn', source: 'a', text: '轮到本人' }];
+  state = receiveRoom(state, { ...view(3, later, [{ ...racer('a'), tripped: true }, racer('b', 4)]), pending: { id: 'choice', racerId: 'a', playerId: 'pa', kind: 'hypnotist', title: '召唤', options: [{ id: 'b', label: '对手' }], optional: true } });
+  const shown: number[] = [];
+  while (state.queue.length) {
+    shown.push(...state.queue[0]!.events.map(event => event.id));
+    state = completeBeat(state);
+  }
+  assert.deepEqual(shown, [1, 2, 3, 4]);
+  assert.equal(state.confirmed.pending?.id, 'choice');
+  assert.deepEqual(state.racers, state.confirmed.racers);
+});
+
+test('a batched next race preserves the preceding final motion and reconstructs both boards in order', () => {
+  const initial = view(1, [], [racer('a', 27), racer('b', 28)]);
+  const nextRacers = [{ ...racer('c', 3), characterId: 'cheerleader' }, racer('d')];
+  const events: GameEvent[] = [motion(1, ['a'], [27], [30]), { id: 2, type: 'finish', source: 'a', text: '冲线' }, { id: 3, type: 'phase', text: '第1场结束' }, { id: 4, type: 'phase', text: '第2场选择' }, { id: 5, type: 'reveal', text: '新阵容' }, { id: 6, type: 'power', source: 'c', text: '加油' }, motion(7, ['c'], [0], [3])];
+  const room: RoomView = { ...view(4, events, nextRacers), round: 2, track: 'wild', results: [{ round: 1, placements: [{ racerId: 'a', playerId: 'pa', characterId: 'coach', rank: 1, points: 3 }] }] };
+  let state = receiveRoom(createPlayback(initial), room);
+  assert.equal(state.round, 1);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['move', 'finish']);
+  assert.equal(state.racers[0]!.position, 27);
+  state = completeBeat(state);
+  assert.equal(state.racers[0]!.position, 30);
+  state = completeBeat(state);
+  assert.equal(state.round, 2);
+  assert.equal(state.confirmed.track, 'wild');
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.equal(state.racers[0]!.position, 0);
+  while (state.queue.length) state = completeBeat(state);
+  assert.deepEqual(state.racers, nextRacers);
+});
+
+test('a complete presentation event stream supplements the short 120-line UI log without gaps', () => {
+  const events: GameEvent[] = Array.from({ length: 180 }, (_, index) => ({ id: index + 1, type: 'power', source: 'a', text: `技能${index + 1}` }));
+  let state = receiveRoom(createPlayback(view()), { ...view(2, events.slice(-120)), presentationEvents: events });
+  assert.equal(state.queue.length, 180);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), events.map(event => event.id));
+  assert.ok(state.queue.every(beat => beatDuration(beat) >= 1500));
+  for (const options of [{ speed: 4 }, { speed: 4, reducedMotion: true }]) assert.ok(state.queue.every(beat => beatDuration(beat, options) >= 1500));
+  while (state.queue.length) state = completeBeat(state);
+  assert.equal(state.eventCursor, 180);
+});
+
+test('an entire later race already at results still replays after the preceding board instead of resetting', () => {
+  const events: GameEvent[] = [motion(1, ['a'], [0], [2])];
+  let state = receiveRoom(createPlayback(view()), view(2, events, [racer('a', 2), racer('b')]));
+  const later: GameEvent[] = [...events, { id: 2, type: 'phase', text: '下场选择' }, { id: 3, type: 'reveal', text: '下场揭示' }, { id: 4, type: 'power', source: 'c', text: '下场能力' }, motion(5, ['c'], [0], [30]), { id: 6, type: 'finish', source: 'c', text: '下场冲线' }];
+  const next: RoomView = { ...view(4, later, [{ ...racer('c', 30), finished: true, rank: 1 }, racer('d')]), phase: 'results', round: 2, track: 'wild' };
+  state = receiveRoom(state, next);
+  assert.equal(state.round, 1);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [1]);
+  state = completeBeat(state);
+  assert.equal(state.round, 2);
+  assert.equal(state.racers[0]!.position, 0);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [4, 5, 6]);
+  while (state.queue.length) state = completeBeat(state);
+  assert.equal(state.confirmed.phase, 'results');
+  assert.deepEqual(state.racers, next.racers);
+});
+
+test('paired duel dice reveal together, then the winner skill and movement follow', () => {
+  const events: GameEvent[] = [{ id: 1, type: 'duel-dice', source: 'a', targets: ['a', 'b'], faces: [4, 4], text: '双方掷决斗骰' }, { id: 2, type: 'duel', source: 'a', targets: ['b'], text: '决斗家平手获胜' }, motion(3, ['a'], [2], [4])];
+  let state = receiveRoom(createPlayback(view(1, [], [racer('a', 2), racer('b', 2)])), view(2, events, [racer('a', 4), racer('b', 2)]));
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['duel-dice', 'skill', 'move']);
+  assert.deepEqual(state.queue[0]!.faces, [4, 4]);
+  assert.equal(state.queue[0]!.durationMs, 3000);
+  for (let index = 0; index < 2; index++) { state = completeBeat(state); assert.equal(state.racers[0]!.position, 2); }
+  state = completeBeat(state);
+  assert.equal(state.racers[0]!.position, 4);
+});
+
+test('a mastermind prediction becomes persistent only after its own reveal beat and survives later actions', () => {
+  const initial = view();
+  const predicted = racer('a'); predicted.flags.prediction = 'b';
+  const events: GameEvent[] = [die(1, 2), { id: 2, type: 'prediction', source: 'a', targets: ['b'], text: '预测b夺冠' }, motion(3, ['b'], [0], [3])];
+  let state = receiveRoom(createPlayback(initial), view(2, events, [predicted, racer('b', 3)]));
+  assert.equal(state.racers[0]!.flags.prediction, undefined);
+  state = completeBeat(state); assert.equal(state.racers[0]!.flags.prediction, undefined);
+  state = completeBeat(state); assert.equal(state.racers[0]!.flags.prediction, 'b');
+  state = completeBeat(state); assert.equal(state.racers[0]!.flags.prediction, 'b');
+  const resumed = createPlayback(state.confirmed); assert.equal(resumed.racers[0]!.flags.prediction, 'b');
 });

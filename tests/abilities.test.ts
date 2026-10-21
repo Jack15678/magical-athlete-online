@@ -58,7 +58,7 @@ test('CHAR-02 Baba Yaga trips a single arriving racer', () => {
   assert.equal(racer(s, 1).position, 7); assert.equal(racer(s, 1).tripped, true); assert.equal(racer(s).tripped, false);
 });
 test('CHAR-02 Baba Yaga still trips an already-triggered Duelist after a prioritized duel', () => {
-  const s = fixture(['duelist', 'baba-yaga', 'alchemist'], [2, 5, 14]); dice(s, 4, 2); move(s, 0, 3); choose(s, 'r1');
+  const s = fixture(['duelist', 'baba-yaga', 'alchemist'], [2, 5, 14]); dice(s, 4, 2); move(s, 0, 3); choose(s, 'r1'); choose(s, 'roll'); choose(s, 'roll');
   assert.equal(racer(s).position, 7); assert.equal(racer(s).tripped, true);
 });
 test('CHAR-03 Banana trips after the full move, including backward passes', () => {
@@ -95,7 +95,7 @@ test('CHAR-09 Dicemonger moves before the new die is generated', () => {
   assert.equal(racer(s, 1).position, 4); assert.equal(s.lastRoll?.face, 4);
 });
 test('CHAR-10 Duelist wins tied dice and moves two', () => {
-  const s = fixture(['duelist', 'alchemist'], [5, 5]); dice(s, 3, 3); begin(s); choose(s, 'r1');
+  const s = fixture(['duelist', 'alchemist'], [5, 5]); dice(s, 3, 3); begin(s); choose(s, 'r1'); choose(s, 'roll'); choose(s, 'roll');
   assert.equal(racer(s).position, 7); assert.equal(racer(s, 1).position, 5);
 });
 test('CHAR-11 Egg retains its identity and obtains copied before-race powers', () => {

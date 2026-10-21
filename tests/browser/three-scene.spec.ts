@@ -18,12 +18,13 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => { await application.close(); });
 
-async function pair(browser: Browser, mobile = false) {
+async function pair(browser: Browser, mobile = false, recordVideo = false) {
   const contexts: BrowserContext[] = [];
   const pages: Page[] = [];
   const errors: string[] = [];
   for (let seat = 0; seat < 2; seat++) {
-    const context = await browser.newContext({ viewport: mobile && seat === 0 ? { width: 390, height: 844 } : process.env.CI ? { width: 1280, height: 900 } : { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+    const viewport = mobile && seat === 0 ? { width: 390, height: 844 } : process.env.CI ? { width: 1280, height: 900 } : { width: 1440, height: 1000 };
+    const context = await browser.newContext({ viewport, deviceScaleFactor: 1, ...(recordVideo && seat === 0 ? { recordVideo: { dir: 'test-results/three-scene/video', size: viewport } } : {}) });
     contexts.push(context);
     await context.addInitScript(() => {
       try {
@@ -96,7 +97,7 @@ async function choose(room: Pair, optionId: string) {
   await page.getByRole('region', { name: '待处理技能' }).getByRole('button', { name: option.label, exact: true }).click();
 }
 interface BeatRecord {
-  phase: string; events: string; motions: string; upFace: string;
+  phase: string; events: string; motions: string; upFace: string; upFaces: string;
   positions: Record<string, { position: string; target: string }>;
   rollDisabled: boolean; choices: number; at: number;
 }
@@ -112,7 +113,7 @@ async function recordBeats(page: Page, autoClickSkipOnMove = false) {
     (window as unknown as { __sceneSkipped: SkipRecord }).__sceneSkipped = skipped;
     const save = () => {
       const positions = Object.fromEntries(Array.from(board.querySelectorAll<HTMLElement>('[data-testid="scene-racer"]')).map(node => [node.dataset.racerId!, { position: node.dataset.position ?? '', target: node.dataset.targetPosition ?? '' }]));
-      const next = { phase: board.getAttribute('data-phase') ?? '', events: board.getAttribute('data-event-ids') ?? '', motions: board.getAttribute('data-motion-count') ?? '', upFace: board.querySelector('.dice-spotlight')?.getAttribute('data-up-face') ?? '', positions, rollDisabled: !!document.querySelector('.floating-roll button')?.hasAttribute('disabled'), choices: document.querySelectorAll('.choice-panel').length };
+      const next = { phase: board.getAttribute('data-phase') ?? '', events: board.getAttribute('data-event-ids') ?? '', motions: board.getAttribute('data-motion-count') ?? '', upFace: board.querySelector('.dice-spotlight')?.getAttribute('data-up-face') ?? '', upFaces: board.querySelector('.dice-spotlight')?.getAttribute('data-up-faces') ?? '', positions, rollDisabled: !!document.querySelector('.floating-roll button')?.hasAttribute('disabled'), choices: document.querySelectorAll('.choice-panel').length };
       const previous = records.at(-1);
       if (JSON.stringify(next) !== JSON.stringify(previous && { ...previous, at: undefined })) records.push({ ...next, at: performance.now() });
       // Record the simultaneous pre-move positions before invoking the actual
@@ -130,7 +131,7 @@ async function recordBeats(page: Page, autoClickSkipOnMove = false) {
     // Observe commits in-page: protocol round trips can outlast a short beat
     // on software-rendered CI while the browser still displays the right order.
     const observer = new MutationObserver(save);
-    observer.observe(board, { attributes: true, subtree: true, attributeFilter: ['data-phase', 'data-event-ids', 'data-motion-count', 'data-position', 'data-target-position', 'data-up-face', 'hidden'] });
+    observer.observe(board, { attributes: true, subtree: true, attributeFilter: ['data-phase', 'data-event-ids', 'data-motion-count', 'data-position', 'data-target-position', 'data-up-face', 'data-up-faces', 'hidden'] });
     observed.__sceneObserver = observer; save();
   }, autoClickSkipOnMove);
 }
@@ -221,6 +222,122 @@ test('3D dice settles on the authoritative face before movement; reconnect does 
     await room.host.waitForTimeout(200);
     expect((await beats(room.host)).filter((beat, index, records) => beat.phase === 'dice' && records[index - 1]?.phase !== 'dice')).toHaveLength(1);
     await captureBoard(room.host, 'dice-desktop');
+    expect(room.errors).toEqual([]);
+  } finally { await Promise.all(room.contexts.map(context => context.close())); }
+});
+
+test('back-to-back confirmed dice keep separate full throws without flashing the next result early', async ({ browser }) => {
+  const room = await pair(browser);
+  try {
+    await seed(room, ['coach', 'alchemist', 'legs', 'banana'], [2, 8, 14, 22]);
+    const board = room.host.getByTestId('board-3d');
+    const diceCanvas = await board.locator('.dice-spotlight canvas').elementHandle();
+    await recordBeats(room.host);
+    // Stress the renderer's event protocol with adjacent confirmed throws.
+    // No rule action or movement is inferred from a visual die event.
+    const saved: Room = structuredClone(application.rooms.get(room.code));
+    const first = (saved.game.logs.at(-1)?.id ?? 0) + 1, second = first + 1;
+    saved.game.logs.push({ id: first, type: 'die', source: 'r0', text: '教练掷出2' }, { id: second, type: 'die', source: 'r1', text: '炼金术士掷出5' });
+    saved.game.lastRoll = { racerId: 'r1', face: 5, distance: 5 }; saved.version++;
+    application.rooms.rooms.set(saved.code, saved); application.store.save(saved);
+    for (const socket of application.io.sockets.sockets.values()) if (socket.data.identity?.roomCode === saved.code) socket.emit('snapshot', application.rooms.view(saved, socket.data.identity.playerId));
+    await observedBeat(room.host, 'dice', first);
+    await expect.poll(async () => (await beats(room.host)).some(beat => beat.events === String(first) && beat.upFace === '2')).toBe(true);
+    await observedBeat(room.host, 'dice', second);
+    await expect.poll(async () => (await beats(room.host)).some(beat => beat.events === String(second) && beat.upFace === '5')).toBe(true);
+    await expect(board).toHaveAttribute('data-phase', 'idle');
+    const records = await beats(room.host);
+    const firstStart = records.find(record => record.events === String(first))!;
+    const secondStart = records.find(record => record.events === String(second))!;
+    const secondSettled = records.find(record => record.events === String(second) && record.upFace === '5')!;
+    expect(firstStart.upFace).toBe(''); expect(secondStart.upFace).toBe('');
+    expect(secondStart.at - firstStart.at).toBeGreaterThanOrEqual(2300);
+    expect(secondSettled.at - secondStart.at).toBeGreaterThanOrEqual(1900);
+    expect(await room.host.evaluate(original => document.querySelector('.dice-spotlight canvas') === original, diceCanvas)).toBe(true);
+    for (const racer of saved.game.racers) await expect(token(room.host, racer.id)).toHaveAttribute('data-position', String(racer.position));
+    writeFileSync('test-results/three-scene/consecutive-dice-events.json', JSON.stringify(records, null, 2));
+    expect(room.errors).toEqual([]);
+  } finally { await Promise.all(room.contexts.map(context => context.close())); }
+});
+
+test('two human duel rolls reveal paired dice together before the winner moves', async ({ browser }) => {
+  const room = await pair(browser, true, true);
+  const video = room.host.video();
+  try {
+    await seed(room, ['duelist', 'alchemist', 'legs', 'banana'], [5, 5, 14, 22], [5, 2]);
+    const board = room.host.getByTestId('board-3d'), spotlight = room.host.locator('.dice-spotlight');
+    const diceCanvas = await spotlight.locator('canvas').elementHandle();
+    await choose(room, 'r1');
+    await expect(room.host.getByRole('region', { name: '待处理技能' }).getByRole('button', { name: '掷决斗骰', exact: true })).toBeEnabled();
+    await room.host.getByRole('button', { name: '掷决斗骰', exact: true }).click();
+    await expect(room.guest.getByRole('button', { name: '掷决斗骰', exact: true })).toBeEnabled();
+    expect(application.rooms.get(room.code).game.logs.some(event => event.type === 'duel-dice' || event.type === 'duel')).toBe(false);
+    await expect(spotlight).toBeHidden(); await expect(token(room.host, 'r0')).toHaveAttribute('data-position', '5');
+    await recordBeats(room.host);
+    await room.guest.getByRole('button', { name: '掷决斗骰', exact: true }).click();
+    const event = application.rooms.get(room.code).game.logs.find(event => event.type === 'duel-dice')!;
+    expect(event.faces).toEqual([5, 2]); expect(event.targets).toEqual(['r0', 'r1']);
+    const rolling = await observedBeat(room.host, 'duel-dice', event.id);
+    expect(rolling.upFaces).toBe(''); expect(rolling.positions.r0?.position).toBe('5'); expect(rolling.positions.r1?.position).toBe('5');
+    await expect(spotlight).toHaveAttribute('data-dice-mode', 'duel');
+    await expect(spotlight).toHaveAttribute('data-result-read-ms', '1500');
+    await expect(spotlight.locator('[data-duel-racer-id]')).toHaveCount(2);
+    await expect(spotlight.locator('.duel-contenders')).toContainText('决斗家'); await expect(spotlight.locator('.duel-contenders')).toContainText('炼金术士');
+    await expect.poll(async () => (await beats(room.host)).some(beat => beat.phase === 'duel-dice' && beat.upFaces === '5,2')).toBe(true);
+    await room.host.screenshot({ path: 'test-results/three-scene/duel-paired-mobile.png' });
+    await expect(board).toHaveAttribute('data-phase', 'idle');
+    const records = await beats(room.host), die = records.filter(record => record.events === String(event.id)), settled = die.find(record => record.upFaces === '5,2')!;
+    expect(die.every(record => ['', '5,2'].includes(record.upFaces))).toBe(true);
+    expect(settled.at - rolling.at).toBeGreaterThanOrEqual(1350);
+    const afterDuel = records.find(record => record.at > rolling.at && record.phase !== 'duel-dice')!;
+    // Allow one browser frame of measurement jitter around the 1500 ms budget.
+    expect(afterDuel.at - settled.at).toBeGreaterThanOrEqual(1450);
+    const move = records.find(record => record.phase === 'move')!; expect(move).toBeDefined(); expect(move.at - rolling.at).toBeGreaterThanOrEqual(2900);
+    await expect(token(room.host, 'r0')).toHaveAttribute('data-position', '7'); await expect(token(room.host, 'r1')).toHaveAttribute('data-position', '5');
+    expect(await room.host.evaluate(original => document.querySelector('.dice-spotlight canvas') === original, diceCanvas)).toBe(true);
+    writeFileSync('test-results/three-scene/duel-paired-events.json', JSON.stringify(records, null, 2));
+    await room.host.getByTestId('presentation-settings').click();
+    await room.host.getByLabel('减少动效', { exact: true }).check(); await room.host.getByLabel('动画速度', { exact: true }).selectOption('4');
+    await room.host.getByRole('dialog', { name: '比赛菜单', exact: true }).getByRole('button', { name: '关闭', exact: true }).click();
+    await seed(room, ['duelist', 'alchemist', 'legs', 'banana'], [5, 5, 14, 22], [5, 2]);
+    await choose(room, 'r1'); await room.host.getByRole('button', { name: '掷决斗骰', exact: true }).click();
+    await recordBeats(room.host); await room.guest.getByRole('button', { name: '掷决斗骰', exact: true }).click();
+    await expect(spotlight).toHaveAttribute('data-up-faces', '5,2');
+    await expect(spotlight).toHaveAttribute('data-result-read-ms', '1500');
+    await expect(board).toHaveAttribute('data-phase', 'idle');
+    const fast = await beats(room.host), fastDuel = fast.filter(record => record.phase === 'duel-dice');
+    expect(fastDuel[0]?.upFaces).toBe('5,2');
+    expect(room.errors).toEqual([]);
+  } finally { await Promise.all(room.contexts.map(context => context.close())); if (video) await video.saveAs('test-results/three-scene/duel-paired-demo.webm'); }
+});
+
+test('champion prediction appears after its confirmed beat, persists through motion and clears after the race', async ({ browser }) => {
+  const room = await pair(browser, true);
+  try {
+    await seed(room, ['mastermind', 'coach', 'alchemist', 'legs'], [2, 8, 14, 22], [2]);
+    const board = room.host.getByTestId('board-3d'), hud = room.host.getByTestId('prediction-hud');
+    await expect(hud).toHaveCount(0);
+    await choose(room, 'r1');
+    await expect(board).toHaveAttribute('data-phase', 'skill');
+    await expect(hud).toHaveCount(0);
+    await expect(board).toHaveAttribute('data-phase', 'idle'); await expect(hud).toBeVisible();
+    await expect(hud.locator('[data-prediction-source="r0"]')).toHaveAttribute('data-prediction-target', 'r1');
+    await expect(hud).toContainText('幕后军师'); await expect(hud).toContainText('教练'); await expect(hud).toContainText('2号');
+    await recordBeats(room.host); await room.host.getByRole('button', { name: '掷骰子', exact: true }).click();
+    await observedBeat(room.host, 'dice'); await expect(hud).toBeVisible();
+    await expect(board).toHaveAttribute('data-phase', 'idle'); await expect(hud).toBeVisible();
+    await room.host.screenshot({ path: 'test-results/three-scene/prediction-persistent-mobile.png' });
+    // Copying characters can hold the same public prediction flag. A fresh
+    // fixture baseline verifies multiple displayed sources without new rules.
+    const multiple: Room = structuredClone(application.rooms.get(room.code));
+    multiple.game.racers[2]!.characterId = 'copycat'; multiple.game.racers[2]!.flags = { ...multiple.game.racers[2]!.flags, prediction: 'r1', copyPower: 'mastermind' }; multiple.version++;
+    application.rooms.rooms.set(multiple.code, multiple); application.store.save(multiple);
+    for (const socket of application.io.sockets.sockets.values()) if (socket.data.identity?.roomCode === multiple.code) socket.emit('snapshot', application.rooms.view(multiple, socket.data.identity.playerId));
+    await expect(hud.locator('[data-prediction-source]')).toHaveCount(2); await expect(hud).toContainText('模仿猫');
+    const ended: Room = structuredClone(application.rooms.get(room.code)); ended.game.phase = 'results'; ended.game.pending = undefined; ended.version++;
+    application.rooms.rooms.set(ended.code, ended); application.store.save(ended);
+    for (const socket of application.io.sockets.sockets.values()) if (socket.data.identity?.roomCode === ended.code) socket.emit('snapshot', application.rooms.view(ended, socket.data.identity.playerId));
+    await expect(hud).toHaveCount(0);
     expect(room.errors).toEqual([]);
   } finally { await Promise.all(room.contexts.map(context => context.close())); }
 });

@@ -6,6 +6,17 @@ import type { GameAction, Racer, RoomView } from '../shared/types.js';
 const strength:Record<string,number>={legs:10,hare:8,blimp:8,'lovable-loser':7,alchemist:7,'rocket-scientist':7,magician:7,'party-animal':6,coach:6,'flip-flop':6,genius:5,hypnotist:5,'third-wheel':5,cheerleader:5,suckerfish:5,sisyphus:3};
 const value=(id:string)=>strength[id]??4;
 const active=(r:Racer)=>!r.finished&&!r.eliminated;
+function repeatedFollow(view:RoomView,r:Racer):boolean {
+  // A copied Fish can repeatedly carry a Scoocher onto the same backward arrow.
+  // Recognize the repeated public journey, without inspecting the pending
+  // motion, private continuation queue or the next die. A new turn/reveal
+  // starts a fresh decision window so ordinary later journeys remain useful.
+  const boundary=view.logs.findLastIndex(e=>['turn','reveal','phase'].includes(e.type));
+  const companions=new Set(view.racers.filter(x=>x.id!==r.id&&active(x)&&x.position===r.position).map(x=>x.id));
+  const journeys=view.logs.slice(boundary+1).filter(e=>e.type==='move'&&e.targets?.some(id=>id===r.id||companions.has(id)));
+  const last=journeys.at(-1);if(!last)return false;
+  return journeys.slice(0,-1).some(e=>e.source===last.source&&e.cause===last.cause&&JSON.stringify(e.targets)===JSON.stringify(last.targets)&&JSON.stringify(e.before)===JSON.stringify(last.before)&&JSON.stringify(e.after)===JSON.stringify(last.after));
+}
 export function decideAI(view:RoomView):GameAction|undefined {
   const self=view.players.find(p=>p.id===view.selfId);if(!self)return;
   if(view.phase==='draft'&&view.draft?.order[view.draft.cursor]===self.id){const best=[...view.draft.market].sort((a,b)=>value(b)-value(a)||a.localeCompare(b))[0];if(best)return{type:'draft',characterId:best};}
@@ -20,7 +31,8 @@ export function decideAI(view:RoomView):GameAction|undefined {
     const targets=available.map(id=>view.racers.find(r=>r.id===id)).filter((r):r is Racer=>!!r&&active(r));
     const others=targets.filter(t=>t.playerId!==self.id);
     switch(c.kind){
-      case 'legs':case 'alchemist':case 'cheerleader':case 'suckerfish': if(has('use'))pick='use';break;
+      case 'legs':case 'alchemist':case 'cheerleader': if(has('use'))pick='use';break;
+      case 'suckerfish':if(has('use')&&r&&!repeatedFollow(view,r))pick='use';break;
       case 'rocket-scientist':if(has('use')&&(view.lastRoll?.face??0)>=3)pick='use';break;
       case 'genius':pick=has('4')?'4':pick;break;
       case 'reroll':if((view.lastRoll?.face??6)<=3&&has('reroll'))pick='reroll';break;

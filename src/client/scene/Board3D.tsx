@@ -62,7 +62,8 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   useDiceSound(beat, durationMs, muted);
   const active = beat?.source ?? room.currentRacerId;
   const selected = racers.find(r => r.id === active);
-  const dice = beat?.kind === 'dice';
+  const dice = beat?.kind === 'dice' || beat?.kind === 'duel-dice';
+  const duelContenders = beat?.kind === 'duel-dice' && beat.faces?.length === 2 ? beat.targets.slice(0, 2).flatMap((id, index) => { const racer = racers.find(value => value.id === id); return racer ? [{ racerId: id, characterId: racer.characterId, name: characterName(racer.characterId), face: beat.faces![index]! }] : []; }) : undefined;
   useEffect(() => {
     if (beat) { setHeldFocus(previous => { const next = actionFocus(beat, racers, queue); return previous && previous.chainId === next.chainId ? { ...next, ids: [...new Set([...previous.ids, ...next.ids])], positions: [...new Set([...previous.positions, ...next.positions])] } : next; }); return; }
     const timer = setTimeout(() => setHeldFocus(null), ACTION_HOLD_MS);
@@ -71,7 +72,7 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const beatFocus = beat ? actionFocus(beat, racers, queue) : null;
   const action = beatFocus && heldFocus && heldFocus.chainId === beatFocus.chainId ? { ...beatFocus, ids: [...new Set([...heldFocus.ids, ...beatFocus.ids])], positions: [...new Set([...heldFocus.positions, ...beatFocus.positions])] } : beatFocus ?? heldFocus;
   const myAction = action?.ids.some(id => racers.some(racer => racer.id === id && racer.playerId === room.selfId));
-  const choosing = !beat ? choiceFocus(room, racers) : undefined;
+  const choosing = !beat && !(queue?.length) ? choiceFocus(room, racers) : undefined;
   const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : ownFocus(room, racers));
   const returnSelf = () => { setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId); setCameraReset(value => value + 1); };
   return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
@@ -82,8 +83,9 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
       {manualCamera && cameraMode === 'self' && !choosing && <span className="camera-paused" role="status">跟拍已暂停</span>}
     </div>
     <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} />
+    <PredictionHud room={room} racers={racers} choosing={!!choosing} />
     <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}>
-      <Canvas className="board-webgl" key={resetKey} frameloop={beat && beat.kind !== 'dice' ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.65]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c4e4d7'); gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
+      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.65]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c4e4d7'); gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
         <ambientLight intensity={1.2} />
         <hemisphereLight args={['#fff8e7', '#6a9e8f', 1.5]} />
         <directionalLight position={[-7, 16, 8]} intensity={3.1} castShadow={!lowQuality} shadow-mapSize={lowQuality ? [512, 512] : [1024, 1024]} shadow-camera-left={-18} shadow-camera-right={18} shadow-camera-top={18} shadow-camera-bottom={-18} shadow-normalBias={.025} shadow-bias={-.0001} />
@@ -97,7 +99,7 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
     </SceneBoundary>
     <div className="scene-labels" aria-hidden="true">{racers.filter(r => !r.eliminated).map(racer => { const owner = room.players.find(p => p.id === racer.playerId), scale = occupancy(racer, racers, racer.position).scale; return <span key={racer.id} ref={element => { if (element) labels.current.set(racer.id, element); else labels.current.delete(racer.id); }} className={`pawn-seat ${active === racer.id ? 'is-active' : ''} ${scale < .5 ? 'is-crowded' : scale < .9 ? 'is-shared' : ''}`} style={{ borderColor: owner?.color }}>{(owner?.seat ?? 0) + 1}</span>; })}<span ref={scoreLabel} className="score-float" style={{ display: beat?.kind === 'score' || beat?.kind === 'finish' ? undefined : 'none' }}>{beat?.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? (beat?.kind === 'finish' ? '冲线！' : '得分！')}</span></div>
     {lost && <div className="scene-fallback"><strong>正在恢复图形画面…</strong><button onClick={() => { setLost(false); setResetKey(n => n + 1); }}>重新载入 3D</button></div>}
-    <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}><DiceSpotlight active={dice} face={beat?.face ?? room.lastRoll?.face ?? 1} startedAt={startedAt} durationMs={durationMs} reducedMotion={reducedMotion} lowQuality={lowQuality} source={selected ? characterName(selected.characterId) : '运动员'} /></SceneBoundary>
+    <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}><DiceSpotlight active={dice} beatKey={dice ? beat?.key : undefined} contenders={duelContenders} face={beat?.face ?? room.lastRoll?.face ?? 1} startedAt={startedAt} durationMs={durationMs} reducedMotion={reducedMotion} lowQuality={lowQuality} source={selected ? characterName(selected.characterId) : '运动员'} /></SceneBoundary>
     <ActionBanner beat={beat} racers={racers} />
     <ul className="sr-only" aria-label="立体棋盘选手位置">{racers.map(r => <li key={r.id} data-testid="scene-racer" data-racer-id={r.id} data-position={r.position} data-target-position={beat?.motions.find(m => m.racerId === r.id)?.to ?? r.position}>{characterName(r.characterId)} · {r.position} 格{r.tripped ? ' · 绊倒' : ''}</li>)}</ul>
   </section>;
@@ -188,6 +190,17 @@ function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: 
     </div>)}</div>
     {others.length > 0 && <div className="minimap-positions" aria-label="其他选手位置">{others.map(racer => { const owner = room.players.find(player => player.id === racer.playerId); return <span key={racer.id} data-racer-id={racer.id} data-position={Math.round(currentPosition(racer))} className={active === racer.id ? 'is-active' : ''} style={{ borderColor: owner?.color }} aria-label={`${(owner?.seat ?? 0) + 1}号选手，${characterName(racer.characterId)}，${positionText(racer)}`}><i style={{ background: owner?.color }} /><small>{(owner?.seat ?? 0) + 1}号</small><b>{racer.eliminated ? '出局' : <>{Math.round(currentPosition(racer))}<em>格</em></>}</b></span>; })}</div>}
   </aside>;
+}
+
+function PredictionHud({ room, racers, choosing }: { room: RoomView; racers: Racer[]; choosing: boolean }) {
+  if (room.phase !== 'race') return null;
+  // These are displayed racers, never the newer confirmed room's future flags.
+  const predictions = racers.flatMap(source => { const target = racers.find(racer => racer.id === source.flags.prediction); return target ? [{ source, target }] : []; });
+  if (!predictions.length) return null;
+  const ownerText = (racer: Racer) => { const owner = room.players.find(player => player.id === racer.playerId); return `${(owner?.seat ?? 0) + 1}号 · ${owner?.id === room.selfId ? '你' : owner?.name ?? '选手'}`; };
+  return <aside className={`prediction-hud ${choosing ? 'is-choosing' : ''}`} data-testid="prediction-hud" aria-label="本场冠军预测" aria-live="polite"><span className="prediction-hud-title">✦ 冠军预测</span><div className="prediction-hud-list">{predictions.map(({ source, target }) => <div key={source.id} className={`prediction-chip ${source.eliminated ? 'is-inactive' : ''}`} data-prediction-source={source.id} data-prediction-target={target.id} aria-label={`${ownerText(source)}的${characterName(source.characterId)}预测${ownerText(target)}的${characterName(target.characterId)}夺冠${source.eliminated ? '，预测已失效' : ''}`}>
+    <span className="prediction-avatar"><Avatar id={source.characterId} /></span><span className="prediction-racer"><strong>{characterName(source.characterId)}</strong><small>{ownerText(source)}</small></span><b aria-hidden="true">→</b><span className="prediction-racer"><strong>{characterName(target.characterId)}</strong><small>{ownerText(target)}</small></span>{source.eliminated && <em>已失效</em>}
+  </div>)}</div></aside>;
 }
 
 function ActionBanner({ beat, racers }: { beat?: PresentationBeat; racers: Racer[] }) {
@@ -309,7 +322,7 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
 function SkillEffect({ beat, racers, compact, startedAt, durationMs, reducedMotion }: { beat?: PresentationBeat; racers: Racer[]; compact: boolean; startedAt: number; durationMs: number; reducedMotion: boolean }) {
   const group = useRef<THREE.Group>(null);
   useFrame(() => { if (!group.current) return; const t = progress(startedAt, durationMs); group.current.scale.setScalar(reducedMotion ? 1 : .6 + t * .8); group.current.rotation.y = reducedMotion ? 0 : t * Math.PI; });
-  if (!beat || beat.kind === 'dice') return null;
+  if (!beat || beat.kind === 'dice' || beat.kind === 'duel-dice') return null;
   const affected = [...new Set([beat.source, ...beat.targets].filter((id): id is string => !!id))];
   const warp = beat.kind === 'warp' || beat.kind === 'swap';
   const impact = beat.kind === 'trip' || beat.cause === 'huge-baby' || beat.cause === 'centaur';
@@ -331,7 +344,7 @@ function ScoreProjector({ beat, racers, compact, label }: { beat?: PresentationB
 }
 
 const pipPatterns: Record<number, [number, number][]> = { 1: [[0, 0]], 2: [[-.24, .24], [.24, -.24]], 3: [[-.24, .24], [0, 0], [.24, -.24]], 4: [[-.24, .24], [.24, .24], [-.24, -.24], [.24, -.24]], 5: [[-.24, .24], [.24, .24], [0, 0], [-.24, -.24], [.24, -.24]], 6: [[-.24, .26], [.24, .26], [-.24, 0], [.24, 0], [-.24, -.26], [.24, -.26]] };
-function Die({ face, startedAt, durationMs, reducedMotion }: { face: number; startedAt: number; durationMs: number; reducedMotion: boolean }) {
+function Die({ face, startedAt, durationMs, reducedMotion, side = 0 }: { face: number; startedAt: number; durationMs: number; reducedMotion: boolean; side?: number }) {
   const die = useRef<THREE.Group>(null);
   useFrame(() => {
     if (!die.current) return;
@@ -339,19 +352,26 @@ function Die({ face, startedAt, durationMs, reducedMotion }: { face: number; sta
     const throwTime = clamp(p / .82, 0, 1), remaining = 1 - ease(clamp((p - .15) / .68, 0, 1));
     // Kinematic presentation: fixed result orientation, ballistic throw and damped rebounds.
     const flight = p < .34 ? Math.sin(p / .34 * Math.PI) * 2.1 : p < .59 ? Math.sin((p - .34) / .25 * Math.PI) * .78 : p < .75 ? Math.sin((p - .59) / .16 * Math.PI) * .26 : p < .83 ? Math.sin((p - .75) / .08 * Math.PI) * .07 : 0;
-    die.current.position.set(reducedMotion ? 0 : -1.4 * (1 - ease(throwTime)), .44 + (reducedMotion ? 0 : flight), reducedMotion ? 0 : Math.sin(p * Math.PI * 2) * .28 * (1 - throwTime));
-    die.current.rotation.set(final[0] + (reducedMotion ? 0 : remaining * Math.PI * 8), final[1] + (reducedMotion ? 0 : remaining * Math.PI * 5), final[2] + (reducedMotion ? 0 : remaining * Math.PI * 6));
+    die.current.position.set(reducedMotion ? 0 : (side || -1.4) * (1 - ease(throwTime)), .44 + (reducedMotion ? 0 : flight), reducedMotion ? 0 : Math.sin(p * Math.PI * 2) * .28 * (1 - throwTime));
+    const spin = side > 0 ? -1 : 1;
+    die.current.rotation.set(final[0] + (reducedMotion ? 0 : spin * remaining * Math.PI * 8), final[1] + (reducedMotion ? 0 : spin * remaining * Math.PI * 5), final[2] + (reducedMotion ? 0 : spin * remaining * Math.PI * 6));
   });
   const faces: { value: number; position: [number, number, number]; rotation: [number, number, number] }[] = [{ value: 1, position: [0, .501, 0], rotation: [-Math.PI / 2, 0, 0] }, { value: 6, position: [0, -.501, 0], rotation: [Math.PI / 2, 0, 0] }, { value: 2, position: [0, 0, .501], rotation: [0, 0, 0] }, { value: 5, position: [0, 0, -.501], rotation: [0, Math.PI, 0] }, { value: 3, position: [.501, 0, 0], rotation: [0, Math.PI / 2, 0] }, { value: 4, position: [-.501, 0, 0], rotation: [0, -Math.PI / 2, 0] }];
   return <group ref={die}><RoundedBox args={[1, 1, 1]} radius={.095} smoothness={3} castShadow receiveShadow><meshStandardMaterial color="#fff9e9" roughness={.3} metalness={.05} /></RoundedBox>{faces.map(side => <group key={side.value} position={side.position} rotation={side.rotation}>{pipPatterns[side.value].map(([x, y], i) => <mesh key={i} position={[x, y, .005]} scale={[1, 1, .28]}><sphereGeometry args={[.065, 12, 8]} /><meshStandardMaterial color={side.value === 1 ? '#ed6149' : '#253e50'} roughness={.5} /></mesh>)}</group>)}</group>;
 }
-function DiceSpotlight({ active, face, startedAt, durationMs, reducedMotion, lowQuality, source }: { active: boolean; face: number; startedAt: number; durationMs: number; reducedMotion: boolean; lowQuality: boolean; source: string }) {
-  const [settled, setSettled] = useState(false);
-  useEffect(() => { setSettled(false); if (!active) return; const timer = setTimeout(() => setSettled(true), durationMs * .84); return () => clearTimeout(timer); }, [active, startedAt, durationMs]);
-  return <div hidden={!active} className={`dice-spotlight ${settled ? 'is-settled' : ''}`} role="status" aria-label={`${source}正在掷骰`} data-up-face={active && settled ? face : ''}>
-    <div className="dice-caption">{source}<strong>{settled ? '点数确认' : '好戏，掷出来！'}</strong></div>
-    <Canvas frameloop={active ? 'always' : 'never'} shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.5]} camera={{ position: [3.7, 6.5, 5], fov: 38 }} gl={{ alpha: true, antialias: !lowQuality }}><ambientLight intensity={1.5} /><directionalLight position={[-3, 8, 4]} intensity={3} castShadow shadow-mapSize={[512, 512]} shadow-normalBias={.02} /><RoundedBox args={[4.2, .18, 3.6]} position={[0, -.15, 0]} radius={.2} smoothness={3} receiveShadow><meshStandardMaterial color="#315c62" roughness={.9} /></RoundedBox>{[-1, 1].map(side => <group key={side}><mesh position={[side * 2.04, .03, 0]}><boxGeometry args={[.1, .3, 3.7]} /><meshStandardMaterial color="#e4b569" /></mesh><mesh position={[0, .03, side * 1.78]}><boxGeometry args={[4.1, .3, .1]} /><meshStandardMaterial color="#e4b569" /></mesh></group>)}<Die {...{ face, startedAt, durationMs, reducedMotion }} /></Canvas>
-    <div className="dice-result" data-testid={active ? 'dice-value' : undefined}>{settled ? <><b>{face}</b><span>点 · 即将出发</span></> : <span>抛出 · 弹跳 · 停稳</span>}</div>
+interface DuelContender { racerId: string; characterId: string; name: string; face: number }
+function DiceSpotlight({ active, beatKey, contenders, face, startedAt, durationMs, reducedMotion, lowQuality, source }: { active: boolean; beatKey?: string; contenders?: DuelContender[]; face: number; startedAt: number; durationMs: number; reducedMotion: boolean; lowQuality: boolean; source: string }) {
+  const [settledKey, setSettledKey] = useState<string>();
+  const paired = contenders?.length === 2;
+  const revealAfterMs = paired ? reducedMotion ? 0 : Math.max(0, Math.min(1800, durationMs - 1500)) : durationMs * .84;
+  const settled = active && !!beatKey && (revealAfterMs === 0 || settledKey === beatKey);
+  // Consecutive throws can keep `active` true. Tie their revealed face to the
+  // confirmed event, so a new throw never inherits the previous settled frame.
+  useEffect(() => { if (!active || !beatKey) return; const timer = setTimeout(() => setSettledKey(beatKey), Math.max(0, startedAt + revealAfterMs - performance.now())); return () => clearTimeout(timer); }, [active, beatKey, startedAt, revealAfterMs]);
+  return <div hidden={!active} className={`dice-spotlight ${settled ? 'is-settled' : ''} ${paired ? 'is-duel' : ''}`} role="status" aria-label={paired ? `${contenders[0]!.name}与${contenders[1]!.name}的决斗骰` : `${source}正在掷骰`} data-dice-event-key={active ? beatKey : ''} data-dice-mode={paired ? 'duel' : 'single'} data-up-face={!paired && settled ? face : ''} data-up-faces={paired && settled ? contenders.map(contender => contender.face).join(',') : ''} data-result-read-ms={paired ? durationMs - revealAfterMs : undefined}>
+    {paired ? <div className="duel-contenders">{contenders.map((contender, index) => <div key={contender.racerId} data-duel-racer-id={contender.racerId}><span><Avatar id={contender.characterId} /></span><strong>{contender.name}</strong><small>{index ? '应战方' : '挑战方'}</small></div>)}<b>VS</b></div> : <div className="dice-caption">{source}<strong>{settled ? '点数确认' : '好戏，掷出来！'}</strong></div>}
+    <Canvas frameloop={active ? 'always' : 'never'} shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.5]} camera={{ position: [3.7, 6.5, 5], fov: 38 }} gl={{ alpha: true, antialias: !lowQuality }}><ambientLight intensity={1.5} /><directionalLight position={[-3, 8, 4]} intensity={3} castShadow shadow-mapSize={[512, 512]} shadow-normalBias={.02} /><RoundedBox args={[4.2, .18, 3.6]} position={[0, -.15, 0]} radius={.2} smoothness={3} receiveShadow><meshStandardMaterial color="#315c62" roughness={.9} /></RoundedBox>{[-1, 1].map(side => <group key={side}><mesh position={[side * 2.04, .03, 0]}><boxGeometry args={[.1, .3, 3.7]} /><meshStandardMaterial color="#e4b569" /></mesh><mesh position={[0, .03, side * 1.78]}><boxGeometry args={[4.1, .3, .1]} /><meshStandardMaterial color="#e4b569" /></mesh></group>)}{paired ? contenders.map((contender, index) => <group key={contender.racerId} position={[(index ? 1 : -1) * .95, 0, 0]} scale={.82}><Die face={contender.face} startedAt={startedAt} durationMs={Math.max(1, revealAfterMs)} reducedMotion={reducedMotion || revealAfterMs === 0} side={index ? 1 : -1} /></group>) : <Die {...{ face, startedAt, durationMs, reducedMotion }} />}</Canvas>
+    <div className={`dice-result ${paired ? 'duel-result' : ''}`} data-testid={active ? paired ? 'duel-dice-value' : 'dice-value' : undefined}>{paired ? <><span className="duel-values"><b>{settled ? contenders[0]!.face : '·'}</b><i>:</i><b>{settled ? contenders[1]!.face : '·'}</b></span><span>{settled ? '双方点数确认 · 即将结算' : '两人已投骰 · 同时揭晓'}</span></> : settled ? <><b>{face}</b><span>点 · 即将出发</span></> : <span>抛出 · 弹跳 · 停稳</span>}</div>
   </div>;
 }
 
@@ -359,7 +379,7 @@ function useDiceSound(beat: PresentationBeat | undefined, durationMs: number, mu
   const audio = useRef<AudioContext | null>(null);
   useEffect(() => { const unlock = () => { if (muted) return; try { audio.current ??= new AudioContext(); void audio.current.resume(); } catch { /* Audio is optional. */ } }; document.addEventListener('pointerdown', unlock); return () => document.removeEventListener('pointerdown', unlock); }, [muted]);
   useEffect(() => {
-    if (muted || beat?.kind !== 'dice') return;
+    if (muted || !beat || beat.kind !== 'dice' && beat.kind !== 'duel-dice') return;
     const timers = [.34, .59, .75, .83].map((at, index) => setTimeout(() => {
       try { const ctx = audio.current; if (!ctx || ctx.state !== 'running') return; const oscillator = ctx.createOscillator(), gain = ctx.createGain(); oscillator.type = 'triangle'; oscillator.frequency.setValueAtTime(170 + index * 35, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + .065); gain.gain.setValueAtTime(.13 / (index + 1), ctx.currentTime); gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .09); oscillator.connect(gain).connect(ctx.destination); oscillator.start(); oscillator.stop(ctx.currentTime + .1); } catch { /* Gameplay never depends on audio availability. */ }
     }, durationMs * at));

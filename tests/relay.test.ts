@@ -313,3 +313,16 @@ test('worker mode accepts only exact strings and preserves the nullish multiplay
     const response=await worker.default.fetch(request,env);assert.equal(response.status,201);assert.equal(forwarded?.mode,mode??'multiplayer');
   }
 });
+
+test('relay event backfill derives the reader identity and only the authenticated authority may deliver public pages',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity),other=await authenticate(env);
+  host.clear();peer.clear();other.clear();
+  await env.relay.webSocketMessage(peer,JSON.stringify({type:'events',requestId:'missing-events',afterId:120}));
+  assert.deepEqual(host.sent.find(message=>message.type==='request'),{type:'request',operation:'events',playerId:guest.identity.playerId,requestId:'missing-events',afterId:120});
+  const batch={afterId:120,latestId:122,events:[{id:121,type:'power',text:'公开技能'},{id:122,type:'move',text:'公开位移'}]};
+  await env.relay.webSocketMessage(peer,JSON.stringify({type:'deliver-events',to:guest.identity.playerId,requestId:'forged-events',batch}));assert.match(peer.sent.at(-1).message,/只有当前主持/);
+  peer.clear();await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver-events',to:guest.identity.playerId,requestId:'missing-events',batch}));
+  assert.deepEqual(peer.sent.find(message=>message.type==='events'),{type:'events',requestId:'missing-events',batch});assert(!other.sent.some(message=>message.type==='events'));
+  peer.clear();other.clear();await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver-events',to:guest.identity.playerId,requestId:'event-error',error:'无法读取动画记录。'}));assert.deepEqual(peer.sent.at(-1),{type:'error',requestId:'event-error',message:'无法读取动画记录。'});assert.equal(other.sent.length,0);assert.equal(host.readyState,1);
+  host.clear();await env.relay.webSocketMessage(peer,JSON.stringify({type:'events',requestId:'injected-reader',afterId:120,playerId:env.created.identity.playerId}));assert.equal(host.sent.length,0);assert.match(peer.sent.at(-1).message,/格式/);
+});

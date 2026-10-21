@@ -1,3 +1,4 @@
+import { PUBLIC_EVENT_BATCH_BYTES, validatePublicEventBatch } from '../shared/public-events.js';
 import { DurableObject } from 'cloudflare:workers';
 import { PLAYER_COLORS, RULES_STATUS } from '../shared/constants.js';
 import type { ActionEnvelope, ActionReply, GameMode, Identity, Phase, RoomView } from '../shared/types.js';
@@ -291,6 +292,18 @@ export class RoomRelay extends DurableObject<Env> {
           return;
         }
         if(!connection.playerId){socket.close(4401,'请先认证');return;}
+        if(parsed.type==='deliver-events'){
+          const currentAuthority=this.authority();
+          if(!connection.authority||!currentAuthority||this.attachment(currentAuthority)?.connectionId!==connection.connectionId)throw Error('只有当前主持网页可以发送动画记录。');
+          if(!only(parsed,['type','to','requestId','batch','error'])||!textId(parsed.to)||!room.members.some(player=>player.id===parsed.to)||!requestId)throw Error('动画记录格式不正确。');
+          if(parsed.error!==undefined){
+            if(parsed.batch!==undefined||!textId(parsed.error,1000))throw Error('动画记录错误格式不正确。');
+            for(const target of this.sockets())if(this.attachment(target)?.playerId===parsed.to)this.send(target,{type:'error',requestId,message:parsed.error});return;
+          }
+          if(!validatePublicEventBatch(parsed.batch)||new TextEncoder().encode(JSON.stringify(parsed.batch)).byteLength>PUBLIC_EVENT_BATCH_BYTES)throw Error('动画记录格式不正确。');
+          for(const target of this.sockets())if(this.attachment(target)?.playerId===parsed.to)this.send(target,{type:'events',requestId,batch:parsed.batch});
+          return;
+        }
         if(parsed.type==='deliver'){
           const currentAuthority=this.authority();
           if(!connection.authority||!currentAuthority||this.attachment(currentAuthority)?.connectionId!==connection.connectionId)throw Error('只有当前主持网页可以发送状态。');
@@ -350,6 +363,10 @@ export class RoomRelay extends DurableObject<Env> {
         }
         const host=this.authority();
         if(!host){this.send(socket,{type:'host-status',online:false});throw Error('主持网页离线，游戏已暂停。请等待房主回来。');}
+        if(parsed.type==='events'){
+          if(!only(parsed,['type','requestId','afterId'])||!requestId||!Number.isSafeInteger(parsed.afterId)||(parsed.afterId as number)<0)throw Error('动画记录请求格式不正确。');
+          this.send(host,{type:'request',playerId:connection.playerId,requestId,operation:'events',afterId:parsed.afterId as number});return;
+        }
         if(parsed.type==='sync'){
           if(!only(parsed,['type','requestId'])||(parsed.requestId!==undefined&&!textId(parsed.requestId)))throw Error('同步请求格式不正确。');
           if(room.pendingClose){

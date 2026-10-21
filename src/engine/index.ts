@@ -358,8 +358,22 @@ function processChoice(s:GameState,c:PendingChoice,id:string) {
   }
   if(c.kind==='duelist'){
     if(id==='skip')return;const target=racer(s,id);if(!target||!live(target)||!live(r)||target.position!==r.position)throw Error('决斗对象已经不在同格');
-    const a=random(s,`${name(r)}决斗`),b=random(s,`${name(target)}决斗`);log(s,'duel',`${name(r)} ${a} : ${b} ${name(target)}`,{source:r.id,targets:[target.id],cause:'duelist'});
-    usePower(s,r,[{kind:'move',racerId:a>=b?r.id:target.id,distance:2,cause:'duelist'}]);return;
+    ask(s,r,'duel-roll',`${name(r)}，请掷决斗骰`,[{id:'roll',label:'掷决斗骰'}],{duelistId:r.id,targetId:target.id});return;
+  }
+  if(c.kind==='duel-roll'){
+    const duelist=racer(s,String(ctx.duelistId)),target=racer(s,String(ctx.targetId));
+    if(id!=='roll'||!duelist||!target||!live(duelist)||!live(target)||duelist.position!==target.position)throw Error('决斗双方已不在同格或不再参赛');
+    if(ctx.firstFace===undefined){
+      const firstFace=random(s,`${name(duelist)}决斗`);
+      // The first result is private continuation state, not a public log or
+      // projected choice. Neither participant sees it before both have rolled.
+      ask(s,target,'duel-roll',`${name(target)}，请掷决斗骰`,[{id:'roll',label:'掷决斗骰'}],{duelistId:duelist.id,targetId:target.id,firstFace});return;
+    }
+    const a=Number(ctx.firstFace);if(!Number.isInteger(a)||a<1||a>6)throw Error('决斗骰子存档无效');
+    const b=random(s,`${name(target)}决斗`);
+    log(s,'duel-dice',`${name(duelist)} ${a} : ${b} ${name(target)}`,{source:duelist.id,targets:[duelist.id,target.id],faces:[a,b],cause:'duelist'});
+    log(s,'duel',`${name(duelist)} ${a} : ${b} ${name(target)}`,{source:duelist.id,targets:[target.id],cause:'duelist'});
+    usePower(s,duelist,[{kind:'move',racerId:a>=b?duelist.id:target.id,distance:2,cause:'duelist'}]);return;
   }
   if(id==='skip')return;
   if(c.kind==='cheerleader'){
