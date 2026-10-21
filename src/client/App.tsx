@@ -38,6 +38,7 @@ export function App() {
   const [code, setCode] = useState(currentCode);
   const [identity, setIdentity] = useState<Identity | null>(() => readIdentity(currentCode()));
   const [room, setRoom] = useState<RoomView | null>(null);
+  const [endRoom, setEndRoom] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>('connecting');
   const [connectionError, setConnectionError] = useState('');
   const [error, setError] = useState('');
@@ -63,7 +64,7 @@ export function App() {
     } catch { /* Browser audio may be unavailable; play never depends on sound. */ }
   }, [muted]);
   useEffect(() => { document.documentElement.dataset.motion = reduceMotion ? 'reduce' : 'full'; try { localStorage.setItem('magical-athlete:reduced-motion', String(reduceMotion)); localStorage.setItem('magical-athlete:muted', String(muted)); } catch { /* Preferences are optional. */ } }, [reduceMotion, muted]);
-  useEffect(() => { const pop = () => { const next = currentCode(); setCode(next); setIdentity(readIdentity(next)); setRoom(null); setError(''); }; addEventListener('popstate', pop); return () => removeEventListener('popstate', pop); }, []);
+  useEffect(() => { const pop = () => { const next = currentCode(); setCode(next); setIdentity(readIdentity(next)); setRoom(null); setError(''); setEndRoom(false); setConnection('connecting'); }; addEventListener('popstate', pop); return () => removeEventListener('popstate', pop); }, []);
   useEffect(() => {
     if (!identity) return;
     setConnection('connecting'); setConnectionError('');
@@ -74,25 +75,26 @@ export function App() {
     return () => { client.disconnect(); socket.current = null; document.removeEventListener('visibilitychange', sync); removeEventListener('focus', sync); removeEventListener('online', sync); removeEventListener('pageshow', sync); };
   }, [identity]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 4000); return () => clearTimeout(timer); }, [notice]);
-  useEffect(() => { if (room) document.title = `${room.code} · ${phaseLabels[room.phase]} | 胡闹运动会`; else document.title = '胡闹运动会 · 好友联机'; }, [room]);
+  useEffect(() => { if (connection === 'closed' || room?.closedAt) document.title = '房间已解散 | 胡闹运动会'; else if (room) document.title = `${room.code} · ${phaseLabels[room.phase]} | 胡闹运动会`; else document.title = '胡闹运动会 · 好友联机'; }, [room, connection]);
   const act = useCallback(async (action: GameAction) => {
-    if (!room || !socket.current?.connected || busyRef.current) return;
+    if (!room || room.closedAt || !socket.current?.connected || busyRef.current) return false;
     busyRef.current = true; setBusy(true); setError('');
-    try { const reply = await sendAction(socket.current, room, action); if (!reply.ok) { setError(reply.error ?? '此时无法进行这个操作。'); socket.current?.emit('sync'); } else sound(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : '操作未确认，请重新同步。'); }
+    try { const reply = await sendAction(socket.current, room, action); if (!reply.ok) { setError(reply.error ?? '此时无法进行这个操作。'); socket.current?.emit('sync'); } else sound(); return reply.ok; }
+    catch (cause) { setError(cause instanceof Error ? cause.message : '操作未确认，请重新同步。'); return false; }
     finally { busyRef.current = false; setBusy(false); }
   }, [room, sound]);
-  const enter = (next: { identity: Identity; room: RoomView }) => { history.pushState({}, '', `/room/${next.room.code}`); setCode(next.room.code); setRoom(next.room); setIdentity(next.identity); setError(''); };
-  const resume = (saved: Identity) => { history.pushState({}, '', `/room/${saved.roomCode}`); setCode(saved.roomCode); setRoom(null); setIdentity(saved); setError(''); };
+  const enter = (next: { identity: Identity; room: RoomView }) => { history.pushState({}, '', `/room/${next.room.code}`); setCode(next.room.code); setRoom(next.room); setIdentity(next.identity); setError(''); setConnection('connecting'); };
+  const resume = (saved: Identity) => { history.pushState({}, '', `/room/${saved.roomCode}`); setCode(saved.roomCode); setRoom(null); setIdentity(saved); setError(''); setConnection('connecting'); };
   const copy = async (value: string, label: string) => { try { await navigator.clipboard.writeText(value); setNotice(`${label}已复制`); } catch { setCopyFallback(value); } };
-  const home = () => { history.pushState({}, '', '/'); setCode(''); setIdentity(null); setRoom(null); setError(''); };
+  const home = () => { history.pushState({}, '', '/'); setCode(''); setIdentity(null); setRoom(null); setError(''); setEndRoom(false); setConnection('connecting'); setConnectionError(''); };
   const online = connection === 'online' && room?.authorityOnline !== false;
+  const closed = connection === 'closed' || !!room?.closedAt;
   return <>
     <header className="site-header"><button className="wordmark" onClick={home} aria-label="胡闹运动会首页"><span className="logo-dice"><Icon kind="dice" size={28} /></span><span>胡闹运动会<small>Magical Athlete · 好友联机</small></span></button><nav><button className="header-link" onClick={() => setRules(true)}>怎么玩</button><button className="sound-toggle" onClick={() => setMuted(!muted)} aria-label={muted ? '开启提示音' : '关闭提示音'} aria-pressed={!muted}><Icon kind={muted ? 'mute' : 'sound'} /></button></nav></header>
-    {!identity ? <Home code={code} onEnter={enter} onResume={resume} onHome={home} onDetail={setDetail} /> : !room ? <main className="restore-screen"><div className="large-dice"><Icon kind="dice" size={68} /></div><h1>{connectionError.includes('计算房主网页离线') ? '等待计算房主返回' : '正在回到赛场…'}</h1><p>{connectionError || '正在恢复你的座位与对局进度。'}</p>{connection === 'offline' && <Button secondary onClick={() => socket.current?.connect()}>重新同步</Button>}{connection === 'error' && <><Button onClick={() => socket.current?.connect()}>重新连接</Button><Button secondary onClick={() => { forgetIdentity(code); setIdentity(null); }}>重新输入昵称</Button></>}</main> : <>
-      <div className="room-bar"><div className="room-label">房间 <button onClick={() => void copy(room.code, '房间码')} title="复制房间码">{room.code}<Icon kind="copy" size={15} /></button><span className={`connection ${online ? 'is-online' : ''}`}><i />{online ? '已连接' : connection === 'connecting' ? '连接中' : '重连中'}</span></div><button className="invite-button" onClick={() => void copy(`${location.origin}/room/${room.code}`, '邀请链接')}><Icon kind="copy" size={17} />邀请朋友</button></div>
+    {closed ? <main className="restore-screen room-closed" data-room-closed="true"><div className="large-dice"><Icon kind="flag" size={68} /></div><h1>房间已解散</h1><p>房主已结束此房间，所有玩家已退出。<br />此房间不能恢复。</p><Button onClick={home}>返回首页</Button></main> : !identity ? <Home code={code} onEnter={enter} onResume={resume} onHome={home} onDetail={setDetail} /> : !room ? <main className="restore-screen"><div className="large-dice"><Icon kind="dice" size={68} /></div><h1>{connectionError.includes('计算房主网页离线') ? '等待计算房主返回' : '正在回到赛场…'}</h1><p>{connectionError || '正在恢复你的座位与对局进度。'}</p>{connection === 'offline' && <Button secondary onClick={() => socket.current?.connect()}>重新同步</Button>}{connection === 'error' && <><Button onClick={() => socket.current?.connect()}>重新连接</Button><Button secondary onClick={() => { forgetIdentity(code); setIdentity(null); }}>重新输入昵称</Button></>}</main> : <>
+      <div className="room-bar"><div className="room-label">房间 <button onClick={() => void copy(room.code, '房间码')} title="复制房间码">{room.code}<Icon kind="copy" size={15} /></button><span className={`connection ${online ? 'is-online' : ''}`}><i />{online ? '已连接' : connection === 'connecting' ? '连接中' : '重连中'}</span></div><div className="room-actions"><button className="invite-button" onClick={() => void copy(`${location.origin}/room/${room.code}`, '邀请链接')}><Icon kind="copy" size={17} />邀请朋友</button>{room.hostId === room.selfId && <button className="end-room-button" disabled={busy || !online} onClick={() => setEndRoom(true)}>结束房间</button>}</div></div>
       {!online && <div className="connection-banner" role="status">{connectionError || '连接暂时中断，恢复后会自动同步。'}<button onClick={() => { socket.current?.connect(); socket.current?.emit('sync'); }}>立即重连</button></div>}
-      {error && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="关闭错误提示">×</button></div>}
+      {error && !endRoom && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="关闭错误提示">×</button></div>}
       <main className={`game-shell phase-${room.phase}`} data-room-version={room.version}>
         {room.hosting === 'browser' && <div className="authority-notice"><strong>计算房主：{room.players.find(player => player.id === room.authorityId)?.name ?? '创建者'}</strong><span>{room.authorityId === room.selfId ? '请保持负责计算的原浏览器标签页打开。对局存档保存在这个浏览器中。' : '计算房主页面在线时对局继续；关闭后等待其用原浏览器返回。'}</span></div>}
         <div className="stage-heading"><div><p className="stage-kicker">{room.phase === 'lobby' ? '朋友到齐，就开跑' : room.phase === 'draft' ? `第 ${(room.draft?.batch ?? 0) + 1} 次选秀` : `第 ${Math.max(1, room.round)} / 4 场 · ${room.track === 'mild' ? '轻松赛道' : '狂野赛道'}`}</p><h1>{phaseLabels[room.phase]}</h1></div><span className="mode-tag">{room.players.length >= 7 ? '7～8 人扩展规则' : room.players.length === 2 ? '两人双角色模式' : '标准模式'}</span></div>
@@ -110,9 +112,10 @@ export function App() {
     </>}
     <Footer />
     {notice && <div className="toast" role="status">{notice}</div>}
-    {detail && <CharacterModal id={detail} onClose={() => setDetail(null)} />}
-    {copyFallback && <Modal title="手动复制" onClose={() => setCopyFallback(null)}><div className="manual-copy"><p>长按或选中下方内容，复制后发给朋友。</p><input aria-label="待复制的邀请内容" value={copyFallback} readOnly onFocus={event => event.target.select()} /><Button secondary onClick={() => setCopyFallback(null)}>完成</Button></div></Modal>}
-    {rules && <Modal title="怎么玩" onClose={() => setRules(false)}><RulesContent browser={BROWSER_HOST_MODE} /></Modal>}
+    {detail && !closed && <CharacterModal id={detail} onClose={() => setDetail(null)} />}
+    {copyFallback && !closed && <Modal title="手动复制" onClose={() => setCopyFallback(null)}><div className="manual-copy"><p>长按或选中下方内容，复制后发给朋友。</p><input aria-label="待复制的邀请内容" value={copyFallback} readOnly onFocus={event => event.target.select()} /><Button secondary onClick={() => setCopyFallback(null)}>完成</Button></div></Modal>}
+    {rules && !closed && <Modal title="怎么玩" onClose={() => setRules(false)}><RulesContent browser={BROWSER_HOST_MODE} /></Modal>}
+    {endRoom && !closed && room && room.hostId === room.selfId && <Modal title="结束此房间？" busy={busy} descriptionId="end-room-description" onClose={() => { if (!busyRef.current) setEndRoom(false); }}><div className="end-room-confirm"><p id="end-room-description">确认后将解散整个房间，所有玩家都会退出。此操作不能撤销，房间和对局不能恢复。</p>{error && <p className="end-room-error" role="alert">{error}</p>}<div className="end-room-confirm-actions"><Button secondary data-modal-focus="" disabled={busy} onClick={() => setEndRoom(false)}>取消</Button><Button className="button-danger" disabled={busy || !online} onClick={async () => { if (await act({ type: 'close' })) setEndRoom(false); }}>{busy ? '正在结束…' : '确认结束'}</Button></div></div></Modal>}
   </>;
 }
 
@@ -225,14 +228,14 @@ function CharacterModal({ id, onClose }: { id: string; onClose: () => void }) {
   const character = findCharacter(id);
   return <Modal title={characterName(id)} onClose={onClose}><div className="character-modal"><div className="modal-avatar"><Avatar id={id} /></div><p className="english-name">{character?.nameEn ?? id}</p><h3>角色能力</h3><p className="full-ability">{character?.ability ?? '角色资料正在载入。'}</p><p className="small-note">角色中文名为本项目译名。技能与合法选项由服务器统一裁定。</p></div></Modal>;
 }
-function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
+function Modal({ title, children, onClose, busy = false, descriptionId }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean; descriptionId?: string }) {
   const panel = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
   close.current = onClose;
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null; const previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; panel.current?.focus();
-    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') close.current(); if (event.key === 'Tab') { const elements = panel.current?.querySelectorAll<HTMLElement>('button, a, input, select, [tabindex="0"]'); if (!elements?.length) return; const first = elements[0], last = elements[elements.length - 1]; if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } };
+    const previous = document.activeElement as HTMLElement | null; const previousOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; (panel.current?.querySelector<HTMLElement>('[data-modal-focus]') ?? panel.current)?.focus();
+    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') close.current(); if (event.key === 'Tab') { const elements = panel.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a, input:not([disabled]), select:not([disabled]), [tabindex="0"]'); if (!elements?.length) { event.preventDefault(); panel.current?.focus(); return; } const first = elements[0], last = elements[elements.length - 1]; if (event.shiftKey && (document.activeElement === first || document.activeElement === panel.current)) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } };
     document.addEventListener('keydown', key); return () => { document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', key); previous?.focus(); };
   }, []);
-  return <div className="modal-backdrop" onClick={onClose}><div ref={panel} className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabIndex={-1} onClick={event => event.stopPropagation()}><div className="modal-header"><h2 id="modal-title">{title}</h2><button className="close-button" onClick={onClose} aria-label="关闭">×</button></div>{children}</div></div>;
+  return <div className="modal-backdrop" onClick={onClose}><div ref={panel} className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby={descriptionId} tabIndex={-1} onClick={event => event.stopPropagation()}><div className="modal-header"><h2 id="modal-title">{title}</h2><button className="close-button" disabled={busy} onClick={onClose} aria-label="关闭">×</button></div>{children}</div></div>;
 }

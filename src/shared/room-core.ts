@@ -32,6 +32,9 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   validateMetadata(meta);
   if (original.code !== meta.code || original.createdAt !== meta.createdAt || original.maxPlayers !== meta.maxPlayers || original.timeoutSeconds !== meta.timeoutSeconds) throw Error('房间配置与本地存档不一致，无法覆盖。');
   const room = structuredClone(original);
+  // Keep the committed tombstone available to replay a lost close receipt, but
+  // never let a reconnect or administrative transfer reopen the room.
+  if (room.closedAt !== undefined) return { room, changed: false };
   let changed = false;
   for (const member of [...meta.members].sort((a,b) => a.seat-b.seat)) {
     const p = room.game.players.find(p => p.id === member.id);
@@ -54,14 +57,18 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   return { room, changed };
 }
 export function setRoomDeadline(room: Room, now: number): void {
-  room.deadline = room.timeoutSeconds > 0 && automaticAction(room.game) ? now + room.timeoutSeconds*1000 : null;
+  room.deadline = room.closedAt === undefined && room.timeoutSeconds > 0 && automaticAction(room.game) ? now + room.timeoutSeconds*1000 : null;
 }
 export interface ReductionOptions { now: number; rematchSeed: number; automatic?: boolean }
 export function reduceRoomAction(original: Room, playerId: string, action: GameAction, options: ReductionOptions): Room {
+  if (original.closedAt !== undefined) throw Error('房间已解散，请创建或加入其他房间。');
   const room = structuredClone(original); const p = room.game.players.find(p => p.id === playerId);
   if (!p) throw Error('你不在这个房间的参赛席位中。');
   if (options.automatic) room.game.logs.push({ id: (room.game.logs.at(-1)?.id ?? 0)+1, type:'timeout', text:`${p.name}操作超时，按公开房规执行合法默认选择。` });
   switch (action.type) {
+    case 'close':
+      if (room.hostId !== playerId) throw Error('只有房主能结束房间。');
+      room.closedAt = options.now; break;
     case 'ready':
       if (room.game.phase !== 'lobby') throw Error('只能在大厅准备。');
       p.ready = action.ready; break;
@@ -101,7 +108,7 @@ export function validateActionEnvelope(value: unknown): ActionEnvelope {
   const a = object(e.action); let action: GameAction;
   switch (a.type) {
     case 'ready': keys(a,['type','ready']); if (typeof a.ready !== 'boolean') throw Error('准备状态无效。'); action={type:'ready',ready:a.ready}; break;
-    case 'start': case 'roll': case 'next': case 'rematch': keys(a,['type']); action={type:a.type}; break;
+    case 'start': case 'roll': case 'next': case 'rematch': case 'close': keys(a,['type']); action={type:a.type}; break;
     case 'draft': keys(a,['type','characterId']); action={type:'draft',characterId:string(a.characterId,50)}; break;
     case 'select':
       keys(a,['type','characterIds']); if (!Array.isArray(a.characterIds) || a.characterIds.length < 1 || a.characterIds.length > 2) throw Error('请选择本场所需角色。');
@@ -117,7 +124,7 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   if (!room.game.players.some(p => p.id === playerId)) throw Error('你不在这个房间的参赛席位中。');
   const g=room.game, pending=g.pending;
   return { code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
-    phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:options.authorityOnline,
+    phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
     draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), currentRacerId:g.currentRacerId,
     pending:pending?.playerId===playerId ? {id:pending.id,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,options:structuredClone(pending.options),optional:pending.optional,kind:pending.kind} : undefined,

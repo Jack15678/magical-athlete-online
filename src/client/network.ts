@@ -33,15 +33,18 @@ export async function enterRoom(code: string | null, data: { name: string; maxPl
   if (BROWSER_HOST_MODE && !code) await prepareBrowserRoom((reply as RelayJoinReply).meta);
   return reply;
 }
-export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error';
+export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error' | 'closed';
 export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => void, onStatus: (state: ConnectionState, message?: string) => void): RoomConnection {
   if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
-  socket.on('connect', () => { onStatus('online'); socket.emit('sync'); });
-  socket.on('snapshot', onSnapshot);
-  socket.on('disconnect', () => onStatus('offline'));
-  socket.on('connect_error', (error: Error) => onStatus('error', error.message));
-  return { get connected() { return socket.connected; }, connect() { socket.connect(); }, disconnect() { socket.disconnect(); }, emit(event) { socket.emit(event); }, request(envelope) { return socketRequest(socket, envelope); } };
+  let closed = false;
+  const finishClosed = () => { closed = true; socket.io.reconnection(false); socket.disconnect(); onStatus('closed', '房间已解散，请创建或加入其他房间。'); };
+  socket.on('connect', () => { if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
+  socket.on('snapshot', (room: RoomView) => { onSnapshot(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
+  socket.on('room-closed', (event: { code: string }) => { if (event.code === identity.roomCode) finishClosed(); });
+  socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
+  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_CLOSED' || error.message.includes('房间已解散')) finishClosed(); else onStatus('error', error.message); });
+  return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) socket.connect(); }, disconnect() { socket.disconnect(); }, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
 }
 function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {
   return new Promise((resolve, reject) => socket.timeout(6500).emit('action', envelope, (error: Error | null, reply: ActionReply) => error ? reject(error) : resolve(reply)));
