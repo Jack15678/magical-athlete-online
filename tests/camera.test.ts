@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { OrthographicCamera, Vector3 } from 'three';
 import type { Racer, RoomView } from '../src/shared/types.js';
 import type { PresentationBeat } from '../src/client/presentation.js';
-import { actionFocus, advanceIntroStep, cameraFocusPoints, cameraFrame, cameraProject, cameraView, choiceFocus, claimRaceIntro, introFocus, introStepAt, INTRO_REDUCED_MS, INTRO_STEP_MS, ownFocus, pawnOccupancy, pawnWorldPoint, raceIntroEligible, raceIntroKey, resetRaceIntroForSetup, START_CENTER_OFFSET, START_EXTENSION, startPlacement } from '../src/client/scene/camera.js';
+import { actionFocus, advanceIntroStep, cameraFocusPoints, cameraFrame, cameraProject, cameraStep, cameraView, choiceFocus, claimRaceIntro, introFocus, introStepAt, INTRO_REDUCED_MS, INTRO_STEP_MS, ownFocus, pawnOccupancy, pawnWorldPoint, raceIntroEligible, raceIntroKey, resetRaceIntroForSetup, START_CENTER_OFFSET, START_EXTENSION, startPlacement } from '../src/client/scene/camera.js';
 import { BOARD_CENTER_SPAN, boardPoint, TILE } from '../src/client/scene/math.js';
 
 const racer = (id: string, playerId: string, position: number): Racer => ({ id, playerId, characterId: 'coach', position, tripped: false, finished: false, eliminated: false, flags: {} });
@@ -24,6 +24,22 @@ test('spectators follow the current racer and retain a useful fallback when that
   assert.deepEqual(ownFocus(watching, racers), { state: 'self', ids: ['b'], positions: [14] });
   assert.deepEqual(ownFocus({ ...watching, currentRacerId: undefined }, racers).ids, ['a']);
   assert.deepEqual(ownFocus(watching, []).positions, [0]);
+});
+
+test('duo follow retains the last live own actor between turns and ignores finished actors', () => {
+  const view = { ...room, logs: [{ id: 1, type: 'turn', source: 'c', text: 'second own actor' }] };
+  assert.deepEqual(ownFocus(view, racers).ids, ['c']);
+  assert.deepEqual(ownFocus({ ...view, currentRacerId: 'a' }, racers).ids, ['a']);
+  assert.deepEqual(ownFocus({ ...view, currentRacerId: 'c' }, racers.map(value => ({ ...value, finished: value.id === 'c' }))).ids, ['a']);
+});
+
+test('distant swaps and reconnect gaps cannot cause an unbounded camera jump', () => {
+  for (const delta of [1 / 120, 1 / 60, .05, 5]) for (const zoom of [30, 100, 160]) {
+    const distance = 80, fraction = cameraStep(distance, zoom, delta);
+    assert.ok(fraction > 0 && fraction <= 1);
+    assert.ok(distance * fraction * zoom <= 720 * Math.min(delta, .05) + 1e-8, 'screen travel is bounded at 720 pixels/second');
+  }
+  assert.equal(cameraStep(80, 160, 5, true), 1, 'reduced motion applies the new frame directly');
 });
 
 test('one confirmed chain frames its actor, full movement path and reactions, excluding later turns', () => {

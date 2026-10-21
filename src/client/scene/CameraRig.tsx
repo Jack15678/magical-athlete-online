@@ -4,7 +4,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Racer } from '../../shared/types.js';
-import { cameraFocusPoints, cameraFrame, cameraView, MAX_CAMERA_ZOOM, type CameraFocus } from './camera.js';
+import { cameraFocusPoints, cameraFrame, cameraStep, cameraView, MAX_CAMERA_ZOOM, type CameraFocus } from './camera.js';
 
 interface Props {
   compact: boolean;
@@ -43,12 +43,14 @@ export function CameraRig({ compact, reset, focus, racers, reducedMotion, onManu
     if (!userDrag.current && focus.state !== 'manual') {
       target.set(frame.x, 0, frame.z);
       desiredOffset.set(...view.offset); offset.subVectors(camera.position, controls.current.target);
-      const amount = reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, .05) * 4.8);
+      const distance = Math.max(controls.current.target.distanceTo(target), offset.distanceTo(desiredOffset));
+      const amount = cameraStep(distance, Math.max(camera.zoom, frame.zoom), delta, reducedMotion);
+      const zoomAmount = reducedMotion ? 1 : Math.min(1 - Math.exp(-Math.min(delta, .05) * 4.8), .65 * Math.min(delta, .05) / Math.max(.001, Math.abs(Math.log(frame.zoom / camera.zoom))));
       const moving = controls.current.target.distanceTo(target) > .003 || Math.abs(camera.zoom - frame.zoom) > .003 || offset.distanceTo(desiredOffset) > .003;
       if (moving) {
         controls.current.target.lerp(target, amount); offset.lerp(desiredOffset, amount);
         camera.position.copy(controls.current.target).add(offset);
-        camera.zoom = THREE.MathUtils.lerp(camera.zoom, frame.zoom, amount);
+        camera.zoom = Math.exp(THREE.MathUtils.lerp(Math.log(camera.zoom), Math.log(frame.zoom), zoomAmount));
         camera.updateProjectionMatrix(); controls.current.update(); invalidate();
       }
     }

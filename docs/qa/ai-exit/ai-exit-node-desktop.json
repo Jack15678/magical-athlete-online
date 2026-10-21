@@ -1,0 +1,15 @@
+{
+  "backend": "node",
+  "viewport": "1280x900 Edge",
+  "topExitReachesDissolve": true,
+  "twoClearOptions": true,
+  "retainedRoomCode": "FU8ZFJ",
+  "retainWindowMs": 1800000,
+  "sameIdentityAfterRefresh": true,
+  "ownerUnchanged": true,
+  "absentRoomListed": true,
+  "closedRoomListed": false,
+  "closeRequests": 1,
+  "closedStatus": 410,
+  "pageErrors": []
+}

@@ -1,0 +1,15 @@
+{
+  "backend": "node",
+  "viewport": "390x844 Edge layout emulation",
+  "topExitReachesDissolve": true,
+  "twoClearOptions": true,
+  "retainedRoomCode": "HLB6F8",
+  "retainWindowMs": 1800000,
+  "sameIdentityAfterRefresh": true,
+  "ownerUnchanged": true,
+  "absentRoomListed": true,
+  "closedRoomListed": false,
+  "closeRequests": 1,
+  "closedStatus": 410,
+  "pageErrors": []
+}

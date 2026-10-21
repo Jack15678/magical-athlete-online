@@ -16,7 +16,7 @@ function metadata(count:number):RelayMetadata{
   return{mode:count===1?'practice':'ai',code:'ABC234',authorityId:'p0',adminHostId:'p0',maxPlayers:count,timeoutSeconds:0,phase:'lobby',createdAt:1000,
     members:Array.from({length:count},(_,seat)=>({id:`p${seat}`,name:seat?`电脑${seat}`:'自己',seat,connected:true,...(seat?{isAI:true}:{})}))};
 }
-for(const count of [1,2,3,4,5,6,7,8])test(`${count===1?'单人练习':`${count-1} AI`} 通过权威裁定完成两批选秀和四场比赛`,()=>{
+for(const count of [1,2,3,4,5,6,7,8])test(`${count===1?'单人练习自由阵容':`${count-1} AI 两批选秀`} 通过权威裁定完成四场比赛`,()=>{
   let now=2000,room=createBrowserRoom(metadata(count),2051+count,now),steps=0;
   while(room.game.phase!=='finished'){
     assert(++steps<10000,`stalled ${count}/${room.game.phase}/${room.game.pending?.kind}`);now+=4000;

@@ -8,6 +8,8 @@ playwright-report/
 *.sqlite*
 *.log
 .DS_Store
+*.blend1
+*.blend2
 docs/research-downloads/
 tmp/
 .wrangler/

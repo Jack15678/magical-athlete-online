@@ -13,7 +13,7 @@ import type { ActionEnvelope, Identity } from '../shared/types.js';
 
 const action=z.discriminatedUnion('type',[
   z.object({type:z.literal('ready'),ready:z.boolean()}).strict(),z.object({type:z.literal('start')}).strict(),
-  z.object({type:z.literal('draft'),characterId:z.string().max(50)}).strict(),z.object({type:z.literal('select'),characterIds:z.array(z.string().max(50)).min(1).max(2)}).strict(),
+  z.object({type:z.literal('draft'),characterId:z.string().max(50)}).strict(),z.object({type:z.literal('select'),characterIds:z.array(z.string().max(50)).min(1).max(2)}).strict(),z.object({type:z.literal('practice-team'),characterIds:z.array(z.string().max(50)).length(4)}).strict(),
   z.object({type:z.literal('roll')}).strict(),z.object({type:z.literal('choose'),choiceId:z.string().max(100),optionId:z.string().max(100)}).strict(),
   z.object({type:z.literal('next')}).strict(),z.object({type:z.literal('rematch')}).strict(),z.object({type:z.literal('close')}).strict(),z.object({type:z.literal('transfer'),playerId:z.string().uuid()}).strict()]);
 const envelope=z.object({actionId:z.string().uuid(),expectedVersion:z.number().int().nonnegative(),action}).strict();
@@ -31,18 +31,29 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
   app.use('/api',(req,res,next)=>{res.setHeader('Cache-Control','no-store');if(!apiRate.accept(req.ip??'unknown')){res.status(429).json({error:'请求太频繁，请稍后再试。'});return;}next();});
   const io=new Server(http,{maxHttpBufferSize:8192,serveClient:false,allowRequest:(req,cb)=>cb(null,allowedOrigin(req.headers.origin)),pingInterval:15000,pingTimeout:20000});
   const broadcast=(code:string)=>{if(rooms.expire(code))return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;for(const socket of io.sockets.sockets.values()) if(socket.data.identity?.roomCode===code) socket.emit('snapshot',rooms.view(room,socket.data.identity.playerId));};
-  const notifyClosed=(code:string)=>{const room=rooms.rooms.get(code);if(room?.closedAt===undefined)return;const sockets=[...io.sockets.sockets.values()].filter(socket=>socket.data.identity?.roomCode===code);for(const socket of sockets)socket.emit('room-closed',{code,closedAt:room.closedAt});for(const socket of sockets)socket.disconnect(true);};
-  rooms.onExpired=(code,expiresAt)=>{const sockets=[...io.sockets.sockets.values()].filter(socket=>socket.data.identity?.roomCode===code);for(const socket of sockets)socket.emit('room-closed',{code,closedAt:expiresAt,reason:'expired'});for(const socket of sockets)socket.disconnect(true);};
+  const notifyClosed=(code:string)=>{const room=rooms.rooms.get(code),closed=rooms.closed(code);if(room?.closedAt===undefined&&!closed)return;const sockets=[...io.sockets.sockets.values()].filter(socket=>socket.data.identity?.roomCode===code);for(const socket of sockets)socket.emit('room-closed',{code,closedAt:closed?.closedAt??room!.closedAt,...(closed?{reason:closed.reason}:{})});for(const socket of sockets)socket.disconnect(true);};
+  rooms.onExpired=(code,expiresAt,reason='expired')=>{resuming.delete(code);const sockets=[...io.sockets.sockets.values()].filter(socket=>socket.data.identity?.roomCode===code);for(const socket of sockets)socket.emit('room-closed',{code,closedAt:expiresAt,reason});for(const socket of sockets)socket.disconnect(true);};
   const resuming=new Set<string>();let closing=false;
   const scheduleContinuation=(code:string)=>{if(closing||rooms.expire(code))return;const current=rooms.rooms.get(code);if(resuming.has(code)||!current||current.closedAt!==undefined||!systemAction(current.game))return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing||rooms.expire(code))return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;const next=systemAction(room.game);if(!next)return;const result=rooms.act(code,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:next.action});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
   app.get('/api/health',(_req,res)=>res.json({ok:true,storage:'sqlite',version:'0.1.0'}));
   app.get('/api/rooms',(_req,res,next)=>{try{res.json({rooms:rooms.list()});}catch(e){next(e);}});
   app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount));}catch(e){next(e);}});
   app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname,role:z.enum(['player','spectator']).optional()}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name,b.role);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
+  app.post('/api/rooms/:code/resume-status',(req,res,next)=>{try{
+    const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');
+    rooms.expire(i.roomCode);const existing=rooms.rooms.get(i.roomCode);
+    if(!existing){res.status(rooms.closed(i.roomCode)?410:404).json({error:rooms.closed(i.roomCode)?'房间已关闭。请创建或加入其他房间。':'房间不存在或已过期，请检查房间码。'});return;}
+    if(existing.closedAt!==undefined){res.status(410).json({error:'房间已关闭。请创建或加入其他房间。'});return;}
+    let room=existing;try{room=rooms.authenticate(i);}catch{res.status(401).json({error:'恢复凭据无效。'});return;}
+    // Inspecting a saved room is not a connection: only a real socket may
+    // restore presence and cancel the owner's departure deadline.
+    const view=rooms.view(room,i.playerId);
+    res.json({ok:true,ownerId:room.ownerId??room.hostId,mode:room.mode??'multiplayer',phase:room.game.phase,createdAt:room.createdAt,hostLeftAt:room.hostLeftAt,expiresAt:view.expiresAt});
+  }catch(e){next(e);}});
   app.post('/api/rooms/:code/leave',(req,res,next)=>{try{
     const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');
     rooms.expire(i.roomCode);const room=rooms.rooms.get(i.roomCode);
-    if(!room){res.status(404).json({error:'房间不存在或已过期，请检查房间码。'});return;}
+    if(!room){res.status(rooms.closed(i.roomCode)?410:404).json({error:rooms.closed(i.roomCode)?'房间已关闭。请创建或加入其他房间。':'房间不存在或已过期，请检查房间码。'});return;}
     if(room.closedAt!==undefined){res.status(410).json({error:'房间已解散。请创建或加入其他房间。'});return;}
     try{rooms.authenticate(i);}catch{res.status(401).json({error:'退出凭据无效。'});return;}
     const result=rooms.leave(i);res.json(result);
@@ -60,7 +71,7 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
       try{if(!socketRate.accept(key))throw Error('动画记录请求太频繁。');const query=z.object({afterId:z.number().int().nonnegative()}).strict().parse(input);ack({ok:true,batch:publicEventBatch(rooms.get(i.roomCode),i.playerId,query.afterId)});}
       catch(error){ack({ok:false,error:error instanceof z.ZodError?'动画记录请求格式不正确。':error instanceof Error?error.message:'无法读取动画记录。'});}
     });
-    socket.on('action',(input:unknown,ack:unknown)=>{let result;let parsed:ActionEnvelope|undefined;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。');parsed=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,parsed);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);if(result.ok&&parsed?.action.type==='close'&&rooms.rooms.get(i.roomCode)?.closedAt!==undefined){notifyClosed(i.roomCode);return;}broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
+    socket.on('action',(input:unknown,ack:unknown)=>{let result;let parsed:ActionEnvelope|undefined;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。');parsed=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,parsed);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);if(result.ok&&parsed?.action.type==='close'&&(rooms.rooms.get(i.roomCode)?.closedAt!==undefined||rooms.closed(i.roomCode))){resuming.delete(i.roomCode);notifyClosed(i.roomCode);return;}broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
     socket.on('disconnect',()=>{const list=connections.get(key);list?.delete(socket.id);if(!list?.size){connections.delete(key);rooms.presence(i.roomCode,i.playerId,false);broadcast(i.roomCode);}});
   });
   const timer=setInterval(()=>{for(const code of rooms.tick()){broadcast(code);scheduleContinuation(code);}},250);timer.unref();

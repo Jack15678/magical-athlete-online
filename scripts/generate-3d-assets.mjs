@@ -22,7 +22,7 @@ const materials = Object.fromEntries(Object.entries(colors).map(([id, color]) =>
 let root;
 function mesh(geometry, color, position = [0, 0, 0], scale = [1, 1, 1], rotation = [0, 0, 0]) {
   const m = new T.Mesh(geometry, materials[color]);
-  m.position.fromArray(position); m.scale.fromArray(scale); m.rotation.fromArray(rotation); root.add(m); return m;
+  m.position.fromArray(position); m.scale.fromArray(scale); m.rotation.fromArray(rotation); m.userData.partType = geometry.type; root.add(m); return m;
 }
 function orb(color, x, y, z, sx, sy = sx, sz = sx) { return mesh(new T.SphereGeometry(1, 12, 8), color, [x, y, z], [sx, sy, sz]); }
 function box(color, x, y, z, sx, sy, sz, rotation = [0, 0, 0]) { return mesh(new T.BoxGeometry(sx, sy, sz, 1, 1, 1), color, [x, y, z], [1, 1, 1], rotation); }
@@ -37,8 +37,8 @@ function rod(color, from, to, radius = 0.025) {
 function tube(color, points, radius = 0.04) { return mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(p => new T.Vector3(...p))), Math.max(6, points.length * 4), radius, 7, false), color); }
 function face(x = 0, y = 0.7, z = 0.21, gap = 0.09, size = 0.052) {
   for (const direction of [-1, 1]) {
-    orb('paper', x + direction * gap, y, z, size, size * 1.22, size * 0.48);
-    orb('ink', x + direction * gap + 0.01, y - 0.006, z + size * 0.44, size * 0.4, size * 0.58, size * 0.2);
+    orb('paper', x + direction * gap, y, z, size, size * 1.22, size * 0.48).userData.role = 'eye-white';
+    orb('ink', x + direction * gap + 0.01, y - 0.006, z + size * 0.44, size * 0.4, size * 0.58, size * 0.2).userData.role = 'eye-pupil';
   }
   tube('ink', [[x - gap * 0.5, y - size * 1.5, z], [x, y - size * 1.8, z + 0.01], [x + gap * 0.5, y - size * 1.5, z]], 0.011);
 }
@@ -154,6 +154,26 @@ const builders = {
   'third-wheel'() { ring('red', 0, 0.36, 0, 0.24, 0.068); ring('paper', 0, 0.36, 0.027, 0.15, 0.035); orb('yellow', 0, 0.36, 0.04, 0.06); for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3; rod('ink', [0, 0.36, 0.04], [Math.cos(a) * 0.17, 0.36 + Math.sin(a) * 0.17, 0.04], 0.015); } orb('blue', 0, 0.76, 0, 0.18, 0.15, 0.15); face(0, 0.78, 0.14, 0.072, 0.043); },
   twin() { feet('ink', 0.16); for (const [d, color] of [[-1, 'pink'], [1, 'blue']]) { orb(color, d * 0.135, 0.35, 0, 0.14, 0.25, 0.14); orb(color, d * 0.135, 0.68, 0, 0.135, 0.17, 0.14); face(d * 0.135, 0.7, 0.135, 0.052, 0.033); } rod('yellow', [-0.13, 0.45, 0], [0.13, 0.45, 0], 0.04); },
 };
+
+// Blender keeps the original per-character silhouettes as editable named parts.
+// This intermediate JSON is generated from the same established 36 designs.
+if (process.argv.includes('--blender-source')) {
+  const designs = [];
+  for (const [id, build] of Object.entries(builders)) {
+    root = new T.Group(); build(); root.updateMatrixWorld(true);
+    designs.push({ id, parts: root.children.map((part, index) => ({
+      name: `GEO-${id}-${String(index).padStart(2, '0')}`, type: part.geometry.type,
+      parameters: part.geometry.parameters, color: part.material.name, role: part.userData.role,
+      matrix: part.matrixWorld.toArray(),
+      positions: [...part.geometry.attributes.position.array], indices: [...(part.geometry.index?.array ?? [])],
+    })) });
+  }
+  const path = fileURLToPath(new URL('../tmp/blender-source.json', import.meta.url));
+  await mkdir(fileURLToPath(new URL('../tmp/', import.meta.url)), { recursive: true });
+  await writeFile(path, JSON.stringify({ colors, designs }));
+  console.log(`Blender source: ${path}, ${designs.length} distinct character designs.`);
+  process.exit(0);
+}
 
 const scene = new T.Scene(); scene.name = 'OriginalToyRacers';
 const manifest = { version: 1, units: 'metres', up: '+Y', forward: '+Z', pivot: 'ground-centre', models: [] };

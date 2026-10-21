@@ -1,18 +1,35 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import type { GameAction, Room } from '../../src/shared/types.js';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
 const smoke=process.env.RELAY_SMOKE==='1';
-async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
+async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await boundedRead(page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))),'capture-frame read');await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
+async function boundedRead<T>(operation:Promise<T>,label:string,timeoutMs=20_000):Promise<T>{
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  try{return await Promise.race([operation,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error(`${label} exceeded ${timeoutMs}ms`)),timeoutMs);})]);}
+  finally{clearTimeout(timer);}
+}
+/** Keep failure diagnostics in the Node test process. A stalled renderer must
+ * not be queried again while recording the original failure. */
+function publicRoom(room:Room){
+  const game=room.game,pending=game.pending;
+  return{code:room.code,version:room.version,mode:room.mode,phase:game.phase,round:game.round,currentRacerId:game.currentRacerId,
+    turnStage:pending?'choice':game.flags.needsBegin?'starting':game.flags.awaitRoll?'roll':'resolving',
+    continuation:!!game.flags.continuation,needsBegin:!!game.flags.needsBegin,baseTurnOrder:game.baseTurnOrder,
+    players:game.players.map(player=>({id:player.id,seat:player.seat,name:player.name,connected:player.connected,isAI:player.isAI,selected:player.selection.length>0,handCount:player.hand.length})),
+    racers:game.racers.map(({id,playerId,characterId,position,tripped,finished,eliminated,rank})=>({id,playerId,characterId,position,tripped,finished,eliminated,rank})),
+    pending:pending?{id:pending.id,kind:pending.kind,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,optionCount:pending.options.length}:undefined,
+    logs:game.logs.slice(-12).map(({id,type,text,source,targets,cause})=>({id,type,text,source,targets,cause})),results:game.results};
+}
 async function saved(page:Page,code:string):Promise<Room>{
   // Transfer the game's documented JSON format rather than Playwright's deeply
   // nested evaluation-value encoding (which can reject large event histories).
-  const json=await page.evaluate(async code=>{
+  const json=await boundedRead(page.evaluate(async code=>{
     const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('magical-athlete-browser-authority-v1',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
     try{return await new Promise<string>((resolve,reject)=>{const r=db.transaction('rooms').objectStore('rooms').get(code);r.onsuccess=()=>resolve(JSON.stringify(r.result.room));r.onerror=()=>reject(r.error);});}finally{db.close();}
-  },code);
+  },code),'authority archive read');
   return JSON.parse(json) as Room;
 }
 
@@ -21,10 +38,28 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
   // The default manual mode retains the complete four-race game and rematch.
   if(process.env.CI&&n===8)test.setTimeout(900_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
+  let latestPublicRoom:ReturnType<typeof publicRoom>|undefined;
+  const uiSnapshots:unknown[]=[];
   const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
   let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};
   const mark=(stage:string,action:string,room?:Room,step=checkpoint.step)=>{checkpoint={stage,action,phase:room?.game.phase??checkpoint.phase,round:room?.game.round??checkpoint.round,step,version:room?.version??checkpoint.version,logId:room?.game.logs.at(-1)?.id??checkpoint.logId,elapsedMs:Date.now()-startedAt};};
   const progress=()=>console.log(`[relay-${n}] checkpoint ${JSON.stringify(checkpoint)}`);
+  const cacheActingUI=async(page:Page,seat:number,action:string)=>{
+    let ui:unknown;
+    try{ui=await boundedRead(page.evaluate(()=>{
+      const board=document.querySelector<HTMLElement>('[data-testid="board-3d"]'),shell=document.querySelector<HTMLElement>('.game-shell');
+      const roll=document.querySelector<HTMLButtonElement>('[data-testid="roll-button"]'),choice=document.querySelector<HTMLElement>('[data-testid="skill-choice"]');
+      const bounds=roll?.getBoundingClientRect();
+      return{roomVersion:shell?.dataset.roomVersion,visibility:document.visibilityState,focused:document.hasFocus(),
+        connection:document.querySelector('.race-match-label .connection,.room-label .connection')?.textContent?.trim(),connectionBanner:document.querySelector('.connection-banner')?.textContent?.trim(),
+        phase:board?.dataset.phase,cameraState:board?.dataset.cameraState,cameraTarget:board?.dataset.cameraTarget,
+        loadedModels:board?.dataset.loadedModels,modelFallbacks:board?.dataset.modelFallbacks,drawCalls:board?.dataset.drawCalls,triangles:board?.dataset.triangles,quality:board?.dataset.quality,
+        status:document.querySelector('[data-testid="animation-phase"]')?.textContent?.trim(),
+        rollButton:roll?{text:roll.textContent?.trim(),disabled:roll.disabled,bounds:bounds?{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}:undefined}:null,
+        skillChoice:choice?{title:choice.querySelector('h2')?.textContent,buttonCount:choice.querySelectorAll('button').length,enabledButtons:choice.querySelectorAll('button:not(:disabled)').length}:null};
+    }),'acting-page public UI read',2_000);}catch(error){ui={readError:error instanceof Error?error.message:String(error)};}
+    uiSnapshots.push({elapsedMs:Date.now()-startedAt,step:checkpoint.step,seat,action,ui});if(uiSnapshots.length>20)uiSnapshots.shift();
+  };
   const observe=(page:Page)=>{
     page.on('pageerror',e=>errors.push(e.stack??e.message));
     page.on('websocket',ws=>{
@@ -53,24 +88,24 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
       const p=pages[i]!;await p.goto(`${url}/room/${code}`);await p.getByLabel('你的昵称').fill(`网页同学${i}`);await p.getByRole('button',{name:'加入这场胡闹'}).click();await expect(p.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
     }
     for(const p of pages){await synced(p,(await saved(host,code)).version);await p.getByRole('button',{name:'我准备好了',exact:true}).click();await expect(p.getByRole('button',{name:'取消准备',exact:true})).toBeVisible();}
-    await host.getByRole('button',{name:'邀请朋友',exact:true}).click();expect(await host.evaluate(()=>navigator.clipboard.readText())).toBe(`${url}/room/${code}`);
-    const ids=await Promise.all(pages.map(p=>p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)));expect(new Set(ids).size).toBe(n);
-    for(const guest of pages.slice(1))expect(await guest.evaluate(async()=>(await indexedDB.databases()).some(db=>db.name==='magical-athlete-browser-authority-v1'))).toBe(false);
+    await host.getByRole('button',{name:'邀请朋友',exact:true}).click();expect(await boundedRead(host.evaluate(()=>navigator.clipboard.readText()),'clipboard read')).toBe(`${url}/room/${code}`);
+    const ids=await Promise.all(pages.map(p=>boundedRead(p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code),'player identity read')));expect(new Set(ids).size).toBe(n);
+    for(const guest of pages.slice(1))expect(await boundedRead(guest.evaluate(async()=>(await indexedDB.databases()).some(db=>db.name==='magical-athlete-browser-authority-v1')),'archive-presence read')).toBe(false);
     await synced(host,(await saved(host,code)).version);await host.getByRole('button',{name:'开始选秀',exact:true}).click();await expect.poll(async()=>(await saved(host,code)).game.phase).toBe('draft');
     while((await saved(host,code)).game.phase==='draft'){
-      const draftRoom=await saved(host,code),d=draftRoom.game.draft!;mark('draft',`pick-${d.cursor}`,draftRoom);const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;await synced(p,(await saved(host,code)).version);
+      const draftRoom=await saved(host,code),d=draftRoom.game.draft!;latestPublicRoom=publicRoom(draftRoom);mark('draft',`pick-${d.cursor}`,draftRoom);const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;await synced(p,(await saved(host,code)).version);
       await p.locator('.character-card .character-art').first().click();const confirm=p.getByRole('button',{name:/确认选择/});if(await confirm.count())await confirm.click();
       await expect.poll(async()=>(await saved(host,code)).game.draft?.cursor??-1).not.toBe(d.cursor);
     }
     let steps=0,hostRecovered=false,guestRecovered=false,raceShot=false;
     while(true){
-      const room=await saved(host,code),g=room.game;
+      const room=await saved(host,code),g=room.game;latestPublicRoom=publicRoom(room);
       if(g.phase==='finished'||(smoke&&g.phase==='results'&&g.results.length>=1))break;
       // Turn setup now belongs to the authority and may expose a skill instead
       // of a die button. Wait for that committed transition before choosing UI.
       if(g.phase==='race'&&!g.pending&&(g.flags.needsBegin||g.flags.continuation)){await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);continue;}
       mark('play',g.pending?`choose-${g.pending.kind}`:g.phase==='selection'?'select':g.phase==='results'?'next':'roll',room,++steps);
-      if(g.round!==lastPrintedRound||steps%50===0){lastPrintedRound=g.round;progress();}
+      if(g.round!==lastPrintedRound||steps%50===0||(process.env.CI&&n===8&&steps%10===0)){lastPrintedRound=g.round;progress();}
       if(steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
       if(g.phase==='selection'){
         mark('selection','lock-racer',room,steps);
@@ -93,7 +128,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
       if(!guestRecovered&&g.phase==='race'){
         mark('guest-recovery','offline-reload',room,steps);
         const p=pages.at(-1)!;await contexts.at(-1)!.setOffline(true);await p.reload().catch(()=>{});await contexts.at(-1)!.setOffline(false);await p.goto(`${url}/room/${code}`);await expect(p.getByText('已连接',{exact:true})).toBeVisible();
-        expect(await p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)).toBe(ids.at(-1));guestRecovered=true;continue;
+        expect(await boundedRead(p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code),'recovered identity read')).toBe(ids.at(-1));guestRecovered=true;continue;
       }
       if(!raceShot&&g.phase==='race')mark('scene','capture-desktop-mobile',room,steps);
       if(!raceShot&&g.phase==='race'){for(const scene of [host,pages.at(-1)!]){await expect(scene.getByTestId('board-3d').locator('.board-webgl canvas')).toBeVisible();await expect(scene.getByTestId('scene-racer')).toHaveCount(n===2?4:n);}await captureRace(host,`test-results/browser-authority/race-${n}.png`);await captureRace(pages.at(-1)!,`test-results/browser-authority/race-mobile-${n}.png`);raceShot=true;}
@@ -104,6 +139,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
       const actionLabel=action.type==='choose'?`choose-${g.pending!.kind}-${action.optionId}`:action.type;
       mark('submit',actionLabel,room,steps);
       const p=pages[ids.indexOf(playerId)]!;await synced(p,room.version);
+      if(process.env.CI&&n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click();
       else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click();
       else await p.getByRole('button',{name:'掷骰子',exact:true}).click();
@@ -119,9 +155,15 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
       expect((await saved(host,code)).game.players.every(p=>p.score===0&&p.hand.length===0)).toBe(true);
     }
     mark('layout','check-overflow',await saved(host,code),steps);
-    for(const p of pages)expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    for(const p of pages)expect(await boundedRead(p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'layout-width read')).toBe(true);
   }catch(error){
     bodyFailed=true;
+    if(n===8)writeFileSync('test-results/browser-authority/diagnostics8.json',JSON.stringify({
+      capturedAt:new Date().toISOString(),checkpoint:{...checkpoint,elapsedMs:Date.now()-startedAt},
+      failure:{name:error instanceof Error?error.name:'Error',message:error instanceof Error?error.message.split('\n')[0]:String(error).split('\n')[0]},
+      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,
+      limitations:'UI snapshots are cached before actions with a 2s read limit; failure capture does not query potentially frozen browser pages. No tokens, deck, RNG or private hands are included.',
+    },null,2));
     console.error(`[relay-${n}] original-error ${error instanceof Error?error.stack??error.message:String(error)}\n[relay-${n}] last-checkpoint ${JSON.stringify({...checkpoint,elapsedMs:Date.now()-startedAt})}`);
     throw error;
   }finally{

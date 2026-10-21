@@ -6,14 +6,18 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { CHARACTER_IDS } from '../src/shared/characters.js';
 
-test('shipping toy GLB decodes every racer within mobile geometry and ground-pivot budgets', async () => {
-  const asset = new URL('../public/models/toy-racers.glb', import.meta.url);
+for (const variant of [
+  { name: 'toy-racers', bytes: 2 * 1024 * 1024, triangles: 220_000, modelTriangles: 10_000 },
+  { name: 'toy-racers-economy', bytes: 1024 * 1024, triangles: 80_000, modelTriangles: 4_000 },
+]) test(`shipping ${variant.name} GLB decodes every racer within geometry and ground-pivot budgets`, async () => {
+  const asset = new URL(`../public/models/${variant.name}.glb`, import.meta.url);
   const bytes = await readFile(asset);
-  const manifest = JSON.parse(await readFile(new URL('../public/models/toy-racers.manifest.json', import.meta.url), 'utf8'));
+  const manifest = JSON.parse(await readFile(new URL(`../public/models/${variant.name}.manifest.json`, import.meta.url), 'utf8'));
   assert.equal(manifest.models.length, CHARACTER_IDS.length);
   assert.deepEqual(manifest.models.map((model: { id: string }) => model.id).sort(), [...CHARACTER_IDS].sort());
   assert.equal(bytes.byteLength, manifest.optimizedBytes, 'manifest must describe the actual shipped compressed asset');
-  assert.ok(bytes.byteLength < 600 * 1024, 'all 36 models must fit a single small mobile download');
+  assert.ok(bytes.byteLength < variant.bytes, 'all 36 refined models must fit the download budget for this quality');
+  assert.match(manifest.generator, /^Blender 5\./, 'shipping models must come from the real Blender refinement pipeline');
 
   const binary = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   const header = new DataView(binary);
@@ -54,9 +58,10 @@ test('shipping toy GLB decodes every racer within mobile geometry and ground-piv
       sharedMaterials.add(material);
     });
     assert.ok(draws >= 2 && draws <= 8, `${id} has an excessive draw-call budget`);
-    assert.ok(triangles < 5000, `${id} has an excessive triangle budget`);
+    assert.ok(triangles < variant.modelTriangles, `${id} has an excessive triangle budget`);
     allTriangles += triangles;
   }
   assert.ok(sharedMaterials.size <= 10, 'all models must reuse the shared toy palette');
-  assert.ok(allTriangles < 90_000, 'full 36-character catalog must stay low-poly');
+  assert.ok(allTriangles < variant.triangles, 'full 36-character catalog must stay within its quality budget');
+  assert.equal(allTriangles, manifest.totalTriangles, 'manifest must describe the decoded shipping triangles');
 });

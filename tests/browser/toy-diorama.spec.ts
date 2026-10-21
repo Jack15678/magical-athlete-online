@@ -321,7 +321,7 @@ test('a failed GLB fetch preserves the running scene and retries into the real c
   const retryGate = new Promise<void>(resolve => { releaseRetry = resolve; });
   let requests = 0;
   try {
-    await room.host.route('**/models/toy-racers.glb', async route => {
+    await room.host.route('**/models/toy-racers.glb*', async route => {
       requests++;
       if (requests === 1) { await route.abort('failed'); return; }
       // Hold the subsequent successful request only until the real fallback

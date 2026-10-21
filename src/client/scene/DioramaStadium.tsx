@@ -13,8 +13,26 @@ const WIDTH = BOARD_CENTER_SPAN.width + TILE * 1.95;
 const DEPTH = BOARD_CENTER_SPAN.depth + TILE * 2.05;
 const START_EXTENSION = TILE * 3;
 
+/** A shared, tiny roughness stamp gives the toy surfaces a soft handmade finish
+ * without geometry, external images, extra materials or post-processing. */
+function mouldGrain() {
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+  const context = canvas.getContext('2d')!, pixels = context.createImageData(64, 64);
+  let seed = 73;
+  for (let index = 0; index < pixels.data.length; index += 4) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) | 0;
+    const value = 190 + ((seed >>> 24) % 35);
+    pixels.data.set([value, value, value, 255], index);
+  }
+  context.putImageData(pixels, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(4, 4);
+  return texture;
+}
+
 function useKit() {
   const kit = useMemo(() => ({
+    grain: mouldGrain(),
     tile: new RoundedBoxGeometry(1.91, .38, 1.91, 2, .105),
     top: new RoundedBoxGeometry(1.85, .055, 1.85, 2, .08),
     start: new RoundedBoxGeometry(1.91 + START_EXTENSION, .38, 2.65, 2, .105),
@@ -78,7 +96,7 @@ export function DioramaTile({ index, track, triggered, kit }: { index: number; t
   const texture = useMemo(() => special ? specialTileTexture(special.kind, special.move, index, angle) : printTexture(index), [index, special?.kind, special?.move, angle]);
   useEffect(() => () => texture.dispose(), [texture]);
   const color = index === 0 ? C.darkMint : index === 30 ? C.coral : special?.kind === 'star' ? '#f1c552' : special?.kind === 'trip' ? C.coral : special?.kind === 'arrow' ? (special.move ?? 0) < 0 ? '#b69bd1' : '#74c7af' : C.cream;
-  const top = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: .57, emissive: color }), [color]);
+  const top = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: .74, roughnessMap: kit.grain, emissive: color }), [color, kit.grain]);
   useEffect(() => () => top.dispose(), [top]);
   useFrame(({ clock }) => { top.emissiveIntensity = triggered ? .16 + Math.sin(clock.elapsedTime * 8) * .09 : 0; });
   const extended = index === 0, center = extended ? -START_EXTENSION / 2 : 0;

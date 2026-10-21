@@ -1,0 +1,488 @@
+{
+  "method": {
+    "source": "Existing Edge browser requestAnimationFrame samples of DOM camera attributes, rounded to 0.01 world/zoom units.",
+    "frameInterpretation": "Sampling intervals and distinct rounded camera-update intervals are reported separately. These are not GPU frame timings, pawn animation frame timings, or real-device FPS.",
+    "translation": "Project camera target delta onto the current normal-view camera right/up vectors and multiply by mean orthographic zoom, approximating CSS pixels; excludes motion caused by changing zoom and camera orientation.",
+    "speed": "Raw adjacent-sample speed is sensitive to quantization and asynchronous DOM/render sampling. Distinct-update intervals and >=100ms net-displacement windows are also reported; raw rate spikes do not by themselves verify a rendered speed-limit violation.",
+    "rounding": "Each rounded x/z reading has <=0.005 world units error; a pairwise target delta can have <=0.01 error on each horizontal axis. Bound is conservatively sqrt(2)*0.01*meanZoom CSS pixels.",
+    "validationLimitations": [
+      "Mobile is a 390x844 desktop Edge viewport simulation, not a physical phone performance measurement.",
+      "The supplied capture ends before camera convergence; tail position is not a settled-frame assertion.",
+      "Screenshots during the trace can contribute sampling gaps; gaps alone do not establish dropped rendered frames."
+    ]
+  },
+  "devices": {
+    "desktop": {
+      "source": "docs/qa/duo-upgrade/movement-desktop.json",
+      "sourceSha256": "9956087c310b95f81cd35cf66e6f42c25461ed04389f5e5e4251da51059742fb",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "loadedModels": 4,
+      "triangles": 82048,
+      "drawCalls": 213,
+      "samples": 509,
+      "durationMs": 8321.9,
+      "phaseCounts": {
+        "idle": 316,
+        "dice": 106,
+        "move": 87
+      },
+      "nonFiniteOrNonPositiveZoomIndices": [],
+      "nonMonotonicTimeIndices": [],
+      "requestAnimationFrameSampleIntervals": {
+        "count": 508,
+        "minMs": 1,
+        "medianMs": 20.25,
+        "p95Ms": 28.865,
+        "maxMs": 135.5
+      },
+      "movePhaseSampleIntervals": {
+        "count": 86,
+        "minMs": 3.6,
+        "medianMs": 20.4,
+        "p95Ms": 22.425,
+        "maxMs": 37.4
+      },
+      "distinctRoundedCameraUpdateIntervals": {
+        "count": 183,
+        "minMs": 2,
+        "medianMs": 24.9,
+        "p95Ms": 49.07,
+        "maxMs": 2769.9
+      },
+      "cameraUpdateBurstsUnder50ms": {
+        "count": 174,
+        "minMs": 2,
+        "medianMs": 24.65,
+        "p95Ms": 37.04,
+        "maxMs": 49.1
+      },
+      "movePhaseDistinctCameraUpdateIntervals": {
+        "count": 0,
+        "minMs": null,
+        "medianMs": null,
+        "p95Ms": null,
+        "maxMs": null
+      },
+      "samplingGaps": {
+        "over50Ms": 2,
+        "over100Ms": 1,
+        "over250Ms": 0,
+        "largest": {
+          "index": 13,
+          "fromAt": 2114.4,
+          "toAt": 2249.9,
+          "dtMs": 135.5,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 8.317,
+          "translationPxPerSec": 61.378,
+          "zoomRelativeChangePercent": 1.153,
+          "zoomLogPerSec": 0.086,
+          "quantizationBoundPx": 1.67
+        }
+      },
+      "cameraTranslation": {
+        "maxAdjacentStep": {
+          "index": 421,
+          "fromAt": 8634.9,
+          "toAt": 8664.3,
+          "dtMs": 29.4,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 27.61,
+          "translationPxPerSec": 939.099,
+          "zoomRelativeChangePercent": 0.017,
+          "zoomLogPerSec": 0.006,
+          "quantizationBoundPx": 1.713
+        },
+        "maxAdjacentSpeed": {
+          "index": 15,
+          "fromAt": 2335,
+          "toAt": 2337.9,
+          "dtMs": 2.9,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 22.99,
+          "translationPxPerSec": 7927.426,
+          "zoomRelativeChangePercent": 3.202,
+          "zoomLogPerSec": 11.222,
+          "quantizationBoundPx": 1.582
+        },
+        "maxDistinctUpdateSpeed": {
+          "index": 15,
+          "fromAt": 2335,
+          "toAt": 2337.9,
+          "dtMs": 2.9,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 22.99,
+          "translationPxPerSec": 7927.426,
+          "zoomRelativeChangePercent": 3.202,
+          "zoomLogPerSec": 11.222,
+          "quantizationBoundPx": 1.582,
+          "fromIndex": 14
+        },
+        "max100msNetWindowSpeed": {
+          "index": 425,
+          "fromAt": 8634.9,
+          "toAt": 8754.9,
+          "dtMs": 120,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 95.978,
+          "translationPxPerSec": 799.813,
+          "zoomRelativeChangePercent": 0.033,
+          "zoomLogPerSec": 0.003,
+          "quantizationBoundPx": 1.713
+        },
+        "stepsOver50Px": 0,
+        "adjacentStepsOver720pxPerSecWithRoundingTolerance": 11,
+        "largeSteps": [],
+        "outOfBoundExamples": [
+          {
+            "index": 15,
+            "fromAt": 2335,
+            "toAt": 2337.9,
+            "dtMs": 2.9,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 22.99,
+            "translationPxPerSec": 7927.426,
+            "zoomRelativeChangePercent": 3.202,
+            "zoomLogPerSec": 11.222,
+            "quantizationBoundPx": 1.582
+          },
+          {
+            "index": 352,
+            "fromAt": 7001.2,
+            "toAt": 7004.8,
+            "dtMs": 3.6,
+            "phase": "idle",
+            "state": "self",
+            "translationPx": 21.621,
+            "translationPxPerSec": 6005.968,
+            "zoomRelativeChangePercent": 3.295,
+            "zoomLogPerSec": 9.005,
+            "quantizationBoundPx": 1.06
+          },
+          {
+            "index": 357,
+            "fromAt": 7053.2,
+            "toAt": 7055.2,
+            "dtMs": 2,
+            "phase": "idle",
+            "state": "self",
+            "translationPx": 8.929,
+            "translationPxPerSec": 4464.603,
+            "zoomRelativeChangePercent": 1.233,
+            "zoomLogPerSec": 6.128,
+            "quantizationBoundPx": 1.108
+          },
+          {
+            "index": 395,
+            "fromAt": 7939.7,
+            "toAt": 7969.3,
+            "dtMs": 29.6,
+            "phase": "idle",
+            "state": "self",
+            "translationPx": 25.65,
+            "translationPxPerSec": 866.546,
+            "zoomRelativeChangePercent": 0.328,
+            "zoomLogPerSec": 0.111,
+            "quantizationBoundPx": 1.682
+          },
+          {
+            "index": 397,
+            "fromAt": 8000.4,
+            "toAt": 8015.6,
+            "dtMs": 15.2,
+            "phase": "idle",
+            "state": "self",
+            "translationPx": 22.003,
+            "translationPxPerSec": 1447.598,
+            "zoomRelativeChangePercent": 0.201,
+            "zoomLogPerSec": 0.132,
+            "quantizationBoundPx": 1.69
+          }
+        ]
+      },
+      "cameraZoom": {
+        "min": 73.75,
+        "max": 121.18,
+        "maxAdjacentRelativeChange": {
+          "index": 352,
+          "fromAt": 7001.2,
+          "toAt": 7004.8,
+          "dtMs": 3.6,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 21.621,
+          "translationPxPerSec": 6005.968,
+          "zoomRelativeChangePercent": 3.295,
+          "zoomLogPerSec": 9.005,
+          "quantizationBoundPx": 1.06
+        },
+        "max100msLogRate": {
+          "index": 360,
+          "fromAt": 7001.2,
+          "toAt": 7114.1,
+          "dtMs": 112.9,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 65.444,
+          "translationPxPerSec": 579.663,
+          "zoomRelativeChangePercent": 9.776,
+          "zoomLogPerSec": 0.826,
+          "quantizationBoundPx": 1.094
+        }
+      },
+      "tail": {
+        "at": 10351.099999904633,
+        "x": 1.03,
+        "z": 3.07,
+        "zoom": 121.18,
+        "phase": "idle",
+        "state": "self"
+      }
+    },
+    "mobile": {
+      "source": "docs/qa/duo-upgrade/movement-mobile.json",
+      "sourceSha256": "d3dcd7c384c3cf69ea01b20631aee5ffdd5ba0819aa334fbe6bcf109c59fb5fa",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "loadedModels": 4,
+      "triangles": 27452,
+      "drawCalls": 117,
+      "samples": 1635,
+      "durationMs": 6982.8,
+      "phaseCounts": {
+        "idle": 658,
+        "dice": 569,
+        "move": 408
+      },
+      "nonFiniteOrNonPositiveZoomIndices": [],
+      "nonMonotonicTimeIndices": [],
+      "requestAnimationFrameSampleIntervals": {
+        "count": 1634,
+        "minMs": 0.6,
+        "medianMs": 4.2,
+        "p95Ms": 4.6,
+        "maxMs": 47.2
+      },
+      "movePhaseSampleIntervals": {
+        "count": 407,
+        "minMs": 2.3,
+        "medianMs": 4.2,
+        "p95Ms": 4.7,
+        "maxMs": 17.5
+      },
+      "distinctRoundedCameraUpdateIntervals": {
+        "count": 582,
+        "minMs": 1.8,
+        "medianMs": 4.2,
+        "p95Ms": 16.7,
+        "maxMs": 3120.9
+      },
+      "cameraUpdateBurstsUnder50ms": {
+        "count": 575,
+        "minMs": 1.8,
+        "medianMs": 4.2,
+        "p95Ms": 12.6,
+        "maxMs": 50
+      },
+      "movePhaseDistinctCameraUpdateIntervals": {
+        "count": 0,
+        "minMs": null,
+        "medianMs": null,
+        "p95Ms": null,
+        "maxMs": null
+      },
+      "samplingGaps": {
+        "over50Ms": 0,
+        "over100Ms": 0,
+        "over250Ms": 0,
+        "largest": {
+          "index": 19,
+          "fromAt": 2028,
+          "toAt": 2075.2,
+          "dtMs": 47.2,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 7.923,
+          "translationPxPerSec": 167.859,
+          "zoomRelativeChangePercent": 0.817,
+          "zoomLogPerSec": 0.174,
+          "quantizationBoundPx": 0.862
+        }
+      },
+      "cameraTranslation": {
+        "maxAdjacentStep": {
+          "index": 20,
+          "fromAt": 2075.2,
+          "toAt": 2105.3,
+          "dtMs": 30.1,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 30.391,
+          "translationPxPerSec": 1009.657,
+          "zoomRelativeChangePercent": 3.015,
+          "zoomLogPerSec": 1.017,
+          "quantizationBoundPx": 0.845
+        },
+        "maxAdjacentSpeed": {
+          "index": 21,
+          "fromAt": 2105.3,
+          "toAt": 2107.1,
+          "dtMs": 1.8,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 18.268,
+          "translationPxPerSec": 10149.037,
+          "zoomRelativeChangePercent": 1.936,
+          "zoomLogPerSec": 10.864,
+          "quantizationBoundPx": 0.824
+        },
+        "maxDistinctUpdateSpeed": {
+          "index": 21,
+          "fromAt": 2105.3,
+          "toAt": 2107.1,
+          "dtMs": 1.8,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 18.268,
+          "translationPxPerSec": 10149.037,
+          "zoomRelativeChangePercent": 1.936,
+          "zoomLogPerSec": 10.864,
+          "quantizationBoundPx": 0.824,
+          "fromIndex": 20
+        },
+        "max100msNetWindowSpeed": {
+          "index": 32,
+          "fromAt": 2075.2,
+          "toAt": 2177.8,
+          "dtMs": 102.6,
+          "phase": "dice",
+          "state": "action",
+          "translationPx": 78.537,
+          "translationPxPerSec": 765.468,
+          "zoomRelativeChangePercent": 8.781,
+          "zoomLogPerSec": 0.896,
+          "quantizationBoundPx": 0.821
+        },
+        "stepsOver50Px": 0,
+        "adjacentStepsOver720pxPerSecWithRoundingTolerance": 6,
+        "largeSteps": [],
+        "outOfBoundExamples": [
+          {
+            "index": 12,
+            "fromAt": 1991.5,
+            "toAt": 1994.9,
+            "dtMs": 3.4,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 7.539,
+            "translationPxPerSec": 2217.231,
+            "zoomRelativeChangePercent": 0.782,
+            "zoomLogPerSec": 2.31,
+            "quantizationBoundPx": 0.882
+          },
+          {
+            "index": 20,
+            "fromAt": 2075.2,
+            "toAt": 2105.3,
+            "dtMs": 30.1,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 30.391,
+            "translationPxPerSec": 1009.657,
+            "zoomRelativeChangePercent": 3.015,
+            "zoomLogPerSec": 1.017,
+            "quantizationBoundPx": 0.845
+          },
+          {
+            "index": 21,
+            "fromAt": 2105.3,
+            "toAt": 2107.1,
+            "dtMs": 1.8,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 18.268,
+            "translationPxPerSec": 10149.037,
+            "zoomRelativeChangePercent": 1.936,
+            "zoomLogPerSec": 10.864,
+            "quantizationBoundPx": 0.824
+          },
+          {
+            "index": 23,
+            "fromAt": 2115.5,
+            "toAt": 2119.6,
+            "dtMs": 4.1,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 4.938,
+            "translationPxPerSec": 1204.434,
+            "zoomRelativeChangePercent": 0.555,
+            "zoomLogPerSec": 1.357,
+            "quantizationBoundPx": 0.813
+          },
+          {
+            "index": 30,
+            "fromAt": 2161.2,
+            "toAt": 2165.6,
+            "dtMs": 4.4,
+            "phase": "dice",
+            "state": "action",
+            "translationPx": 8.591,
+            "translationPxPerSec": 1952.549,
+            "zoomRelativeChangePercent": 1.312,
+            "zoomLogPerSec": 3.001,
+            "quantizationBoundPx": 0.793
+          }
+        ]
+      },
+      "cameraZoom": {
+        "min": 41.14,
+        "max": 62.64,
+        "maxAdjacentRelativeChange": {
+          "index": 1154,
+          "fromAt": 6915.9,
+          "toAt": 6919.7,
+          "dtMs": 3.8,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 15.516,
+          "translationPxPerSec": 4083.068,
+          "zoomRelativeChangePercent": 3.306,
+          "zoomLogPerSec": 8.559,
+          "quantizationBoundPx": 0.591
+        },
+        "max100msLogRate": {
+          "index": 1178,
+          "fromAt": 6915.9,
+          "toAt": 7019.5,
+          "dtMs": 103.6,
+          "phase": "idle",
+          "state": "self",
+          "translationPx": 48.378,
+          "translationPxPerSec": 466.967,
+          "zoomRelativeChangePercent": 10.209,
+          "zoomLogPerSec": 0.938,
+          "quantizationBoundPx": 0.612
+        }
+      },
+      "tail": {
+        "at": 8927.900000095367,
+        "x": -3.07,
+        "z": 1.03,
+        "zoom": 62.64,
+        "phase": "idle",
+        "state": "self"
+      }
+    }
+  }
+}

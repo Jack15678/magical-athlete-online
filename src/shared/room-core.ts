@@ -1,7 +1,9 @@
 import { createGame, startGame, applyGameAction, automaticAction } from '../engine/index.js';
-import { MAX_SPECTATORS, PLAYER_COLORS, ROOM_TTL_MS, RULES_STATUS } from './constants.js';
+import { MAX_SPECTATORS, PLAYER_COLORS, RULES_STATUS } from './constants.js';
 import type { ActionEnvelope, GameAction, Player, Room, RoomView } from './types.js';
 import type { RelayMember, RelayMetadata } from './relay.js';
+import { personalRoom, roomExpiry } from './room-lifecycle.js';
+import { publicCopyCardIds } from './character-info.js';
 
 /** Pure room policy shared by browser authority and future server adapters.
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
@@ -28,6 +30,7 @@ export function validateMetadata(meta: RelayMetadata): void {
   if(meta.members.some(m=>m.isAI!==undefined&&typeof m.isAI!=='boolean')||meta.members.find(m=>m.id===meta.authorityId)?.isAI||meta.members.find(m=>m.id===meta.adminHostId)?.isAI)throw Error('AI不能成为房主或计算设备。');
   if(meta.mode==='practice'&&(meta.maxPlayers!==1||meta.members.length!==1||meta.members[0]?.isAI))throw Error('练习模式只允许自己参加。');
   if (!meta.members.some(m => m.id === meta.authorityId) || !meta.members.some(m => m.id === meta.adminHostId)) throw Error('主持设备或房主管理身份无效。');
+  if(meta.ownerId!==undefined&&!meta.members.some(member=>member.id===meta.ownerId&&!member.isAI))throw Error('生命周期房主身份无效。');
 }
 export function memberPlayer(member: RelayMember): Player {
   return { ...member, connected:!!member.isAI||member.connected, color: PLAYER_COLORS[member.seat]!, ready: false, score: 0, hand: [], used: [], selection: [] };
@@ -35,13 +38,13 @@ export function memberPlayer(member: RelayMember): Player {
 export function createBrowserRoom(meta: RelayMetadata, seed: number, now: number): Room {
   validateMetadata(meta);
   if (meta.phase !== 'lobby') throw Error('主持设备没有这局的本地存档，无法恢复已开始的比赛。请创建新房间。');
-  const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
+  const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, ownerId:meta.ownerId??meta.authorityId,hostLeftAt:meta.hostLeftAt,createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
     spectators: structuredClone(meta.spectators ?? []), game: createGame([...meta.members].sort((a,b) => a.seat-b.seat).map(memberPlayer), seed,meta.mode) };
   if(meta.mode==='practice'||meta.mode==='ai'){room.game.players.forEach(p=>p.ready=true);startGame(room.game);setRoomDeadline(room,now);}
   return room;
 }
-/** Reconcile only relay-owned roster facts. Game state, hands and administrative
- * transfers remain authoritative in the already committed room. */
+/** Reconcile relay-owned roster and confirmed ownership. A local transfer's
+ * receipt is replayed separately until the relay confirms its new owner. */
 export function reconcileRoster(original: Room, meta: RelayMetadata, now: number): { room: Room; changed: boolean } {
   validateMetadata(meta);
   if (original.code !== meta.code || original.createdAt !== meta.createdAt || original.maxPlayers !== meta.maxPlayers || original.timeoutSeconds !== meta.timeoutSeconds || (original.mode??'multiplayer')!==(meta.mode??'multiplayer')) throw Error('房间配置与本地存档不一致，无法覆盖。');
@@ -50,6 +53,10 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   // never let a reconnect or administrative transfer reopen the room.
   if (room.closedAt !== undefined) return { room, changed: false };
   let changed = false;
+  const ownerId=meta.ownerId??meta.authorityId;
+  if(room.ownerId!==ownerId){room.ownerId=ownerId;changed=true;}
+  if(room.hostId!==meta.adminHostId){room.hostId=meta.adminHostId;changed=true;}
+  if(room.hostLeftAt!==meta.hostLeftAt){room.hostLeftAt=meta.hostLeftAt;changed=true;}
   // Only an explicit lobby leave removes a relay identity. Disconnections keep
   // members in metadata, preserving their seat and preparation preference.
   if (room.game.phase === 'lobby') {
@@ -71,10 +78,6 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   // A transiently absent connection never removes its identity or resets a hand.
   for (const p of room.game.players) if (!meta.members.some(m => m.id === p.id) && !p.isAI && p.connected) { p.connected = false; changed = true; }
   if (changed && room.game.phase === 'lobby') room.game.players.sort((a,b) => a.seat-b.seat);
-  if (!room.game.players.some(p => p.id === room.hostId && p.connected)) {
-    const next = room.game.players.find(p => p.connected&&!p.isAI);
-    if (next && next.id !== room.hostId) { room.hostId = next.id; changed = true; }
-  }
   if (changed) { room.version++; room.updatedAt = now; }
   return { room, changed };
 }
@@ -83,15 +86,18 @@ export function setRoomDeadline(room: Room, now: number): void {
 }
 export interface ReductionOptions { now: number; rematchSeed: number; automatic?: boolean }
 export function reduceRoomAction(original: Room, playerId: string, action: GameAction, options: ReductionOptions): Room {
-  if (options.now >= original.createdAt + ROOM_TTL_MS) throw Error('房间已达到3小时上限，请重新创建。');
+  if (options.now >= roomExpiry(original)) throw Error('房主离开超过30分钟，房间已关闭。');
   if (original.closedAt !== undefined) throw Error('房间已解散，请创建或加入其他房间。');
   const room = structuredClone(original); const p = room.game.players.find(p => p.id === playerId);
   if (!p) throw Error('你不在这个房间的参赛席位中。');
-  if (options.automatic) room.game.logs.push({ id: (room.game.logs.at(-1)?.id ?? 0)+1, type:'timeout', text:`${p.name}操作超时，按公开房规执行合法默认选择。` });
+  if (options.automatic) {
+    if(action.type==='choose'&&room.game.pending?.kind==='duel-roll'&&!p.isAI)throw Error('真人决斗投掷必须等待本人点击。');
+    room.game.logs.push({ id: (room.game.logs.at(-1)?.id ?? 0)+1, type:'timeout', text:`${p.name}操作超时，按公开房规执行合法默认选择。` });
+  }
   switch (action.type) {
     case 'close':
       if (room.hostId !== playerId) throw Error('只有房主能结束房间。');
-      room.closedAt = options.now; break;
+      room.closedAt = options.now;room.closeReason='dismissed'; break;
     case 'ready':
       if (room.game.phase !== 'lobby') throw Error('只能在大厅准备。');
       p.ready = action.ready; break;
@@ -102,7 +108,7 @@ export function reduceRoomAction(original: Room, playerId: string, action: GameA
     case 'transfer':
       if (room.hostId !== playerId) throw Error('只有房主能移交管理权。');
       if (!room.game.players.some(p => p.id === action.playerId && p.connected&&!p.isAI)) throw Error('请选择在线玩家。');
-      room.hostId = action.playerId; break;
+      room.hostId = action.playerId;room.ownerId=action.playerId;delete room.hostLeftAt;break;
     case 'rematch':
       if (room.hostId !== playerId || room.game.phase !== 'finished') throw Error('终局后由房主再来一局。');
       room.game = createGame(room.game.players.map(p => ({ ...p, ready:!!p.isAI, score:0, hand:[], used:[], selection:[] })), options.rematchSeed,room.mode);
@@ -134,6 +140,9 @@ export function validateActionEnvelope(value: unknown): ActionEnvelope {
     case 'ready': keys(a,['type','ready']); if (typeof a.ready !== 'boolean') throw Error('准备状态无效。'); action={type:'ready',ready:a.ready}; break;
     case 'start': case 'roll': case 'next': case 'rematch': case 'close': keys(a,['type']); action={type:a.type}; break;
     case 'draft': keys(a,['type','characterId']); action={type:'draft',characterId:string(a.characterId,50)}; break;
+    case 'practice-team':
+      keys(a,['type','characterIds']);if(!Array.isArray(a.characterIds)||a.characterIds.length!==4)throw Error('请选择4张练习角色牌。');
+      action={type:'practice-team',characterIds:a.characterIds.map(id=>string(id,50))};break;
     case 'select':
       keys(a,['type','characterIds']); if (!Array.isArray(a.characterIds) || a.characterIds.length < 1 || a.characterIds.length > 2) throw Error('请选择本场所需角色。');
       action={type:'select',characterIds:a.characterIds.map(id => string(id,50))}; break;
@@ -148,10 +157,11 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   const spectator = room.spectators?.some(p => p.id === playerId) ?? false;
   if (!room.game.players.some(p => p.id === playerId) && !spectator) throw Error('你不在这个房间的参赛席位中。');
   const g=room.game, pending=g.pending;
-  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.createdAt+ROOM_TTL_MS,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
+  const expiry=roomExpiry(room);
+  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.hostLeftAt===undefined?undefined:expiry,ownerId:room.ownerId??room.hostId,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
-    draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), currentRacerId:g.currentRacerId,
+    draft:g.draft ? structuredClone(g.draft) : undefined, racers:g.racers.map(r=>({...structuredClone(r),flags:{...structuredClone(r.flags),...publicCopyCardIds(r,g.logs)}})), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
     pending:pending?.playerId===playerId ? {id:pending.id,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,options:structuredClone(pending.options),optional:pending.optional,kind:pending.kind} : undefined,
     waitingFor:pending?.playerId, logs:structuredClone(g.logs.slice(-120)), results:structuredClone(g.results), lastRoll:g.lastRoll ? {...g.lastRoll} : undefined, rulesStatus:RULES_STATUS };
 }

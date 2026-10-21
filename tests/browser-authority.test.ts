@@ -4,7 +4,8 @@ import { IDBFactory, IDBDatabase, IDBObjectStore } from 'fake-indexeddb';
 import { BrowserAuthority, type AuthorityOptions } from '../src/browser/authority.js';
 import { automaticAction } from '../src/engine/index.js';
 import { createBrowserRoom, projectRoom, reduceRoomAction } from '../src/shared/room-core.js';
-import { PLAYER_COLORS, ROOM_TTL_MS } from '../src/shared/constants.js';
+import { PLAYER_COLORS } from '../src/shared/constants.js';
+import { ROOM_OWNER_AWAY_MS } from '../src/shared/room-lifecycle.js';
 import type { ActionEnvelope, GameAction, Room } from '../src/shared/types.js';
 import type { RelayMetadata } from '../src/shared/relay.js';
 
@@ -155,7 +156,7 @@ test('Roster adds only lobby members and connected status, with per-player priva
   assert.equal(peer.racers.length,0);assert.equal(peer.pending,undefined);assert.equal('rngState' in peer,false);assert.equal('queue' in peer,false);assert.equal('deck' in peer,false);
   const late={...meta,members:[...meta.members,{id:'late',name:'新访客',seat:2,connected:true}]};await assert.rejects(a.roster(late),/不能加入锁定/);
   await a.roster({...meta,members:meta.members.map(m=>({...m,connected:m.id!=='p0'}))});
-  assert.equal(a.view('p1').authorityOnline,false);assert.equal(a.view('p1').hostId,'p1');assert.equal(a.view('p1').authorityId,'p0');a.dispose();
+  assert.equal(a.view('p1').authorityOnline,false);assert.equal(a.view('p1').hostId,'p0');assert.equal(a.view('p1').authorityId,'p0');a.dispose();
 });
 
 test('Pending choices, queue, random history and receipts recover exactly; the host closure resets only the timeout window',async()=>{
@@ -252,14 +253,25 @@ test('explicit lobby departures free seats before a replacement joins, without c
   assert.equal(a.view('p0').players[0]!.ready,true);assert.throws(()=>a.view('p1'),/参赛席位/);a.dispose();
 });
 
-test('room lifetime remains fixed through resume and rematch and rejects actions at the exact 3-hour boundary',async()=>{
+test('online rooms survive old age and rematch; only owner absence applies the exact thirty-minute limit',async()=>{
   const env=environment(),meta=metadata(),a=await BrowserAuthority.create(meta,env.options);
-  const expiresAt=meta.createdAt+ROOM_TTL_MS;assert.equal(a.view('p0').expiresAt,expiresAt);
-  env.clock.now=expiresAt-1;await a.resume(meta);assert.equal(a.view('p0').expiresAt,expiresAt);
+  assert.equal(a.view('p0').expiresAt,undefined);env.clock.now=meta.createdAt+12*60*60*1000;await a.resume(meta);assert.equal(a.view('p0').expiresAt,undefined);
   assert.equal((await command(a,'p0',{type:'ready',ready:true})).reply.ok,true);
   const finished=await raw(env);finished.room.game.phase='finished';await replace(env,finished);await a.roster({...meta,phase:'finished'});
-  assert.equal((await command(a,'p0',{type:'rematch'})).reply.ok,true);assert.equal(a.view('p0').expiresAt,expiresAt);
-  env.clock.now=expiresAt;assert.equal((await command(a,'p0',{type:'ready',ready:false})).reply.ok,false);
+  assert.equal((await command(a,'p0',{type:'rematch'})).reply.ok,true);assert.equal(a.view('p0').expiresAt,undefined);
+  const absent={...meta,hostLeftAt:env.clock.now};await a.roster(absent);assert.equal(a.view('p0').expiresAt,env.clock.now+ROOM_OWNER_AWAY_MS);
+  env.clock.now+=ROOM_OWNER_AWAY_MS;assert.equal((await command(a,'p0',{type:'ready',ready:false})).reply.ok,false);
   assert.equal(await a.tick(),false);a.dispose();
-  await assert.rejects(BrowserAuthority.load(meta,env.options),/3小时/);
+  await assert.rejects(BrowserAuthority.load(absent,env.options),/30分钟/);
+});
+
+test('browser authority preserves absent hosts and persists only explicitly transferred ownership',async()=>{
+  const env=environment(),meta={...metadata(),ownerId:'p0'},authority=await BrowserAuthority.create(meta,env.options);
+  const away={...meta,hostLeftAt:env.clock.now,members:meta.members.map(member=>({...member,connected:member.id!=='p0'}))};
+  await authority.roster(away);assert.equal(authority.view('p1').hostId,'p0');assert.equal(authority.view('p1').ownerId,'p0');authority.dispose();
+  const restored=await BrowserAuthority.load(away,env.options);assert.equal(restored.view('p1').ownerId,'p0');
+  assert.equal(restored.view('p1').hostId,'p0');assert.equal((await command(restored,'p1',{type:'transfer',playerId:'p1'})).reply.ok,false);
+  await restored.roster(meta);assert.equal((await command(restored,'p0',{type:'transfer',playerId:'p1'})).reply.ok,true);assert.equal(restored.view('p1').ownerId,'p1');restored.dispose();
+  const transferred={...meta,adminHostId:'p1',ownerId:'p1',hostLeftAt:undefined},again=await BrowserAuthority.load(transferred,env.options);
+  assert.equal(again.view('p1').ownerId,'p1');assert.equal(again.view('p1').hostId,'p1');assert.equal(again.view('p1').expiresAt,undefined);again.dispose();
 });

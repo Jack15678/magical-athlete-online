@@ -2,17 +2,17 @@
 
 The existing React application uses React Three Fiber. The asset work follows the requested [React Three Fiber game skill](https://github.com/openai/plugins/blob/main/plugins/game-studio/skills/react-three-fiber-game/SKILL.md) and [web 3D asset pipeline skill](https://github.com/openai/plugins/blob/main/plugins/game-studio/skills/web-3d-asset-pipeline/SKILL.md).
 
-`scripts/generate-3d-assets.mjs` is the editable source for 36 original geometric toy sculptures, continuing the silhouettes and colors of `src/client/avatars.tsx`. No game artwork is traced or embedded. Each character has a distinct mesh silhouette: the banana crescent, rabbit ears, house on legs, brain, blimp, shoe, frog, rocket, ruler, fish, heart, paired cats/twins, crown and wheel are geometry rather than billboard portraits. Faces also have real volume.
+The 36 original geometric toy sculptures continue the silhouettes and colors of `src/client/avatars.tsx`. Their refined editable Blender source is `assets/blender/toy-racers.blend`; the reproducible pipeline is `scripts/generate-3d-assets.mjs --blender-source` followed by `scripts/refine-blender-models.py`. See [Blender refinement, coverage and verification](./blender-models.md). No game artwork is traced or embedded. Each character has a distinct real mesh silhouette and volumetric face.
 
 ## Runtime contract
 
-- Asset: `public/models/toy-racers.glb`, glTF 2.0 with Meshopt compression; 465,736 bytes for all 36 sculptures.
+- Asset: `public/models/toy-racers.glb`, glTF 2.0 with native Blender Meshopt compression. The exact current size, per-character refinement and geometry counts are recorded in [the shipping manifest](../public/models/toy-racers.manifest.json); the complete 36-character pack stays below 2 MiB.
 - Stable node names: `toy_${characterId}`; all 36 rule-engine character IDs are present.
-- Units: metres; +Y up; +Z is the face direction; origin is the ground centre. Authored figure height is at most 1.015 units, with width and depth at most 0.59 units. The ownership base in the React component makes the overall height at most 1.1 and footprint 0.6 units.
-- Ten shared PBR plastic materials, no textures, no skinning, no external image requests. Character submeshes are merged by material into 3–6 draws per model. The whole set contains 76,270 triangles (usually about 2,100 per character; maximum 4,224). Geometry and materials are shared between instances by the GLTF loader cache.
+- Units: metres; +Y up; +Z is the face direction; origin is the ground centre. Authored figure height is at most 1.015 units, with width and depth at most 0.59 units. The React wrapper places the figure 0.164 above the tile; the complete figure/base height is at most 1.179 and the ownership base diameter is 0.66 units.
+- Ten shared PBR plastic materials, no textures, no skinning, no external image requests. Character submeshes are merged by material into at most 8 draws per model. Each figure stays below 10,000 triangles and the complete catalog below 220,000; an eight-racer board therefore has a worst-case character budget below 80,000 triangles. Geometry and materials are shared between instances by the GLTF loader cache.
 - Dynamic key/fill light and contact shadows are supplied by the board scene. The character wrapper casts shadows at normal quality; low quality disables model shadow casting.
 - Character collision and gameplay come entirely from the rule engine. These are presentation meshes; no physics colliders or collision-authoritative data is shipped.
-- Each small token is already low-poly; no texture/mesh LOD downloads are needed. Low quality reduces ring segments and shadows. Animation is applied to the parent group rather than deforming the model.
+- Low quality loads `public/models/toy-racers-economy.glb` (below 1 MiB, 80,000 catalog triangles and 4,000 per figure) instead of the high-quality pack. Both share node names, dimensions, palette and pivots; the economy export protects small facial/accessory components before decimation. Quality changes use independent request recovery budgets. Low quality also reduces ring segments and shadows. Animation is applied to the parent group rather than deforming the model.
 
 ```tsx
 import { ToyCharacter } from './scene/ToyCharacter.js';
@@ -24,31 +24,24 @@ The wrapper has its own Suspense fallback, ground-level ownership base and contr
 
 ## Rebuild and optimize
 
-Generate deterministic, texture-free source meshes:
+Generate the original editable design descriptors, then refine and export them using the installed Blender 5.2:
 
 ```sh
-node scripts/generate-3d-assets.mjs
+node scripts/generate-3d-assets.mjs --blender-source
+blender --background --threads 1 --python scripts/refine-blender-models.py
+blender --background --threads 1 --python scripts/export-blender-economy.py
 ```
 
-Then use glTF Transform 4.5.1 without flattening away the character roots:
+Blender exports the final Meshopt-compressed GLB directly and preserves all character roots. Optional independent validation with glTF Transform 4.5.1:
 
 ```sh
-pnpm --package=@gltf-transform/cli dlx gltf-transform dedup public/models/toy-racers.glb public/models/toy-racers.glb
-pnpm --package=@gltf-transform/cli dlx gltf-transform prune public/models/toy-racers.glb public/models/toy-racers.glb
-pnpm --package=@gltf-transform/cli dlx gltf-transform meshopt public/models/toy-racers.glb public/models/toy-racers.glb
 pnpm --package=@gltf-transform/cli dlx gltf-transform validate public/models/toy-racers.glb
 ```
 
-Alternatively pass the absolute path of an installed glTF Transform `bin/cli.js` to the generator; it performs those four steps and records the compressed size in the manifest:
-
-```sh
-node scripts/generate-3d-assets.mjs --optimizer /absolute/path/to/@gltf-transform/cli/bin/cli.js
-```
-
-The checked-in `toy-racers.manifest.json` records every character's dimensions, draw count and triangle count. The indexed uncompressed asset is about 1.53 MiB; material/accessor deduplication and Meshopt reduce it to about 455 KiB. Do not replace it with the raw generated export before release.
+The checked-in `toy-racers.manifest.json` records every character's dimensions, draw count, triangle count and actual Blender refinement. The generator without `--blender-source` retains the legacy primitive export for historical comparison; it does not reproduce the new Blender refinement and must not overwrite the shipping export before release.
 
 ## Verified
 
 The export script checks ground pivots and every model's dimensions using precise mesh bounds. The optimized file was also decoded through Three.js `GLTFLoader` with `MeshoptDecoder`: all 36 roots loaded with their expected names, pivot tolerance below 0.001 units, width/depth below 0.601 and figure height below 1.101 units. TypeScript checking passes.
 
-glTF Transform's validator reports zero errors and zero warnings. Its informational messages state that the validator does not inspect the Meshopt extension itself and that its buffer can appear unused; the successful runtime decoder and bounds check cover this extension path. Browser visual verification is performed with the integrated board scene.
+The shipping-asset test decodes the actual embedded Meshopt buffers using Three.js, asserts the complete catalog, shared materials, geometry budget and precise ground bounds. Browser visual verification uses the integrated board scene; Blender review renders are separately labeled in [blender-models.md](./blender-models.md).

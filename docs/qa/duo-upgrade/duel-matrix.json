@@ -1,0 +1,74 @@
+[
+  {
+    "owner": 0,
+    "ownSlot": 0,
+    "rivalSlot": 0,
+    "initiator": 0,
+    "responder": 2,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 0,
+    "ownSlot": 0,
+    "rivalSlot": 1,
+    "initiator": 0,
+    "responder": 3,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 0,
+    "ownSlot": 1,
+    "rivalSlot": 0,
+    "initiator": 1,
+    "responder": 2,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 0,
+    "ownSlot": 1,
+    "rivalSlot": 1,
+    "initiator": 1,
+    "responder": 3,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 1,
+    "ownSlot": 0,
+    "rivalSlot": 0,
+    "initiator": 2,
+    "responder": 0,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 1,
+    "ownSlot": 0,
+    "rivalSlot": 1,
+    "initiator": 2,
+    "responder": 1,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 1,
+    "ownSlot": 1,
+    "rivalSlot": 0,
+    "initiator": 3,
+    "responder": 0,
+    "throws": 2,
+    "results": 1
+  },
+  {
+    "owner": 1,
+    "ownSlot": 1,
+    "rivalSlot": 1,
+    "initiator": 3,
+    "responder": 1,
+    "throws": 2,
+    "results": 1
+  }
+]

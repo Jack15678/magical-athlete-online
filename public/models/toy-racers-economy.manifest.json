@@ -1,0 +1,702 @@
+{
+  "version": 1,
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/toy-racers.blend",
+  "collapseRatio": 0.36,
+  "models": [
+    {
+      "id": "alchemist",
+      "node": "toy_alchemist",
+      "triangles": 2025,
+      "sourceTriangles": 5480,
+      "draws": 6,
+      "bounds": [
+        0.59,
+        0.89758,
+        0.385
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 13,
+      "canonicalBoundsScale": [
+        0.9999108910560608,
+        1.0000720024108887,
+        1.0010368824005127
+      ]
+    },
+    {
+      "id": "baba-yaga",
+      "node": "toy_baba-yaga",
+      "triangles": 1390,
+      "sourceTriangles": 3726,
+      "draws": 6,
+      "bounds": [
+        0.55483,
+        1.015,
+        0.47275
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 12,
+      "canonicalBoundsScale": [
+        1.0013383626937866,
+        1.0000041723251343,
+        1.0009127855300903
+      ]
+    },
+    {
+      "id": "banana",
+      "node": "toy_banana",
+      "triangles": 1669,
+      "sourceTriangles": 4508,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.938,
+        0.24649
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        0.9996154308319092,
+        0.9997131824493408,
+        1.0009117126464844
+      ]
+    },
+    {
+      "id": "blimp",
+      "node": "toy_blimp",
+      "triangles": 1294,
+      "sourceTriangles": 3470,
+      "draws": 5,
+      "bounds": [
+        0.58888,
+        0.63677,
+        0.38816
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 6,
+      "canonicalBoundsScale": [
+        1.0002875328063965,
+        0.9923474788665771,
+        1.0001249313354492
+      ]
+    },
+    {
+      "id": "centaur",
+      "node": "toy_centaur",
+      "triangles": 2623,
+      "sourceTriangles": 7208,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.93799,
+        0.57777
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 7,
+      "canonicalBoundsScale": [
+        1.000588297843933,
+        0.9992240071296692,
+        1.0003416538238525
+      ]
+    },
+    {
+      "id": "cheerleader",
+      "node": "toy_cheerleader",
+      "triangles": 3346,
+      "sourceTriangles": 9048,
+      "draws": 6,
+      "bounds": [
+        0.59,
+        0.78717,
+        0.3811
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 14,
+      "canonicalBoundsScale": [
+        1.0003174543380737,
+        0.9997203946113586,
+        1.0013093948364258
+      ]
+    },
+    {
+      "id": "coach",
+      "node": "toy_coach",
+      "triangles": 1932,
+      "sourceTriangles": 5276,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.89758,
+        0.46054
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 7,
+      "canonicalBoundsScale": [
+        1.0002214908599854,
+        1.0012091398239136,
+        1.001097559928894
+      ]
+    },
+    {
+      "id": "copycat",
+      "node": "toy_copycat",
+      "triangles": 3084,
+      "sourceTriangles": 8352,
+      "draws": 4,
+      "bounds": [
+        0.59002,
+        0.92295,
+        0.36576
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 16,
+      "canonicalBoundsScale": [
+        0.9993650317192078,
+        0.9997504353523254,
+        1.0010193586349487
+      ]
+    },
+    {
+      "id": "dicemonger",
+      "node": "toy_dicemonger",
+      "triangles": 1978,
+      "sourceTriangles": 5252,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.77728,
+        0.43294
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 15,
+      "canonicalBoundsScale": [
+        1.0001239776611328,
+        0.9997963905334473,
+        1.0013892650604248
+      ]
+    },
+    {
+      "id": "duelist",
+      "node": "toy_duelist",
+      "triangles": 2011,
+      "sourceTriangles": 5500,
+      "draws": 4,
+      "bounds": [
+        0.58985,
+        0.90345,
+        0.44083
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 7,
+      "canonicalBoundsScale": [
+        0.999918520450592,
+        1.0007787942886353,
+        1.0009474754333496
+      ]
+    },
+    {
+      "id": "egg",
+      "node": "toy_egg",
+      "triangles": 1606,
+      "sourceTriangles": 4340,
+      "draws": 3,
+      "bounds": [
+        0.51556,
+        1.015,
+        0.49059
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 10,
+      "canonicalBoundsScale": [
+        0.9987127184867859,
+        1.0001473426818848,
+        1.0014728307724
+      ]
+    },
+    {
+      "id": "flip-flop",
+      "node": "toy_flip-flop",
+      "triangles": 1506,
+      "sourceTriangles": 4108,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.82709,
+        0.3052
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 5,
+      "canonicalBoundsScale": [
+        0.9998503923416138,
+        0.9992519021034241,
+        1.001685380935669
+      ]
+    },
+    {
+      "id": "genius",
+      "node": "toy_genius",
+      "triangles": 1720,
+      "sourceTriangles": 4564,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.91148,
+        0.36296
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        1.0009557008743286,
+        0.9999707937240601,
+        1.0031005144119263
+      ]
+    },
+    {
+      "id": "gunk",
+      "node": "toy_gunk",
+      "triangles": 2520,
+      "sourceTriangles": 6846,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.78864,
+        0.47682
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 5,
+      "canonicalBoundsScale": [
+        0.998794674873352,
+        0.9998131394386292,
+        0.9998902082443237
+      ]
+    },
+    {
+      "id": "hare",
+      "node": "toy_hare",
+      "triangles": 3406,
+      "sourceTriangles": 9308,
+      "draws": 4,
+      "bounds": [
+        0.4812,
+        1.015,
+        0.47107
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 14,
+      "canonicalBoundsScale": [
+        1.0,
+        1.000272274017334,
+        1.0010868310928345
+      ]
+    },
+    {
+      "id": "heckler",
+      "node": "toy_heckler",
+      "triangles": 1208,
+      "sourceTriangles": 3216,
+      "draws": 4,
+      "bounds": [
+        0.5826,
+        0.8692,
+        0.59
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        1.0003502368927002,
+        1.0027896165847778,
+        1.0012116432189941
+      ]
+    },
+    {
+      "id": "huge-baby",
+      "node": "toy_huge-baby",
+      "triangles": 2032,
+      "sourceTriangles": 5568,
+      "draws": 6,
+      "bounds": [
+        0.59,
+        0.97221,
+        0.45173
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 9,
+      "canonicalBoundsScale": [
+        1.0000475645065308,
+        1.000059723854065,
+        1.000963807106018
+      ]
+    },
+    {
+      "id": "hypnotist",
+      "node": "toy_hypnotist",
+      "triangles": 1606,
+      "sourceTriangles": 4368,
+      "draws": 5,
+      "bounds": [
+        0.5583,
+        1.015,
+        0.48916
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 9,
+      "canonicalBoundsScale": [
+        1.000459909439087,
+        1.000213861465454,
+        1.0009739398956299
+      ]
+    },
+    {
+      "id": "inchworm",
+      "node": "toy_inchworm",
+      "triangles": 2924,
+      "sourceTriangles": 7828,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.8278,
+        0.27023
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 19,
+      "canonicalBoundsScale": [
+        1.0,
+        1.000343680381775,
+        0.9999423623085022
+      ]
+    },
+    {
+      "id": "lackey",
+      "node": "toy_lackey",
+      "triangles": 2006,
+      "sourceTriangles": 5510,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.7338,
+        0.35628
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 5,
+      "canonicalBoundsScale": [
+        1.0006440877914429,
+        0.9999287128448486,
+        0.9988191723823547
+      ]
+    },
+    {
+      "id": "leaptoad",
+      "node": "toy_leaptoad",
+      "triangles": 1536,
+      "sourceTriangles": 4020,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.70203,
+        0.4647
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 14,
+      "canonicalBoundsScale": [
+        1.0002312660217285,
+        1.0001806020736694,
+        1.0041295289993286
+      ]
+    },
+    {
+      "id": "legs",
+      "node": "toy_legs",
+      "triangles": 1572,
+      "sourceTriangles": 4168,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.84589,
+        0.39248
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 9,
+      "canonicalBoundsScale": [
+        1.000588297843933,
+        0.9991834163665771,
+        1.0011245012283325
+      ]
+    },
+    {
+      "id": "lovable-loser",
+      "node": "toy_lovable-loser",
+      "triangles": 1758,
+      "sourceTriangles": 4812,
+      "draws": 6,
+      "bounds": [
+        0.59,
+        0.85998,
+        0.42068
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 5,
+      "canonicalBoundsScale": [
+        1.0004910230636597,
+        1.000664234161377,
+        0.9988165497779846
+      ]
+    },
+    {
+      "id": "magician",
+      "node": "toy_magician",
+      "triangles": 2126,
+      "sourceTriangles": 5816,
+      "draws": 5,
+      "bounds": [
+        0.58994,
+        1.00154,
+        0.52173
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 7,
+      "canonicalBoundsScale": [
+        0.9997551441192627,
+        1.0020246505737305,
+        1.0009328126907349
+      ]
+    },
+    {
+      "id": "mastermind",
+      "node": "toy_mastermind",
+      "triangles": 2402,
+      "sourceTriangles": 6416,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.96149,
+        0.3615
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 15,
+      "canonicalBoundsScale": [
+        0.9998300075531006,
+        1.0001193284988403,
+        1.0009679794311523
+      ]
+    },
+    {
+      "id": "mouth",
+      "node": "toy_mouth",
+      "triangles": 2208,
+      "sourceTriangles": 6060,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.79931,
+        0.45563
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 10,
+      "canonicalBoundsScale": [
+        1.001983642578125,
+        1.0035299062728882,
+        1.0026744604110718
+      ]
+    },
+    {
+      "id": "party-animal",
+      "node": "toy_party-animal",
+      "triangles": 2402,
+      "sourceTriangles": 6558,
+      "draws": 6,
+      "bounds": [
+        0.55849,
+        1.01178,
+        0.41991
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        0.9998503923416138,
+        1.0013407468795776,
+        1.0008219480514526
+      ]
+    },
+    {
+      "id": "rocket-scientist",
+      "node": "toy_rocket-scientist",
+      "triangles": 1314,
+      "sourceTriangles": 3554,
+      "draws": 6,
+      "bounds": [
+        0.58912,
+        0.89484,
+        0.33522
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 7,
+      "canonicalBoundsScale": [
+        1.0004265308380127,
+        1.0005897283554077,
+        0.999971866607666
+      ]
+    },
+    {
+      "id": "romantic",
+      "node": "toy_romantic",
+      "triangles": 1534,
+      "sourceTriangles": 4020,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.86446,
+        0.28568
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 71,
+      "canonicalBoundsScale": [
+        0.9998209476470947,
+        0.9996522665023804,
+        1.0010416507720947
+      ]
+    },
+    {
+      "id": "scoocher",
+      "node": "toy_scoocher",
+      "triangles": 1888,
+      "sourceTriangles": 5120,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.80359,
+        0.35245
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        1.0004850625991821,
+        1.0007325410842896,
+        1.0017964839935303
+      ]
+    },
+    {
+      "id": "sisyphus",
+      "node": "toy_sisyphus",
+      "triangles": 1689,
+      "sourceTriangles": 4560,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.88184,
+        0.44958
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 11,
+      "canonicalBoundsScale": [
+        0.9990379214286804,
+        1.000109076499939,
+        1.0016270875930786
+      ]
+    },
+    {
+      "id": "skipper",
+      "node": "toy_skipper",
+      "triangles": 1998,
+      "sourceTriangles": 5488,
+      "draws": 4,
+      "bounds": [
+        0.59,
+        0.96337,
+        0.44484
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 5,
+      "canonicalBoundsScale": [
+        1.0003025531768799,
+        0.9996510744094849,
+        1.0013982057571411
+      ]
+    },
+    {
+      "id": "stickler",
+      "node": "toy_stickler",
+      "triangles": 1508,
+      "sourceTriangles": 4132,
+      "draws": 6,
+      "bounds": [
+        0.53761,
+        1.015,
+        0.31712
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 6,
+      "canonicalBoundsScale": [
+        1.0009288787841797,
+        1.0007867813110352,
+        1.0016251802444458
+      ]
+    },
+    {
+      "id": "suckerfish",
+      "node": "toy_suckerfish",
+      "triangles": 1412,
+      "sourceTriangles": 3702,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.69837,
+        0.38269
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 13,
+      "canonicalBoundsScale": [
+        0.9868943691253662,
+        1.0132650136947632,
+        1.00102698802948
+      ]
+    },
+    {
+      "id": "third-wheel",
+      "node": "toy_third-wheel",
+      "triangles": 1396,
+      "sourceTriangles": 3792,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.8173,
+        0.30519
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 6,
+      "canonicalBoundsScale": [
+        1.0073288679122925,
+        1.0000689029693604,
+        0.9944048523902893
+      ]
+    },
+    {
+      "id": "twin",
+      "node": "toy_twin",
+      "triangles": 2436,
+      "sourceTriangles": 6612,
+      "draws": 5,
+      "bounds": [
+        0.59,
+        0.90645,
+        0.33358
+      ],
+      "pivotY": 0,
+      "protectedSmallComponents": 8,
+      "canonicalBoundsScale": [
+        1.0,
+        0.9999145269393921,
+        1.0015113353729248
+      ]
+    }
+  ],
+  "totalTriangles": 71065,
+  "bytes": 857268,
+  "compression": "EXT_meshopt_compression",
+  "materialCount": 10,
+  "textureCount": 0,
+  "optimizedBytes": 857268,
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre"
+}
