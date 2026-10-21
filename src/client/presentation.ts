@@ -21,6 +21,8 @@ export interface PresentationBeat {
   face?: number;
   cause?: string;
   durationMs: number;
+  /** Uncompressed visual timing; arriving snapshots never compound pacing changes. */
+  naturalDurationMs?: number;
 }
 interface ConfirmedDie { source?: string; face: number; eventId: number }
 export interface PlaybackState {
@@ -96,33 +98,27 @@ function beatForEvent(event: GameEvent, room: RoomView): PresentationBeat | unde
   if (kind === 'dice' && face === undefined) return undefined;
   const motions = eventMotion(event, kind);
   const longest = motions.reduce((steps, motion) => Math.max(steps, Math.abs(motion.to - motion.from)), 0);
-  const durationMs = kind === 'dice' ? 2500 : kind === 'move' ? Math.min(1800, 200 + Math.max(1, longest) * 220) : kind === 'swap' || kind === 'warp' ? 800 : kind === 'trip' ? 650 : kind === 'finish' ? 800 : kind === 'score' ? 550 : 600;
+  const durationMs = kind === 'dice' ? 2500 : kind === 'move' ? Math.min(2200, Math.max(800, 280 + Math.max(1, longest) * 240)) : kind === 'swap' || kind === 'warp' || kind === 'finish' || kind === 'skill' ? 1100 : 850;
   const boundary = room.logs.findLast(log => log.id <= event.id && (log.type === 'turn' || log.type === 'reveal'));
-  return { key: `${room.code}:${room.round}:${event.id}`, chainId: `${room.code}:${room.round}:chain:${boundary?.id ?? 0}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, cause: event.cause, durationMs };
+  return { key: `${room.code}:${room.round}:${event.id}`, chainId: `${room.code}:${room.round}:chain:${boundary?.id ?? 0}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, cause: event.cause, durationMs, naturalDurationMs: durationMs };
 }
 
-/** Long cascades retain every confirmed event, with a shared visual-time budget. */
-function boundChainDurations(queue: PresentationBeat[], activeKey?: string) {
-  const chains = new Map<string, PresentationBeat[]>();
-  for (const beat of queue) {
-    const id = beat.chainId ?? beat.key;
-    chains.set(id, [...(chains.get(id) ?? []), beat]);
-  }
-  const durations = new Map<string, number>();
-  for (const beats of chains.values()) {
-    const active = beats.find(beat => beat.key === activeKey);
-    const tail = beats.filter(beat => beat !== active);
-    const total = tail.reduce((sum, beat) => sum + beat.durationMs, 0);
-    const budget = Math.max(0, 9000 - (active?.durationMs ?? 0));
-    if (total > budget) for (const beat of tail) durations.set(beat.key, Math.max(1, Math.floor(beat.durationMs * budget / total)));
-  }
-  const bounded = queue.map(beat => durations.has(beat.key) ? { ...beat, durationMs: durations.get(beat.key)! } : beat);
-  const active = bounded.find(beat => beat.key === activeKey);
-  const tailDuration = bounded.filter(beat => beat !== active).reduce((sum, beat) => sum + beat.durationMs, 0);
-  const tailBudget = Math.max(0, 11000 - (active?.durationMs ?? 0));
-  // Fast AI turns can arrive while an earlier confirmed action is still playing.
-  // Keep its clock untouched and compress only the unstarted tail.
-  return tailDuration <= tailBudget ? bounded : bounded.map(beat => beat === active ? beat : { ...beat, durationMs: Math.max(1, Math.floor(beat.durationMs * tailBudget / tailDuration)) });
+/** Queue pressure may gently shorten unstarted beats, never erase their readable
+ * screen time. A long causal chain takes longer rather than flashing its steps. */
+const MINIMUM_READABLE_MS:Record<PresentationKind,number>={dice:1750,move:700,warp:800,swap:800,skill:900,trip:650,recover:650,score:650,finish:900,eliminate:650};
+function paceQueuedBeats(queue: PresentationBeat[], activeKey?: string) {
+  const unstarted=queue.filter(beat=>beat.key!==activeKey);
+  const naturalTail=unstarted.reduce((sum,beat)=>sum+(beat.naturalDurationMs??beat.durationMs),0);
+  // This is a bounded change of tempo, not a fixed budget for an arbitrarily
+  // large sequence. Every movement/reaction keeps its place and visible time.
+  const pace=naturalTail>24_000?.7:naturalTail>12_000?.85:1;
+  return queue.map(beat=>{
+    if(beat.key===activeKey)return beat;
+    const naturalDurationMs=beat.naturalDurationMs??beat.durationMs;
+    const minimum=Math.min(naturalDurationMs,MINIMUM_READABLE_MS[beat.kind]);
+    const durationMs=Math.max(minimum,Math.round(naturalDurationMs*pace));
+    return durationMs===beat.durationMs&&beat.naturalDurationMs!==undefined?beat:{...beat,naturalDurationMs,durationMs};
+  });
 }
 
 /** My legal choice takes priority over watching an unrelated queued action. */
@@ -136,10 +132,10 @@ function prioritizeLocalChoice(state: PlaybackState): PlaybackState {
   return createPlayback(state.confirmed);
 }
 
-function mergeSimultaneous(previous: PresentationBeat | undefined, next: PresentationBeat): PresentationBeat | undefined {
+function mergeSimultaneous(previous: PresentationBeat | undefined, next: PresentationBeat, activeKey?: string): PresentationBeat | undefined {
   const group = next.events[0]?.group;
   if (!previous || !group || previous.events.at(-1)?.group !== group || previous.kind !== next.kind || !['move', 'warp', 'swap'].includes(next.kind)) return undefined;
-  return { ...previous, events: [...previous.events, ...next.events], targets: [...new Set([...previous.targets, ...next.targets])], motions: [...previous.motions, ...next.motions], durationMs: Math.max(previous.durationMs, next.durationMs) };
+  return { ...previous, events: [...previous.events, ...next.events], targets: [...new Set([...previous.targets, ...next.targets])], motions: [...previous.motions, ...next.motions], durationMs: previous.key===activeKey?previous.durationMs:Math.max(previous.naturalDurationMs??previous.durationMs,next.naturalDurationMs??next.durationMs), naturalDurationMs: Math.max(previous.naturalDurationMs??previous.durationMs,next.naturalDurationMs??next.durationMs) };
 }
 
 /**
@@ -171,11 +167,11 @@ export function receiveRoom(state: PlaybackState, room: RoomView, options: { rec
     if (event.type === 'roll' && lastDie && lastDie.source === event.source && lastDie.face === beat.face) { lastDie = undefined; continue; }
     if (event.type === 'die') lastDie = { source: event.source, face: beat.face!, eventId: event.id };
     if (event.type === 'roll') lastDie = undefined;
-    const merged = mergeSimultaneous(queue.at(-1), beat);
+    const merged = mergeSimultaneous(queue.at(-1), beat, state.queue[0]?.key);
     if (merged) queue[queue.length - 1] = merged;
     else queue.push(beat);
   }
-  return prioritizeLocalChoice({ ...state, round: room.round, version: room.version, eventCursor: latestId, confirmed: room, queue: boundChainDurations(queue, state.queue[0]?.key), lastDie, racers: queue.length ? baseRacers : cloneRacers(room.racers) });
+  return prioritizeLocalChoice({ ...state, round: room.round, version: room.version, eventCursor: latestId, confirmed: room, queue: paceQueuedBeats(queue, state.queue[0]?.key), lastDie, racers: queue.length ? baseRacers : cloneRacers(room.racers) });
 }
 
 /** Apply all targets together after their visual beat; later skills cannot jump ahead. */
@@ -207,8 +203,10 @@ export function skipPlayback(state: PlaybackState, room: RoomView = state.confir
   return createPlayback(room);
 }
 
+// Reduce movement time while retaining time to read what caused each change.
+const REDUCED_MOTION_MS:Record<PresentationKind,number>={dice:400,move:400,warp:450,swap:450,skill:900,trip:500,recover:500,score:500,finish:650,eliminate:500};
 export function beatDuration(beat: PresentationBeat, options: PresentationOptions = {}): number {
   const speed = Math.max(0.5, Math.min(8, Number.isFinite(options.speed) ? options.speed! : 1));
-  if (options.reducedMotion) return Math.round((beat.kind === 'dice' ? 400 : 100) / speed);
+  if (options.reducedMotion) return Math.round(REDUCED_MOTION_MS[beat.kind] / speed);
   return Math.round(beat.durationMs / speed);
 }

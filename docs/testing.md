@@ -4,6 +4,8 @@
 
 ## 沉浸式、单人练习与人机（2026-10-21）
 
+后续小地图放大、可读连锁节奏与绊倒规则核验，已通过209项自动检查和8项真实浏览器专项；本次未修改引擎规则。尺寸、计时证据、官方规则来源与一个明确列出的未决边界，见[本次核验报告](map-and-tripped-review.md)。
+
 本次升级的实际检查、电脑与手机尺寸、连续技能镜头、手动操作、回合开始选择、完整人机四场，以及可观看的20秒演示，集中记录在[沉浸式与人机验收](immersive-practice.md)。下方保留此前3D与2D版本的历史证据。
 
 最终集成类型检查、两种生产构建、Worker打包预演和189项自动检查全部通过。[本次远端CI](https://github.com/qiuh23/magical-athlete-online/actions/runs/39552190668)已成功完成类型、两种构建、Worker预演和一场八人联机，浏览器部分约4.5分钟。正式站已通过私有仓库推送自动发布提交 `be822c4`，Cloudflare版本 `0f9af3c5-0fc9-4651-bf49-c6be2787ff87` 已100%上线；公开bundle为 `/assets/index-B3lVTEqk.js`。正式站390×844手机尺寸练习从首页选秀、出场至多次掷骰移动通过（7.9秒，0页面错误），[实际截图](qa/immersive-public-practice-mobile.png)。[20秒公开演示](https://magical-athlete.qiuh23.workers.dev/demo/immersive.webm) 实际GET为817,526字节，与本地SHA256一致；细节和验证边界见[部署记录](deployment.json)。

@@ -76,3 +76,4 @@ html[data-view="race"] .modal-panel{color:var(--ink)}
  .race-menu-content{padding:16px}.race-menu-links{gap:8px}.race-menu-links .button{font-size:11px;padding:10px}.race-menu-content .presentation-settings{padding:10px;gap:5px 15px}
 }
 @media(max-height:500px) and (min-width:650px){.floating-racers{bottom:12px}.floating-avatar{width:38px;height:38px}.floating-avatar .avatar{width:33px;height:33px}.floating-roll{bottom:12px}.race-results-overlay{inset:75px 20% 95px}.floating-choice.choice-panel{max-height:60dvh}.race-status-pill{top:16px;max-width:calc(100% - 560px)}}
+@media(max-width:360px){.race-status-pill{max-width:calc(100% - 176px);white-space:normal;line-height:1.45;border-radius:12px;align-items:flex-start;font-size:9px}.race-status-pill .skip-animation{flex-shrink:0;padding:2px}.race-match-label{max-width:91px}}

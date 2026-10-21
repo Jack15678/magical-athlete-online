@@ -145,7 +145,7 @@ function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: 
     const update = () => { const value = progress(startedAt, durationMs); setTick(value); if (value < 1) animation = requestAnimationFrame(update); };
     update(); return () => cancelAnimationFrame(animation);
   }, [beat?.key, startedAt, durationMs]);
-  const mapPoint = (position: number) => { const point = boardPoint(position, false); return { x: 12 + (point[0] / TILE + 7.5) * 10, y: 12 + (point[2] / TILE + 1.5) * 11 }; };
+  const mapPoint = (position: number) => { const point = boardPoint(position, false); return { x: 32 + (point[0] / TILE + 7.5) * 10.3, y: 28 + (point[2] / TILE + 1.5) * 15 }; };
   const currentPosition = (racer: Racer) => {
     const motion = beat?.motions.find(value => value.racerId === racer.id);
     if (!motion) return racer.position;
@@ -154,14 +154,55 @@ function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: 
     const at = Math.min(motion.path.length - 1, Math.floor(step));
     return THREE.MathUtils.lerp(motion.path[at] ?? motion.from, motion.path[Math.min(at + 1, motion.path.length - 1)] ?? motion.to, step - at);
   };
-  return <aside className="board-minimap" data-testid="board-minimap" aria-label="赛道小地图"><div className="minimap-heading"><span>全场 · 格数</span><span>● 你</span></div><svg viewBox="0 0 174 64" aria-hidden="true"><polyline points={Array.from({ length: 31 }, (_, index) => { const point = mapPoint(index); return `${point.x},${point.y}`; }).join(' ')} fill="none" stroke="#527e74" strokeWidth="8" strokeLinejoin="round" />{[0, 12, 15, 30].map(index => { const point = mapPoint(index); return <text key={index} x={point.x} y={point.y + (index === 0 || index === 12 ? -7 : 15)} textAnchor="middle">{index === 0 ? '起' : index === 30 ? '终' : index}</text>; })}{racers.filter(racer => !racer.eliminated).map(racer => { const point = mapPoint(currentPosition(racer)), owner = room.players.find(player => player.id === racer.playerId), own = racer.playerId === room.selfId; const peers = racers.filter(value => Math.round(currentPosition(value)) === Math.round(currentPosition(racer)) && !value.eliminated), index = peers.findIndex(value => value.id === racer.id); return <g key={racer.id} className={`${own ? 'minimap-self' : ''} ${active === racer.id ? 'minimap-active' : ''}`} transform={`translate(${point.x + (index - (peers.length - 1) / 2) * 3.5},${point.y})`}><circle r={own ? 5 : 3.8} fill={owner?.color ?? '#fff'} stroke={own ? '#fff7c4' : '#183b40'} strokeWidth={own ? 2 : 1} />{active === racer.id && <circle r="7.2" fill="none" stroke="#ffe274" strokeWidth="1.3" />}</g>; })}</svg><div className="minimap-positions">{racers.map(racer => { const owner = room.players.find(player => player.id === racer.playerId); return <span key={racer.id} data-racer-id={racer.id} data-position={Math.round(currentPosition(racer))} className={`${racer.playerId === room.selfId ? 'is-self' : ''} ${active === racer.id ? 'is-active' : ''}`} style={{ borderColor: owner?.color }}><i style={{ background: owner?.color }} />{(owner?.seat ?? 0) + 1}<b>{racer.eliminated ? '×' : Math.round(currentPosition(racer))}</b></span>; })}</div></aside>;
+  const ownRacers = racers.filter(racer => racer.playerId === room.selfId);
+  const others = racers.filter(racer => racer.playerId !== room.selfId);
+  const visibleRacers = racers.filter(racer => !racer.eliminated);
+  const ownMarker = (racer: Racer) => ownRacers.length > 1 ? String.fromCharCode(65 + ownRacers.findIndex(value => value.id === racer.id)) : '你';
+  const positionText = (racer: Racer) => racer.eliminated ? '已出局' : `第${Math.round(currentPosition(racer))}格`;
+  return <aside className="board-minimap" data-testid="board-minimap" aria-label="赛道小地图">
+    <div className="minimap-heading"><span>赛道小地图</span><span><i />你的位置</span></div>
+    <svg className="minimap-track" viewBox="0 0 220 104" aria-hidden="true">
+      <polyline points={Array.from({ length: 31 }, (_, index) => { const point = mapPoint(index); return `${point.x},${point.y}`; }).join(' ')} fill="none" stroke="#d9e5da" strokeWidth="15" strokeLinejoin="round" />
+      <polyline points={Array.from({ length: 31 }, (_, index) => { const point = mapPoint(index); return `${point.x},${point.y}`; }).join(' ')} fill="none" stroke="#62877b" strokeWidth="8" strokeLinejoin="round" />
+      {[0, 5, 10, 12, 15, 20, 25, 30].map(index => { const point = mapPoint(index), upper = index <= 12; return <g key={index}><circle cx={point.x} cy={point.y} r="1.8" fill="#ecf5e8" /><text x={point.x} y={point.y + (upper ? -14 : 18)} textAnchor="middle">{index === 0 ? '起点' : index === 30 ? '终点' : index}</text></g>; })}
+      {[...visibleRacers].sort((first, second) => Number(first.playerId === room.selfId) - Number(second.playerId === room.selfId)).map(racer => {
+        const point = mapPoint(currentPosition(racer)), owner = room.players.find(player => player.id === racer.playerId), own = racer.playerId === room.selfId;
+        const peers = visibleRacers.filter(value => Math.round(currentPosition(value)) === Math.round(currentPosition(racer))), index = peers.findIndex(value => value.id === racer.id);
+        const cols = Math.min(3, peers.length), rows = Math.ceil(peers.length / cols);
+        const x = point.x + (index % cols - (cols - 1) / 2) * 14, y = point.y + (Math.floor(index / cols) - (rows - 1) / 2) * 14;
+        return <g key={racer.id} data-map-racer-id={racer.id} className={`${own ? 'minimap-self' : ''} ${active === racer.id ? 'minimap-active' : ''}`}>
+          {peers.length > 1 && <line x1={point.x} y1={point.y} x2={x} y2={y} stroke={own ? '#b68b23' : '#668675'} strokeWidth="1" opacity=".65" />}
+          <g transform={`translate(${x},${y})`}>
+            {own && <circle r="11" fill="#ffd967" fillOpacity=".4" stroke="#c79a2b" strokeWidth="1.2" />}
+            {active === racer.id && <circle r={own ? 13 : 9} fill="none" stroke="#216858" strokeWidth="1.8" strokeDasharray="3 2" />}
+            <circle r={own ? 8 : 5.7} fill={own ? '#285e54' : owner?.color ?? '#fff'} stroke={own ? '#fff8d8' : '#fff9e6'} strokeWidth={own ? 2 : 1.5} />
+            <text className={own ? 'minimap-own-marker' : 'minimap-seat-marker'} textAnchor="middle" dominantBaseline="central">{own ? ownMarker(racer) : (owner?.seat ?? 0) + 1}</text>
+          </g>
+        </g>;
+      })}
+    </svg>
+    <div className="minimap-own-positions">{ownRacers.map(racer => <div key={racer.id} data-testid="minimap-own-position" data-racer-id={racer.id} data-position={Math.round(currentPosition(racer))} className={`minimap-own-position ${active === racer.id ? 'is-active' : ''}`} aria-label={`你，${characterName(racer.characterId)}，${positionText(racer)}`}>
+      <span className="minimap-own-avatar"><Avatar id={racer.characterId} />{ownRacers.length > 1 && <b>{ownMarker(racer)}</b>}</span>
+      <span><strong>你 · {positionText(racer)}</strong><small>{characterName(racer.characterId)}{racer.finished ? ' · 已冲线' : racer.tripped ? ' · 绊倒' : ''}</small></span>
+      {active === racer.id && <i title="正在行动" />}
+    </div>)}</div>
+    {others.length > 0 && <div className="minimap-positions" aria-label="其他选手位置">{others.map(racer => { const owner = room.players.find(player => player.id === racer.playerId); return <span key={racer.id} data-racer-id={racer.id} data-position={Math.round(currentPosition(racer))} className={active === racer.id ? 'is-active' : ''} style={{ borderColor: owner?.color }} aria-label={`${(owner?.seat ?? 0) + 1}号选手，${characterName(racer.characterId)}，${positionText(racer)}`}><i style={{ background: owner?.color }} /><small>{(owner?.seat ?? 0) + 1}号</small><b>{racer.eliminated ? '出局' : <>{Math.round(currentPosition(racer))}<em>格</em></>}</b></span>; })}</div>}
+  </aside>;
 }
 
 function ActionBanner({ beat, racers }: { beat?: PresentationBeat; racers: Racer[] }) {
-  if (!beat || !['skill', 'trip', 'recover', 'score', 'finish', 'warp', 'swap'].includes(beat.kind)) return null;
-  const actor = racers.find(racer => racer.id === beat.source) ?? racers.find(racer => beat.targets.includes(racer.id));
-  const title = beat.kind === 'skill' ? beat.events[0]?.type === 'skip' ? '领先休息' : abilityCaptions[beat.cause ?? actor?.characterId ?? ''] ?? '能力发动' : beat.kind === 'trip' ? '绊倒！' : beat.kind === 'recover' ? '重新站起' : beat.kind === 'swap' ? '交换位置' : beat.kind === 'warp' ? '瞬间移动' : beat.kind === 'finish' ? '冲过终点！' : beat.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? '获得分数';
-  return <div key={beat.key} className={`scene-action-banner banner-${beat.kind}`} data-testid="skill-banner" role="status">{actor && <span className="skill-banner-avatar"><Avatar id={actor.characterId} /></span>}<div><small>{actor ? characterName(actor.characterId) : '魔法赛道'} · {beat.kind === 'skill' ? '技能发动' : '赛场瞬间'}</small><strong>{title}</strong><span>{beat.events.map(event => event.text).join(' · ')}</span></div><b aria-hidden="true">✦</b></div>;
+  const skillMove = beat?.kind === 'move' && !!beat.cause && beat.cause !== 'main';
+  if (!beat || !skillMove && !['skill', 'trip', 'recover', 'score', 'finish', 'warp', 'swap'].includes(beat.kind)) return null;
+  const affected = racers.filter(racer => beat.targets.includes(racer.id));
+  const actor = skillMove ? affected[0] : racers.find(racer => racer.id === beat.source) ?? affected[0];
+  const distances = [...new Set(beat.motions.map(motion => motion.to - motion.from))];
+  const distance = distances[0] ?? 0;
+  const motionText = distances.length > 1 ? '同时移动' : `${beat.motions.length > 1 ? '同时' : ''}${distance < 0 ? '后退' : '前进'}${Math.abs(distance)}格`;
+  const effectName = beat.cause === 'track-arrow' ? '箭头格' : abilityCaptions[beat.cause ?? ''] ?? '技能效果';
+  const title = skillMove ? `${effectName} → ${motionText}` : beat.kind === 'skill' ? beat.events[0]?.type === 'skip' ? '领先休息' : abilityCaptions[beat.cause ?? actor?.characterId ?? ''] ?? '能力发动' : beat.kind === 'trip' ? '绊倒！' : beat.kind === 'recover' ? '起身 · 本次不掷骰' : beat.kind === 'swap' ? '交换位置' : beat.kind === 'warp' ? '瞬间移动' : beat.kind === 'finish' ? '冲过终点！' : beat.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? '获得分数';
+  const caption = skillMove ? `技能效果 · ${affected.map(racer => characterName(racer.characterId)).join('、') || '受影响角色'}` : `${actor ? characterName(actor.characterId) : '魔法赛道'} · ${beat.kind === 'skill' ? '技能发动' : '赛场瞬间'}`;
+  const detail = `${beat.kind === 'recover' ? '起身替代主移动，本次不掷骰。' : ''}${beat.events.map(event => event.text).join(' · ')}`;
+  return <div key={beat.key} className={`scene-action-banner banner-${beat.kind}`} data-testid="skill-banner" role="status">{actor && <span className="skill-banner-avatar"><Avatar id={actor.characterId} /></span>}<div><small>{caption}</small><strong>{title}</strong><span>{detail}</span></div><b aria-hidden="true">✦</b></div>;
 }
 
 function labelTexture(text: string, color: string) {

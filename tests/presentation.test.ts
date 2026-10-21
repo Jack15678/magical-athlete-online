@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, enqueueMove, resolveTasks } from '../src/engine/index.js';
+import { applyGameAction, createGame, enqueueMove, resolveTasks } from '../src/engine/index.js';
 import type { GameEvent, GameState, Racer, RoomView } from '../src/shared/types.js';
 import { beatDuration, completeBeat, confirmedFace, createPlayback, receiveRoom, skipPlayback, trackPath } from '../src/client/presentation.js';
 
@@ -162,16 +162,19 @@ test('server turn boundaries keep movement and reaction chains together across s
   assert.notEqual(state.queue.at(-1)!.chainId, chainId);
 });
 
-test('long chains and incoming AI turns have bounded playback without discarding confirmed events', () => {
+test('long chains and incoming AI turns keep readable steps without discarding confirmed events', () => {
   const events: GameEvent[] = Array.from({ length: 40 }, (_, index) => motion(index + 1, ['a'], [index % 2 ? 8 : 0], [index % 2 ? 0 : 8]));
   let state = receiveRoom(createPlayback(view()), view(2, events));
   assert.equal(state.queue.length, 40);
-  assert.ok(state.queue.reduce((sum, beat) => sum + beat.durationMs, 0) <= 9000);
+  assert.ok(state.queue.every(beat=>beat.durationMs>=700));
+  assert.ok(state.queue.every(beat=>beat.durationMs>=(beat.naturalDurationMs??0)*.7));
+  assert.ok(state.queue.reduce((sum,beat)=>sum+beat.durationMs,0)>9000, 'a long chain takes the time its readable steps need');
   const activeDuration = state.queue[0]!.durationMs;
   const allEvents: GameEvent[] = [...events, ...Array.from({ length: 60 }, (_, index) => index % 2 ? motion(index + 41, ['b'], [0], [6]) : { id: index + 41, type: 'turn', text: 'AI行动', source: 'b' })];
   state = receiveRoom(state, view(3, allEvents));
   assert.equal(state.queue[0]!.durationMs, activeDuration, 'arrival must never restart or retime a beat already playing');
-  assert.ok(state.queue.reduce((sum, beat) => sum + beat.durationMs, 0) <= 11000);
+  assert.ok(state.queue.every(beat=>beat.durationMs>=700));
+  assert.ok(state.queue.every(beat=>beat.durationMs>=(beat.naturalDurationMs??0)*.7));
   assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), allEvents.filter(event => event.type === 'move').map(event => event.id));
   while (state.queue.length) state = completeBeat(state);
   assert.deepEqual(state.racers, state.confirmed.racers);
@@ -202,4 +205,84 @@ test('my own die settles before its resulting skill choice and later unrelated b
   assert.equal(state.confirmed.pending?.id, pending.id);
   const otherChoice = receiveRoom(createPlayback(initial), { ...confirmed, pending: { ...pending, playerId: 'pb', racerId: 'b' } });
   assert.equal(otherChoice.queue[0]?.kind, 'dice', 'another player choice never steals my presentation camera');
+});
+
+
+test('normal skill, movement and reactions leave enough time to read the cause and see the change',()=>{
+  const events:GameEvent[]=[{id:1,type:'power',source:'a',cause:'centaur',text:'半人马发动后蹄踢击'},motion(2,['b'],[6],[4]),{id:3,type:'trip',source:'a',targets:['b'],text:'对手绊倒'},{id:4,type:'score',source:'a',text:'玩家+1分'},{id:5,type:'recover',source:'b',targets:['b'],text:'对手起身'}];
+  const state=receiveRoom(createPlayback(view()),view(2,events));
+  assert.deepEqual(state.queue.map(beat=>[beat.kind,beat.durationMs]),[['skill',1100],['move',800],['trip',850],['score',850],['recover',850]]);
+  assert(state.queue.every(beat=>beat.durationMs===beat.naturalDurationMs));
+});
+
+test('repeated incoming snapshots never compound gentle pacing or retime the current beat',()=>{
+  const events:GameEvent[]=Array.from({length:100},(_,i)=>({id:i+1,type:'power',source:i%2?'b':'a',cause:i%2?'coach':'scoocher',text:`第${i+1}次技能发动`}));
+  let state=receiveRoom(createPlayback(view()),view(2,events));
+  const active=state.queue[0]!,durations=state.queue.map(beat=>beat.durationMs),natural=state.queue.map(beat=>beat.naturalDurationMs);
+  assert.equal(state.queue.length,100,'separate activations each retain a visible beat');
+  assert(state.queue.every(beat=>beat.durationMs>=900));
+  for(let version=3;version<=20;version++){
+    state=receiveRoom(state,view(version,events));
+    assert.equal(state.queue[0],active,'unchanged active beat identity prevents a restarted timer');
+    assert.deepEqual(state.queue.map(beat=>beat.durationMs),durations);
+    assert.deepEqual(state.queue.map(beat=>beat.naturalDurationMs),natural);
+  }
+  const appended=[...events,motion(101,['b'],[0],[8])];
+  state=receiveRoom(state,view(21,appended));
+  assert.equal(state.queue[0],active);
+  assert(state.queue.every(beat=>beat.durationMs>=(beat.naturalDurationMs??0)*.7));
+  assert.deepEqual(state.queue.flatMap(beat=>beat.events.map(event=>event.id)),appended.map(event=>event.id));
+});
+
+test('a later simultaneous target can join an active movement without restarting its clock',()=>{
+  let state=receiveRoom(createPlayback(view()),view(2,[motion(1,['a'],[0],[1],{group:'same'})]));
+  const duration=state.queue[0]!.durationMs,key=state.queue[0]!.key;
+  state=receiveRoom(state,view(3,[motion(1,['a'],[0],[1],{group:'same'}),motion(2,['b'],[0],[8],{group:'same'})]));
+  assert.equal(state.queue.length,1);assert.equal(state.queue[0]!.key,key);assert.equal(state.queue[0]!.durationMs,duration);
+  assert.deepEqual(state.queue[0]!.events.map(event=>event.id),[1,2]);
+});
+
+test('a real progressing Scoocher and Suckerfish chain preserves readable causes, every motion and its final rule state',()=>{
+  const players=Array.from({length:4},(_,seat)=>({id:`p${seat}`,name:`玩家${seat}`,seat,color:'#000',ready:true,connected:true,score:0,hand:[],used:[],selection:[]}));
+  const game=createGame(players,1234);game.phase='race';game.round=1;game.currentRacerId='r0';
+  game.racers=['alchemist','gunk','scoocher','suckerfish'].map((characterId,i)=>({...racer(`r${i}`,[17,23,0,0][i]),playerId:`p${i}`,characterId}));
+  const project=(version:number):RoomView=>({...view(version,structuredClone(game.logs),structuredClone(game.racers)),phase:game.phase,results:structuredClone(game.results)});
+  const initial=project(1);game.flags.testDice=[3];game.queue.push({kind:'beginTurn',racerId:'r0'});resolveTasks(game);applyGameAction(game,'p0',{type:'roll'});
+  let responses=0;
+  while(game.pending&&game.phase==='race'){
+    assert(++responses<40);const choice=game.pending;applyGameAction(game,choice.playerId,{type:'choose',choiceId:choice.id,optionId:'use'});
+  }
+  assert.equal(game.phase,'results');assert(responses>20);
+  const confirmed=project(2),before=JSON.stringify(game);
+  let state=receiveRoom(createPlayback(initial),confirmed);
+  const expected=game.logs.filter(event=>['die','move','warp','place','power','copy','prediction','duel','cancel','reroll','skip','trip','recover','score','finish','eliminate'].includes(event.type));
+  assert.deepEqual(state.queue.flatMap(beat=>beat.events.map(event=>event.id)),expected.map(event=>event.id));
+  assert(state.queue.filter(beat=>beat.kind==='skill').every(beat=>beat.durationMs>=900));
+  assert(state.queue.filter(beat=>beat.kind==='move').every(beat=>beat.durationMs>=700));
+  assert(state.queue.every(beat=>beat.durationMs>=(beat.naturalDurationMs??0)*.7));
+  const skillCount=state.queue.filter(beat=>beat.kind==='skill').length,movementCount=state.queue.filter(beat=>beat.kind==='move').length;
+  assert(state.queue.reduce((sum,beat)=>sum+beat.durationMs,0)>=skillCount*900+movementCount*700);
+  for(const options of [{},{speed:2},{speed:4},{speed:4,reducedMotion:true}]){
+    let playback=state;
+    while(playback.queue.length){assert(beatDuration(playback.queue[0]!,options)>0);playback=completeBeat(playback);}
+    assert.deepEqual(playback.racers,confirmed.racers);assert.equal(JSON.stringify(game),before);
+  }
+  while(state.queue.length)state=completeBeat(state);
+  assert.deepEqual(state.racers,confirmed.racers);assert.equal(JSON.stringify(game),before);
+});
+
+
+test('reduced motion retains skill reading time and explicit 2x or 4x only changes visual timing',()=>{
+  const events:GameEvent[]=[die(1,3),roll(2,3),{id:3,type:'power',source:'a',text:'技能说明'},motion(4,['a'],[0],[3]),{id:5,type:'trip',source:'a',targets:['b'],text:'绊倒'},{id:6,type:'recover',source:'b',targets:['b'],text:'起身'},{id:7,type:'score',source:'a',text:'获得1分'},{id:8,type:'finish',source:'a',text:'冲线'}];
+  const confirmed=view(2,events,[{...racer('a',30),finished:true,rank:1},racer('b')]);
+  const state=receiveRoom(createPlayback(view()),confirmed),snapshot=JSON.stringify(confirmed);
+  assert.deepEqual(state.queue.map(beat=>[beat.kind,beatDuration(beat,{reducedMotion:true})]),[['dice',400],['skill',900],['move',400],['trip',500],['recover',500],['score',500],['finish',650]]);
+  const skill=state.queue.find(beat=>beat.kind==='skill')!;
+  assert.equal(beatDuration(skill,{reducedMotion:true,speed:2}),450);
+  assert.equal(beatDuration(skill,{reducedMotion:true,speed:4}),225);
+  for(const speed of [1,2,4]){
+    let playback=state;
+    while(playback.queue.length){const beat=playback.queue[0]!;assert.equal(beatDuration(beat,{reducedMotion:true,speed}),Math.round(beatDuration(beat,{reducedMotion:true})/speed));playback=completeBeat(playback);}
+    assert.deepEqual(playback.racers,confirmed.racers);assert.equal(JSON.stringify(confirmed),snapshot);
+  }
 });
