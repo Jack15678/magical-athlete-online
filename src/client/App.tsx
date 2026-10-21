@@ -5,6 +5,7 @@ import { Avatar } from './avatars.js';
 import { RulesContent } from './RulesContent.js';
 import { BROWSER_HOST_MODE, connectRoom, enterRoom, forgetIdentity, leaveRoom, listRooms, readIdentity, saveIdentity, sendAction, type ConnectionState, type RoomConnection } from './network.js';
 import { usePresentation, type UsePresentationResult } from './usePresentation.js';
+import { useRaceIntroReset } from './scene/useRaceIntro.js';
 const Board3D = lazy(() => import('./scene/Board3D.js').then(module => ({ default: module.Board3D })));
 
 const characters = CHARACTERS;
@@ -34,6 +35,7 @@ export function App() {
   const [code, setCode] = useState(currentCode);
   const [identity, setIdentity] = useState<Identity | null>(() => readIdentity(currentCode()));
   const [room, setRoom] = useState<RoomView | null>(null);
+  useRaceIntroReset(room);
   const [endRoom, setEndRoom] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [connection, setConnection] = useState<ConnectionState>('connecting');

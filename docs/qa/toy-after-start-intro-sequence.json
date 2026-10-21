@@ -1,0 +1,52 @@
+[
+  {
+    "at": 726.3999998569489,
+    "state": "self",
+    "targets": "r0"
+  },
+  {
+    "at": 738.0999999046326,
+    "state": "intro",
+    "targets": "r0"
+  },
+  {
+    "at": 2091.7999999523163,
+    "state": "intro",
+    "targets": "r1"
+  },
+  {
+    "at": 3450.699999809265,
+    "state": "intro",
+    "targets": "r2"
+  },
+  {
+    "at": 4790.099999904633,
+    "state": "intro",
+    "targets": "r3"
+  },
+  {
+    "at": 6138.899999856949,
+    "state": "intro",
+    "targets": "r4"
+  },
+  {
+    "at": 7500.899999856949,
+    "state": "intro",
+    "targets": "r5"
+  },
+  {
+    "at": 8846.5,
+    "state": "intro",
+    "targets": "r6"
+  },
+  {
+    "at": 10190,
+    "state": "intro",
+    "targets": "r7"
+  },
+  {
+    "at": 11538.299999952316,
+    "state": "self",
+    "targets": "r0"
+  }
+]

@@ -1,6 +1,7 @@
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Mesh, type Group } from 'three';
+import { Mesh, MeshStandardMaterial, type Group } from 'three';
+import { toyResources } from './pawn-materials.js';
 
 export interface ToyCharacterProps {
   characterId: string;
@@ -11,7 +12,7 @@ export interface ToyCharacterProps {
 
 const MODEL_URL = '/models/toy-racers.glb';
 
-function CharacterModel({ characterId, castShadow = true }: Pick<ToyCharacterProps, 'characterId' | 'castShadow'>) {
+function CharacterModel({ characterId, lowQuality = false, castShadow = true }: Pick<ToyCharacterProps, 'characterId' | 'lowQuality' | 'castShadow'>) {
   const { scene } = useGLTF(MODEL_URL);
   const model = useMemo(() => {
     const source = scene.getObjectByName(`toy_${characterId}`) ?? scene.getObjectByName('toy_hare');
@@ -19,13 +20,16 @@ function CharacterModel({ characterId, castShadow = true }: Pick<ToyCharacterPro
     instance.traverse(object => {
       if (object instanceof Mesh) {
         object.castShadow = castShadow;
-        object.receiveShadow = false;
+        object.receiveShadow = !lowQuality;
         object.frustumCulled = true;
+        object.material = Array.isArray(object.material)
+          ? object.material.map(material => material instanceof MeshStandardMaterial ? toyResources.characterMaterial(material, lowQuality) : material)
+          : object.material instanceof MeshStandardMaterial ? toyResources.characterMaterial(object.material, lowQuality) : object.material;
       }
     });
     return instance;
-  }, [scene, characterId, castShadow]);
-  // Geometry and palette materials belong to the loader cache, shared by every racer.
+  }, [scene, characterId, castShadow, lowQuality]);
+  // Source geometry belongs to useGLTF; satin palette variants to toyResources.
   return <primitive object={model} dispose={null} />;
 }
 
@@ -44,18 +48,13 @@ function LoadingToy({ color }: { color: string }) {
 
 /** Original toy sculptures: +Y up, +Z face, ground pivot at zero. */
 export function ToyCharacter({ characterId, color, lowQuality = false, castShadow = true }: ToyCharacterProps) {
+  const geometry = toyResources.baseGeometry(lowQuality);
   return <group name={`racer-model-${characterId}`}>
-    <mesh position={[0, 0.035, 0]} receiveShadow castShadow={castShadow}>
-      <cylinderGeometry args={[0.29, 0.3, 0.07, lowQuality ? 12 : 24]} />
-      <meshStandardMaterial color={color} roughness={0.5} metalness={0.04} />
-    </mesh>
-    <mesh position={[0, 0.075, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.25, 0.017, 5, lowQuality ? 12 : 24]} />
-      <meshStandardMaterial color="#fffaf0" roughness={0.5} />
-    </mesh>
-    <group position={[0, 0.085, 0]}>
+    <mesh geometry={geometry.body} material={toyResources.baseMaterial(color, lowQuality)} receiveShadow={!lowQuality} castShadow={castShadow && !lowQuality} dispose={null} />
+    <mesh geometry={geometry.cap} material={toyResources.baseMaterial(color, lowQuality, true)} receiveShadow={!lowQuality} dispose={null} />
+    <group position={[0, .164, 0]}>
       <Suspense fallback={<LoadingToy color={color} />}>
-        <CharacterModel characterId={characterId} castShadow={castShadow && !lowQuality} />
+        <CharacterModel characterId={characterId} lowQuality={lowQuality} castShadow={castShadow && !lowQuality} />
       </Suspense>
     </group>
   </group>;
