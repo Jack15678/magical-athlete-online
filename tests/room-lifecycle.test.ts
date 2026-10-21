@@ -10,13 +10,13 @@ function fixture(mode:GameMode='ai'){
   const created=rooms.create('房主',2,0,mode,1),identity=created.identity;
   return{clock,store,rooms,identity,created};
 }
-test('personal rooms retain an idle connected owner beyond three hours and never list practice rooms',()=>{
-  for(const mode of ['ai','practice'] as const){const env=fixture(mode);try{
+test('all room modes retain an idle connected owner beyond three hours and never list practice rooms',()=>{
+  for(const mode of ['multiplayer','ai','practice'] as const){const env=fixture(mode);try{
     env.rooms.presence(env.identity.roomCode,env.identity.playerId,true);
     env.clock.now+=4*60*60*1000;env.rooms.tick();
     const room=env.rooms.get(env.identity.roomCode);assert.equal(room.hostLeftAt,undefined);
     assert.equal(env.rooms.view(room,env.identity.playerId).expiresAt,undefined);
-    assert.equal(env.rooms.list().some(entry=>entry.code===room.code),mode==='ai');
+    assert.equal(env.rooms.list().some(entry=>entry.code===room.code),mode!=='practice');
   }finally{env.store.close();}}
 });
 test('personal rooms close exactly thirty minutes after owner departure regardless of AI or spectator presence',()=>{
@@ -52,8 +52,8 @@ test('restart preserves absence and counts downtime from the separately persiste
     const again=new Rooms(store,0,()=>clock.now);assert.throws(()=>again.authenticate(identity),/房间已关闭/);
   }finally{env.store.close();}}
 });
-test('owner dismissal atomically clears room, credentials and tasks, retains only a tombstone and is idempotent',()=>{
-  const env=fixture();try{
+for(const mode of ['multiplayer','ai','practice'] as const)test(`${mode} owner dismissal atomically clears room, credentials and tasks, retains only a tombstone and is idempotent`,()=>{
+  const env=fixture(mode);try{
     const {rooms,identity,store}=env;rooms.presence(identity.roomCode,identity.playerId,true);
     const spectator=rooms.join(identity.roomCode,'观众','spectator'),room=rooms.get(identity.roomCode);
     const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'close'}};
@@ -74,5 +74,27 @@ test('restart migrates a legacy closed personal room to its lightweight tombston
     const room=env.rooms.get(env.identity.roomCode);room.closedAt=env.clock.now;env.store.save(room);
     const restored=new Rooms(env.store,0,()=>env.clock.now);assert.equal(restored.rooms.has(room.code),false);
     assert.deepEqual(env.store.load(),[]);assert.equal(restored.closed(room.code)?.closedAt,room.closedAt);
+  }finally{env.store.close();}
+});
+
+test('multiplayer guests taking management or acting never renew the fixed owner absence',()=>{
+  const env=fixture('multiplayer');try{
+    const {rooms,identity,clock}=env;rooms.presence(identity.roomCode,identity.playerId,true);
+    const guest=rooms.join(identity.roomCode,'在线朋友').identity;rooms.presence(identity.roomCode,guest.playerId,true);
+    rooms.presence(identity.roomCode,identity.playerId,false);const departed=clock.now,room=rooms.get(identity.roomCode);
+    assert.equal(room.ownerId,identity.playerId);assert.equal(room.hostId,guest.playerId);
+    clock.now+=PERSONAL_ROOM_AWAY_MS-1;assert.equal(rooms.act(room.code,guest.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'ready',ready:true}}).ok,true);
+    assert.equal(rooms.get(room.code).hostLeftAt,departed);clock.now++;rooms.tick();assert.equal(rooms.closed(room.code)?.reason,'host-away');
+  }finally{env.store.close();}
+});
+test('explicit multiplayer transfer changes the lifecycle owner and survives Node restart',()=>{
+  const env=fixture('multiplayer');try{
+    const {rooms,identity,clock,store}=env;rooms.presence(identity.roomCode,identity.playerId,true);
+    const guest=rooms.join(identity.roomCode,'新房主').identity;rooms.presence(identity.roomCode,guest.playerId,true);
+    const room=rooms.get(identity.roomCode);assert.equal(rooms.act(room.code,identity.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'transfer',playerId:guest.playerId}}).ok,true);
+    rooms.presence(room.code,identity.playerId,false);assert.equal(rooms.get(room.code).ownerId,guest.playerId);assert.equal(rooms.get(room.code).hostLeftAt,undefined);
+    clock.now+=15_000;rooms.tick();const restored=new Rooms(store,0,()=>clock.now);assert.equal(restored.get(room.code).ownerId,guest.playerId);
+    restored.presence(room.code,guest.playerId,true);clock.now+=4*60*60*1000;restored.tick();assert.equal(restored.get(room.code).hostLeftAt,undefined);
+    restored.presence(room.code,guest.playerId,false);clock.now+=PERSONAL_ROOM_AWAY_MS;restored.tick();assert.equal(restored.closed(room.code)?.reason,'host-away');
   }finally{env.store.close();}
 });

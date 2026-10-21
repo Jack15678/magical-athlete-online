@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import type { ActionEnvelope, Identity, RoomView } from '../src/shared/types.js';
 import type { RelayJoinReply } from '../src/shared/relay.js';
-import { MAX_SPECTATORS, ROOM_TTL_MS } from '../src/shared/constants.js';
+import { MAX_SPECTATORS } from '../src/shared/constants.js';
 import { PERSONAL_ROOM_AWAY_MS } from '../src/shared/room-lifecycle.js';
 
 // Exercise the real relay handlers. Only the platform base class, persistent
@@ -155,8 +155,8 @@ test('relay expires unauthenticated sockets, pauses without authority, and clear
   await env.relay.alarm();assert.equal(pending.closeCode,4401);
   socket.clear();await env.relay.webSocketClose(host,1000,'close',true);assert.equal(socket.sent.find(m=>m.type==='host-status').online,false);
   await env.relay.webSocketMessage(socket,JSON.stringify({type:'action',requestId:'offline',envelope:act()}));assert.match(socket.sent.at(-1).message,/主持网页离线/);
-  const record=await env.ctx.storage.get<any>('room');record.expiresAt=1;await env.ctx.storage.put('room',record);
-  const restored=await instance(env.ctx.storage,env.ctx.sockets);await restored.relay.alarm();assert.equal(env.ctx.storage.values.size,0);assert.equal(socket.closeCode,4404);
+  const record=await env.ctx.storage.get<any>('room');record.hostLeftAt=Date.now()-PERSONAL_ROOM_AWAY_MS;await env.ctx.storage.put('room',record);
+  const restored=await instance(env.ctx.storage,env.ctx.sockets);await restored.relay.alarm();assert.equal(env.ctx.storage.values.size,1);assert.equal(socket.closeCode,4410);assert.equal((await env.ctx.storage.get<any>('closed')).reason,'host-away');
 });
 test('worker rejects cross-origin access and oversized or invalid room parameters',async()=>{
   const env={ASSETS:{fetch:()=>new Response('asset')},ROOMS:{}};
@@ -203,13 +203,13 @@ for(const phase of ['lobby','race'] as const)test(`relay close in ${phase} commi
   host.clear();peer.clear();viewer.clear();await closeIntent(env,host);
   const closedAt=Date.now(),closedView={...env.created.room,phase,version:3,closedAt};
   await deliver(env,host,env.created.identity.playerId,closedView,'close-room');
-  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.closedAt,closedAt);assert.equal(stored.pendingClose,undefined);
+  const stored=await env.ctx.storage.get<any>('closed');assert.equal(stored.closedAt,closedAt);assert.equal(stored.reason,'dismissed');assert.equal(await env.ctx.storage.get('room'),undefined);
   assert.equal(await env.ctx.storage.get('view:'+guest.identity.playerId),undefined);
-  assert.equal(stored.expiresAt,stored.createdAt+ROOM_TTL_MS);assert.equal(stored.expiresAt,env.created.room.expiresAt);assert.equal(env.ctx.storage.alarmAt,stored.expiresAt);
+  assert.equal(env.ctx.storage.values.size,1);assert.equal(env.ctx.storage.alarmAt,null);
   for(const socket of [host,peer,viewer]){assert.equal(socket.closeCode,4410);assert.equal(socket.sent.find(m=>m.type==='room-closed').closedAt,closedAt);}
   const ack=host.sent.findIndex(m=>m.type==='ack');assert.ok(ack>=0);assert.equal(host.sent[ack].result.ok,true);
   assert.ok(ack<host.sent.findIndex(m=>m.type==='room-closed'));
-  assert.equal(host.sent.find(m=>m.type==='snapshot').room.authorityOnline,false);
+  assert.ok(!host.sent.some(m=>m.type==='snapshot'));
   assert.ok(!peer.sent.some(m=>m.type==='ack'));
 });
 test('relay close permission follows the current management host rather than the browser authority',async()=>{
@@ -240,7 +240,7 @@ test('relay close storage failures never announce success or partially delete pr
   await deliver(env,host,guest.identity.playerId,{...guest.room,version:2});host.clear();peer.clear();
   env.ctx.storage.failPut='room';await closeIntent(env,host,'intent-write-fails');
   assert.equal((await env.ctx.storage.get<any>('room')).pendingClose,undefined);assert.ok(!host.sent.some(m=>m.type==='request'));
-  const pending=await closeIntent(env,host,'close-commit-fails');host.clear();env.ctx.storage.failAlarm=true;
+  const pending=await closeIntent(env,host,'close-commit-fails');host.clear();env.ctx.storage.failPut='closed';
   const projection={...env.created.room,version:3,closedAt:Date.now()};await deliver(env,host,env.created.identity.playerId,projection,pending.requestId);
   const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.closedAt,undefined);assert.equal(stored.pendingClose.requestId,pending.requestId);
   assert.equal((await env.ctx.storage.get<any>('view:'+guest.identity.playerId)).version,2);
@@ -249,7 +249,7 @@ test('relay close storage failures never announce success or partially delete pr
   const replay=host.sent.find(m=>m.type==='request');
   assert.deepEqual(replay,{type:'request',playerId:env.created.identity.playerId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});
   await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:replay.playerId,requestId:replay.requestId,result:{ok:true,duplicate:true,version:projection.version},room:projection,phase:projection.phase,adminHostId:env.created.identity.playerId}));
-  assert.equal((await env.ctx.storage.get<any>('room')).closedAt,projection.closedAt);
+  assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,projection.closedAt);assert.equal(await env.ctx.storage.get('room'),undefined);
   assert.ok(host.sent.some(m=>m.type==='ack'&&m.requestId===pending.requestId&&m.result.ok&&m.result.duplicate));
   for(const socket of [host,peer]){assert.equal(socket.readyState,3);assert.ok(socket.sent.some(m=>m.type==='room-closed'&&m.closedAt===projection.closedAt));}
 });
@@ -279,7 +279,7 @@ test('relay close replays its durable pending receipt after authority recovery b
   // Recovered BrowserAuthority may broadcast closed projections before replay.
   await deliver(restored,next,guest.identity.playerId,{...guest.room,version:2,closedAt});assert.equal(next.readyState,1);assert.ok(!next.sent.some(m=>m.type==='error'));assert.ok(!peer.sent.some(m=>m.type==='room-closed'));
   await restored.relay.webSocketMessage(next,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:pending.requestId,result:{ok:true,duplicate:true,version:2},room:{...env.created.room,version:2,closedAt},phase:'lobby',adminHostId:env.created.identity.playerId}));
-  assert.equal(next.sent.find(m=>m.type==='ack').result.duplicate,true);assert.equal((await env.ctx.storage.get<any>('room')).closedAt,closedAt);assert.equal(next.closeCode,4410);assert.equal(peer.closeCode,4410);
+  assert.equal(next.sent.find(m=>m.type==='ack').result.duplicate,true);assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,closedAt);assert.equal(next.closeCode,4410);assert.equal(peer.closeCode,4410);
 });
 test('relay close retransmission preserves the original confirmation and rejects a conflicting action payload',async()=>{
   const env=await create(),host=await authenticate(env,env.created.identity,true),first=await closeIntent(env,host,'close-original');
@@ -288,10 +288,12 @@ test('relay close retransmission preserves the original confirmation and rejects
   const forwarded=host.sent.filter(m=>m.type==='request').length;
   await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'conflicting-payload',envelope:{...first.envelope,action:{type:'ready',ready:true}}}));
   assert.match(host.sent.at(-1).message,/房间正在解散/);assert.equal(host.sent.filter(m=>m.type==='request').length,forwarded);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'close-transfer-conflict',envelope:{...first.envelope,action:{type:'transfer',playerId:env.created.identity.playerId}}}));
+  assert.match(host.sent.at(-1).message,/房间正在解散/);assert.equal((await env.ctx.storage.get<any>('room')).pendingOwnerTransfer,undefined);
   await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'extra-close-field',envelope:{...first.envelope,action:{type:'close',ready:true}}}));
   assert.match(host.sent.at(-1).message,/操作格式/);assert.equal(host.sent.filter(m=>m.type==='request').length,forwarded);
   host.clear();await deliver(env,host,env.created.identity.playerId,{...env.created.room,version:2,closedAt:Date.now()},'close-original');
-  stored=await env.ctx.storage.get<any>('room');assert.ok(stored.closedAt!==undefined);
+  stored=await env.ctx.storage.get<any>('closed');assert.ok(stored.closedAt!==undefined);assert.equal(await env.ctx.storage.get('room'),undefined);
   assert.deepEqual(host.sent.filter(m=>m.type==='ack').map(m=>m.requestId).sort(),['close-original','close-retry']);
   assert.ok(host.sent.filter(m=>m.type==='ack').every(m=>m.result.ok));assert.equal(host.closeCode,4410);
 });
@@ -375,20 +377,20 @@ test('explicit leave preserves active players and creator credentials while paus
   await deliver(env,host,guest.identity.playerId,{...guest.room,phase:'race',version:2});
   assert.deepEqual(await (await leave(env,guest.identity)).json(),{ok:true,retainIdentity:true});assert.equal(peer.closeCode,4401);assert.equal((await authenticate(env,guest.identity)).readyState,1);
   const viewer=await authenticate(env,env.created.identity);assert.deepEqual(await (await leave(env,env.created.identity)).json(),{ok:true,retainIdentity:true});assert.equal(host.closeCode,4401);assert.equal(viewer.closeCode,4401);
-  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.members.length,2);assert.equal(stored.expiresAt,stored.createdAt+ROOM_TTL_MS);
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.members.length,2);assert.equal(stored.expiresAt,stored.createdAt+PERSONAL_ROOM_AWAY_MS);assert.equal(typeof stored.hostLeftAt,'number');
   assert.equal((await authenticate(env,env.created.identity,true)).sent.find(message=>message.type==='auth-ok').authority,true);
   const lobby=await create();await authenticate(lobby,lobby.created.identity,true);assert.deepEqual(await (await leave(lobby,lobby.created.identity)).json(),{ok:true,retainIdentity:true});assert.equal((await authenticate(lobby,lobby.created.identity,true)).readyState,1);
 });
 
-test('three-hour lifetime applies to legacy records on HTTP, WebSocket, and alarms and sends terminal expiry',async()=>{
+test('owner absence closes multiplayer rooms on HTTP, WebSocket and alarms while ignoring legacy lifetime fields',async()=>{
   for(const entry of ['http','socket','alarm'] as const){
-    const env=await create(),socket=await authenticate(env,env.created.identity,true),record=await env.ctx.storage.get<any>('room');
-    record.createdAt=Date.now()-ROOM_TTL_MS;record.expiresAt=Date.now()+30*86_400_000;await env.ctx.storage.put('room',record);
+    const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),socket=await authenticate(env,guest.identity);await env.relay.webSocketClose(host,1000,'owner left',true);const record=await env.ctx.storage.get<any>('room');
+    record.createdAt=Date.now()-12*60*60*1000;record.hostLeftAt=Date.now()-PERSONAL_ROOM_AWAY_MS;record.expiresAt=Date.now()+30*86_400_000;await env.ctx.storage.put('room',record);
     const restored=await instance(env.ctx.storage,env.ctx.sockets);socket.clear();
-    if(entry==='http')assert.equal((await restored.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"过期"}'}))).status,404);
+    if(entry==='http')assert.equal((await restored.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"过期"}'}))).status,410);
     if(entry==='socket')await restored.relay.webSocketMessage(socket,JSON.stringify({type:'sync',requestId:'expired-sync'}));
     if(entry==='alarm')await restored.relay.alarm();
-    assert.equal(socket.closeCode,4404);assert.equal(socket.sent.find(message=>message.type==='room-closed').reason,'expired');assert.equal(await env.ctx.storage.get('room'),undefined);assert.equal(env.ctx.storage.values.size,0);
+    assert.equal(socket.closeCode,4410);assert.equal(socket.sent.find(message=>message.type==='room-closed').reason,'host-away');assert.equal(await env.ctx.storage.get('room'),undefined);assert.equal(env.ctx.storage.values.size,1);
   }
 });
 
@@ -399,9 +401,9 @@ test('expired and missing room WebSocket upgrades deliver a terminal notice rath
     globalThis.Response=UpgradeResponse as typeof Response;
     for(const exists of [true,false]){
       const env=exists?await create():await instance();
-      if(exists){const record=await env.ctx.storage.get<any>('room');record.createdAt=Date.now()-ROOM_TTL_MS;await env.ctx.storage.put('room',record);}
+      if(exists){const record=await env.ctx.storage.get<any>('room');record.hostLeftAt=Date.now()-PERSONAL_ROOM_AWAY_MS;await env.ctx.storage.put('room',record);}
       const restored=await instance(env.ctx.storage),response=await restored.relay.fetch(new Request('https://room.internal/ws/ABC234',{headers:{Upgrade:'websocket'}}));
-      assert.equal(response.status,101);const socket=restored.ctx.sockets.at(-1)!;assert.equal(socket.closeCode,4404);assert.equal(socket.sent[0].type,'room-closed');assert.equal(socket.sent[0].reason,'expired');assert.equal(await restored.ctx.storage.get('room'),undefined);
+      assert.equal(response.status,101);const socket=restored.ctx.sockets.at(-1)!;assert.equal(socket.closeCode,exists?4410:4404);assert.equal(socket.sent[0].type,'room-closed');assert.equal(socket.sent[0].reason,exists?'host-away':'expired');assert.equal(await restored.ctx.storage.get('room'),undefined);
     }
   }finally{globalThis.Response=NativeResponse;}
 });
@@ -424,7 +426,7 @@ test('worker room directory excludes practice rooms and lists fresh public prese
   for(const mode of ['multiplayer','practice','ai']){const response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:mode,mode,aiCount:1})}),ns.env);assert.equal(response.status,201);created.push(await response.json() as RelayJoinReply);}
   let rooms=await listedRooms(ns.env);assert.equal(rooms.length,2);assert(rooms.every(room=>!room.authorityOnline));assert.deepEqual(rooms.map(room=>room.mode).sort(),['ai','multiplayer']);
   assert.equal(rooms.find(room=>room.mode==='ai')!.expiresAt-rooms.find(room=>room.mode==='ai')!.createdAt,PERSONAL_ROOM_AWAY_MS);
-  assert.equal(rooms.find(room=>room.mode==='multiplayer')!.expiresAt-rooms.find(room=>room.mode==='multiplayer')!.createdAt,ROOM_TTL_MS);
+  assert.equal(rooms.find(room=>room.mode==='multiplayer')!.expiresAt-rooms.find(room=>room.mode==='multiplayer')!.createdAt,PERSONAL_ROOM_AWAY_MS);
   const first=created[0]!,active=ns.instances.get(first.identity.roomCode)!,env={...active,created:first},host=await authenticate(env,first.identity,true);
   const spectatorResponse=await worker.default.fetch(new Request(`https://game.test/api/browser/rooms/${first.identity.roomCode}/join`,{method:'POST',body:'{"name":"观众","role":"spectator"}'}),ns.env);assert.equal(spectatorResponse.status,201);
   assert.equal((await listedRooms(ns.env)).find(room=>room.code===first.identity.roomCode)!.spectatorCount,0);
@@ -434,7 +436,7 @@ test('worker room directory excludes practice rooms and lists fresh public prese
   assert.equal((await listedRooms(ns.env)).find(room=>room.code===first.identity.roomCode)!.authorityOnline,false);
   const recovered=await authenticate(env,first.identity,true),requestId='directory-close';await closeIntent(env,recovered,requestId);await deliver(env,recovered,first.identity.playerId,{...first.room,version:2,closedAt:Date.now()},requestId);
   assert(!(await listedRooms(ns.env)).some(room=>room.code===first.identity.roomCode));
-  const expired=created[1]!,old=ns.instances.get(expired.identity.roomCode)!,record=await old.ctx.storage.get<any>('room');record.createdAt=Date.now()-ROOM_TTL_MS;record.expiresAt=Date.now()+ROOM_TTL_MS;await old.ctx.storage.put('room',record);
+  const expired=created[2]!,old=ns.instances.get(expired.identity.roomCode)!,record=await old.ctx.storage.get<any>('room');record.hostLeftAt=Date.now()-PERSONAL_ROOM_AWAY_MS;await old.ctx.storage.put('room',record);
   const restored=new worker.RoomRelay(old.ctx,ns.env);await old.ctx.ready();old.relay=restored;
   assert(!(await listedRooms(ns.env)).some(room=>room.code===expired.identity.roomCode));
 });
@@ -525,3 +527,54 @@ test('legacy closed personal relay records migrate without retaining private vie
   assert.equal((await env.ctx.storage.get<any>('closed')).reason,'dismissed');
   const response=await restored.relay.fetch(new Request('https://room.internal/summary/ABC234'));assert.equal(response.status,410);
 });
+
+test('multiplayer relay owner is stable through management takeover and guest activity cannot cancel absence',async()=>controlledClock(async clock=>{
+  const env=await create(),owner=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  await env.relay.webSocketMessage(owner,JSON.stringify({type:'deliver',to:guest.identity.playerId,room:{...guest.room,hostId:guest.identity.playerId},phase:'lobby',adminHostId:guest.identity.playerId}));
+  assert.equal((await env.ctx.storage.get<any>('room')).ownerId,env.created.identity.playerId);
+  await env.relay.webSocketClose(owner,1000,'owner away',true);const departed=clock.now;
+  clock.now+=PERSONAL_ROOM_AWAY_MS-1;peer.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,departed);
+  clock.now++;await env.relay.alarm();assert.equal(peer.closeCode,4410);assert.equal((await env.ctx.storage.get<any>('closed')).reason,'host-away');
+}));
+test('explicit multiplayer transfer commits lifecycle owner only after its matching successful receipt and survives reconstruction',async()=>controlledClock(async clock=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:1,action:{type:'transfer',playerId:guest.identity.playerId}};
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'owner-transfer',envelope}));
+  assert.equal((await env.ctx.storage.get<any>('room')).ownerId,env.created.identity.playerId);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,room:{...env.created.room,version:2,hostId:guest.identity.playerId},requestId:'owner-transfer',result:{ok:true,version:2},phase:'lobby',adminHostId:guest.identity.playerId}));
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.ownerId,guest.identity.playerId);assert.equal(stored.pendingOwnerTransfer,undefined);
+  await env.relay.webSocketClose(host,1000,'former owner left',true);assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  const restored=await instance(env.ctx.storage,env.ctx.sockets);assert.equal((await env.ctx.storage.get<any>('room')).ownerId,guest.identity.playerId);
+  clock.now+=4*60*60*1000;peer.lastAutoResponseAt=new Date(clock.now);await restored.relay.alarm();assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  await restored.relay.webSocketClose(peer,1000,'new owner left',true);const at=clock.now;clock.now+=PERSONAL_ROOM_AWAY_MS;await restored.relay.alarm();assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,at+PERSONAL_ROOM_AWAY_MS);
+}));
+
+test('an old successful transfer receipt cannot replace a newer absent owner or reset its deadline after reconstruction',async()=>controlledClock(async clock=>{
+  let env=await create();const creator=env.created.identity,host=await authenticate(env,creator,true),second=await join(env),peer=await authenticate(env,second.identity),third=await join(env),other=await authenticate(env,third.identity);
+  const transfer=async(actor:Socket,actorId:string,targetId:string,actionId:string,expectedVersion:number,requestId:string,duplicate=false)=>{
+    const envelope:ActionEnvelope={actionId,expectedVersion,action:{type:'transfer',playerId:targetId}};
+    await env.relay.webSocketMessage(actor,JSON.stringify({type:'action',requestId,envelope}));
+    await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:actorId,requestId,result:{ok:true,version:expectedVersion+1,...(duplicate?{duplicate:true}:{})},room:{...env.created.room,selfId:actorId,version:20,hostId:targetId},phase:'lobby',adminHostId:targetId}));
+  };
+  const oldAction=crypto.randomUUID();await transfer(host,creator.playerId,creator.playerId,oldAction,1,'self-transfer');
+  await transfer(host,creator.playerId,third.identity.playerId,crypto.randomUUID(),2,'new-owner');
+  await env.relay.webSocketClose(other,1000,'lifecycle owner left',true);const departed=clock.now;
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:creator.playerId,room:{...env.created.room,version:21,hostId:creator.playerId},phase:'lobby',adminHostId:creator.playerId}));
+  env={...env,...await instance(env.ctx.storage,env.ctx.sockets)};
+  clock.now+=10_000;await transfer(host,creator.playerId,creator.playerId,oldAction,1,'replayed-self-transfer',true);
+  const record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,third.identity.playerId);assert.equal(record.ownerTransferVersion,3);assert.equal(record.hostLeftAt,departed);assert.equal(record.pendingOwnerTransfer,undefined);
+  assert(host.sent.some(message=>message.type==='ack'&&message.requestId==='replayed-self-transfer'&&message.result.duplicate));
+  clock.now=departed+PERSONAL_ROOM_AWAY_MS;peer.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,departed+PERSONAL_ROOM_AWAY_MS);
+}));
+
+test('a departing pending transfer target retains its identity and a recovered receipt owns it even after automatic management takeover',async()=>controlledClock(async clock=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:1,action:{type:'transfer',playerId:guest.identity.playerId}};
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'pending-transfer',envelope}));
+  const response=await env.relay.fetch(new Request('https://room.internal/leave/ABC234',{method:'POST',body:JSON.stringify(guest.identity)}));assert.equal(response.status,200);assert.equal((await response.json()).retainIdentity,true);assert.equal(peer.closeCode,4401);
+  const restored={...env,...await instance(env.ctx.storage,env.ctx.sockets)};
+  const deliverReceipt=(result:unknown)=>restored.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:'pending-transfer',result,room:{...env.created.room,version:4,hostId:env.created.identity.playerId},phase:'lobby',adminHostId:env.created.identity.playerId}));
+  await deliverReceipt({ok:true});assert.match(host.sent.at(-1).message,/移交确认版本/);assert(await env.ctx.storage.get<any>('room').then(record=>record.pendingOwnerTransfer));
+  await deliverReceipt({ok:true,duplicate:true,version:2});const record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,guest.identity.playerId);assert.equal(record.adminHostId,env.created.identity.playerId);assert.equal(record.pendingOwnerTransfer,undefined);assert.equal(record.hostLeftAt,clock.now);
+  const returning=await authenticate(restored,guest.identity);assert.equal(returning.readyState,1);assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+}));

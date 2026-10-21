@@ -59,11 +59,16 @@
 
 沿用现有游戏的父级待机、移动、技能、交换、传送和淘汰呈现，不引入新的骨骼播放器或把模型动画当作规则。摔倒使用 `pawn-fall.ts` 的一次 90° 倾倒：短失衡、倾倒、轻微落地反馈。底座支撑高度随角度变化，倒地持续时间取决于服务端 `tripped` 状态；只有规则的 `recover` 才起身，起身后旋转归零。降低动态效果时直接使用稳定倒地姿态。
 
-整包 **1,636,676 字节（约 1.56 MiB）**，**192,306 三角形**；最大单角色兔子 **9,308 三角形**。最多 8 个角色同时呈现，角色部分最坏小于 80,000 三角形。全套复用 **10 种无纹理 PBR 材质**，单角色最多 8 次材质绘制，Meshopt 解码器随现有 Three.js 提供。手机低画质继续关闭角色投影、降低底座分段，几何和材质实例共享。
+高画质整包 **1,636,676 字节（约 1.56 MiB）**，**192,306 三角形**；最大单角色兔子 **9,308 三角形**。最多 8 个角色同时呈现，角色部分最坏小于 80,000 三角形。
+
+低画质实际加载独立的 [economy GLB](../public/models/toy-racers-economy.glb)，为 **857,268 字节（约 837 KiB）**、**71,065 三角形**，最大单角色 **3,406 三角形**；角色部分最坏小于 32,000 三角形。它直接由同一 `.blend` 的游戏网格导出，按连通组件缩减曲面，保留小眼睛、鼻尖和配件的最低面数，并对齐高模边界和地面原点。高低画质不会同时下载；玩家切换画质时才请求另一版本，各有独立的失败恢复和重试预算。
+
+两套全角色均复用 **10 种无纹理 PBR 材质**，单角色最多 8 次材质绘制，Meshopt 解码器随现有 Three.js 提供。低画质关闭角色投影、降低底座分段，几何和材质实例共享。减少动效模式下，棋盘与骰子按需渲染，直接展示确认的落点、骰面及倒地/起身姿态，演出和规则计时不变。
 
 ## 验证与证据
 
 - 真正 Blender 渲染：[两代表角色正侧背](./evidence/blender/representatives-front-side-back.png)、[全部 36 角色正面](./evidence/blender/all-36-front.png)。这些是模型检查图；实际游戏截图由本轮整体 UI 验收另外保存，不混作游戏截图。
+- [高低画质正侧背对比](./evidence/blender/economy-front-side-back.png)检查相同镜头、灯光下的轮廓、五官和背侧细节。
 - `tests/3d-assets.test.ts` 实际使用 Three.js/Meshopt 解码当前 GLB，检查 36 个角色 ID、真实边界、地面原点、材质复用、无外部资源、文件大小和面数预算。
 - `tests/pawn-fall.test.ts` 采样 101 个倾倒时刻，检查无连续旋转、落地支撑、倒地保持、起身终点和降低动态效果。
 - 当前候选版在批量编辑/求交时曾多线程退出，最终使用 `--threads 1` 成功完成。此设置仅影响离线建模，不影响浏览器运行。
@@ -73,6 +78,7 @@
 ```powershell
 node scripts/generate-3d-assets.mjs --blender-source
 & 'C:\blender-5.2.3-candidate+v52.fab76e95306d-windows.amd64-release\blender.exe' --background --threads 1 --python scripts/refine-blender-models.py
+& 'C:\blender-5.2.3-candidate+v52.fab76e95306d-windows.amd64-release\blender.exe' --background --threads 1 --python scripts/export-blender-economy.py
 node node_modules/tsx/dist/cli.mjs --test tests/3d-assets.test.ts tests/pawn-fall.test.ts
 ```
 

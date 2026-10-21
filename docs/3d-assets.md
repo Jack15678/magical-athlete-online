@@ -12,7 +12,7 @@ The 36 original geometric toy sculptures continue the silhouettes and colors of 
 - Ten shared PBR plastic materials, no textures, no skinning, no external image requests. Character submeshes are merged by material into at most 8 draws per model. Each figure stays below 10,000 triangles and the complete catalog below 220,000; an eight-racer board therefore has a worst-case character budget below 80,000 triangles. Geometry and materials are shared between instances by the GLTF loader cache.
 - Dynamic key/fill light and contact shadows are supplied by the board scene. The character wrapper casts shadows at normal quality; low quality disables model shadow casting.
 - Character collision and gameplay come entirely from the rule engine. These are presentation meshes; no physics colliders or collision-authoritative data is shipped.
-- Each small token is already low-poly; no texture/mesh LOD downloads are needed. Low quality reduces ring segments and shadows. Animation is applied to the parent group rather than deforming the model.
+- Low quality loads `public/models/toy-racers-economy.glb` (below 1 MiB, 80,000 catalog triangles and 4,000 per figure) instead of the high-quality pack. Both share node names, dimensions, palette and pivots; the economy export protects small facial/accessory components before decimation. Quality changes use independent request recovery budgets. Low quality also reduces ring segments and shadows. Animation is applied to the parent group rather than deforming the model.
 
 ```tsx
 import { ToyCharacter } from './scene/ToyCharacter.js';
@@ -29,6 +29,7 @@ Generate the original editable design descriptors, then refine and export them u
 ```sh
 node scripts/generate-3d-assets.mjs --blender-source
 blender --background --threads 1 --python scripts/refine-blender-models.py
+blender --background --threads 1 --python scripts/export-blender-economy.py
 ```
 
 Blender exports the final Meshopt-compressed GLB directly and preserves all character roots. Optional independent validation with glTF Transform 4.5.1:

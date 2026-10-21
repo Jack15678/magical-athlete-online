@@ -77,7 +77,7 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
     const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
     if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
   },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
-  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已达到3小时上限，请重新创建。' : closedMessage); };
+  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已到期关闭，请重新创建。' : closedMessage); };
   socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
   socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主连续离开超过30分钟，房间已关闭。'; finishClosed(); } });

@@ -24,4 +24,6 @@ export interface ActionReply { ok: boolean; error?: string; version?: number; du
 export interface RoomView { hosting?: 'browser' | 'local'; authorityId?: string; authorityOnline?: boolean; closedAt?: number; }
 export interface RoomView { baseTurnOrder?: string[]; hostLeftAt?: number; closeReason?: 'expired' | 'host-away' | 'dismissed'; }
 export interface Room { spectators?: Spectator[]; }
+export interface Room { ownerId?: string; }
+export interface RoomView { ownerId?: string; }
 export interface RoomView { role?: RoomRole; spectators?: Spectator[]; createdAt?: number; expiresAt?: number; }

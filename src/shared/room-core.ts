@@ -29,6 +29,7 @@ export function validateMetadata(meta: RelayMetadata): void {
   if(meta.members.some(m=>m.isAI!==undefined&&typeof m.isAI!=='boolean')||meta.members.find(m=>m.id===meta.authorityId)?.isAI||meta.members.find(m=>m.id===meta.adminHostId)?.isAI)throw Error('AI不能成为房主或计算设备。');
   if(meta.mode==='practice'&&(meta.maxPlayers!==1||meta.members.length!==1||meta.members[0]?.isAI))throw Error('练习模式只允许自己参加。');
   if (!meta.members.some(m => m.id === meta.authorityId) || !meta.members.some(m => m.id === meta.adminHostId)) throw Error('主持设备或房主管理身份无效。');
+  if(meta.ownerId!==undefined&&!meta.members.some(member=>member.id===meta.ownerId&&!member.isAI))throw Error('生命周期房主身份无效。');
 }
 export function memberPlayer(member: RelayMember): Player {
   return { ...member, connected:!!member.isAI||member.connected, color: PLAYER_COLORS[member.seat]!, ready: false, score: 0, hand: [], used: [], selection: [] };
@@ -36,7 +37,7 @@ export function memberPlayer(member: RelayMember): Player {
 export function createBrowserRoom(meta: RelayMetadata, seed: number, now: number): Room {
   validateMetadata(meta);
   if (meta.phase !== 'lobby') throw Error('主持设备没有这局的本地存档，无法恢复已开始的比赛。请创建新房间。');
-  const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
+  const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, ownerId:meta.ownerId??meta.authorityId,hostLeftAt:meta.hostLeftAt,createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
     spectators: structuredClone(meta.spectators ?? []), game: createGame([...meta.members].sort((a,b) => a.seat-b.seat).map(memberPlayer), seed,meta.mode) };
   if(meta.mode==='practice'||meta.mode==='ai'){room.game.players.forEach(p=>p.ready=true);startGame(room.game);setRoomDeadline(room,now);}
   return room;
@@ -51,6 +52,9 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   // never let a reconnect or administrative transfer reopen the room.
   if (room.closedAt !== undefined) return { room, changed: false };
   let changed = false;
+  const ownerId=meta.ownerId??meta.authorityId;
+  if(room.ownerId!==ownerId){room.ownerId=ownerId;changed=true;}
+  if(room.hostLeftAt!==meta.hostLeftAt){room.hostLeftAt=meta.hostLeftAt;changed=true;}
   // Only an explicit lobby leave removes a relay identity. Disconnections keep
   // members in metadata, preserving their seat and preparation preference.
   if (room.game.phase === 'lobby') {
@@ -84,7 +88,7 @@ export function setRoomDeadline(room: Room, now: number): void {
 }
 export interface ReductionOptions { now: number; rematchSeed: number; automatic?: boolean }
 export function reduceRoomAction(original: Room, playerId: string, action: GameAction, options: ReductionOptions): Room {
-  if (options.now >= roomExpiry(original)) throw Error(personalRoom(original)?'房主离开超过30分钟，房间已关闭。':'房间已达到3小时上限，请重新创建。');
+  if (options.now >= roomExpiry(original)) throw Error('房主离开超过30分钟，房间已关闭。');
   if (original.closedAt !== undefined) throw Error('房间已解散，请创建或加入其他房间。');
   const room = structuredClone(original); const p = room.game.players.find(p => p.id === playerId);
   if (!p) throw Error('你不在这个房间的参赛席位中。');
@@ -106,7 +110,7 @@ export function reduceRoomAction(original: Room, playerId: string, action: GameA
     case 'transfer':
       if (room.hostId !== playerId) throw Error('只有房主能移交管理权。');
       if (!room.game.players.some(p => p.id === action.playerId && p.connected&&!p.isAI)) throw Error('请选择在线玩家。');
-      room.hostId = action.playerId; break;
+      room.hostId = action.playerId;room.ownerId=action.playerId;delete room.hostLeftAt;break;
     case 'rematch':
       if (room.hostId !== playerId || room.game.phase !== 'finished') throw Error('终局后由房主再来一局。');
       room.game = createGame(room.game.players.map(p => ({ ...p, ready:!!p.isAI, score:0, hand:[], used:[], selection:[] })), options.rematchSeed,room.mode);
@@ -156,7 +160,7 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   if (!room.game.players.some(p => p.id === playerId) && !spectator) throw Error('你不在这个房间的参赛席位中。');
   const g=room.game, pending=g.pending;
   const expiry=roomExpiry(room);
-  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:personalRoom(room)&&room.hostLeftAt===undefined?undefined:expiry,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
+  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.hostLeftAt===undefined?undefined:expiry,ownerId:room.ownerId??room.hostId,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
     draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,

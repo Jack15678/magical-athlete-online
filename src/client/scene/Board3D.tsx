@@ -86,7 +86,7 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const idleFocus = ownFocus(room, racers);
   const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : intro.focus ?? (action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : idleFocus));
   const returnSelf = () => { intro.skip(); setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId); setCameraReset(value => value + 1); };
-  return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
+  return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-frameloop={beat && !dice && !reducedMotion ? 'always' : 'demand'} data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
     <div className="scene-camera-toolbar">
       <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} aria-label={spectator ? '跟随当前选手' : undefined} onClick={returnSelf}>{spectator ? '跟随' : '自己'}</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { intro.skip(); setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
       <button className="camera-home" onClick={returnSelf} aria-label="恢复默认视角" title={spectator ? '跟随当前选手' : '回到自己的棋子'}>⌖ <span>{spectator ? '跟随选手' : '回到自己'}</span></button>
@@ -98,10 +98,10 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
       <div><small>{intro.reducedMotion ? '全体选手就位' : `选手亮相 · ${intro.index + 1} / ${intro.total}`}</small><strong>{intro.racer ? characterName(intro.racer.characterId) : '准备开赛！'}</strong></div>
       <button onClick={returnSelf} aria-label="跳过选手介绍">跳过 ›</button>
     </div>}
-    <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} />
+    <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} reducedMotion={reducedMotion} />
     <PredictionHud room={room} racers={racers} choosing={!!choosing} />
     <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}>
-      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, compact ? 1.25 : 1.5]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c7dfd3'); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.1; gl.shadowMap.type = THREE.PCFShadowMap; gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
+      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice && !reducedMotion ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, compact ? 1.25 : 1.5]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c7dfd3'); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.1; gl.shadowMap.type = THREE.PCFShadowMap; gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
         <StudioLighting compact={compact} lowQuality={lowQuality} />
         <AdaptiveQuality lowQuality={lowQuality} onSlow={() => setAutomaticLow(true)} root={root} />
         <CameraRig racers={racers} compact={compact} reset={cameraReset} focus={focus} reducedMotion={reducedMotion} onManual={() => { intro.skip(); setManualCamera(true); }} root={root} />
@@ -112,7 +112,7 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
         <PerformanceProbe root={root} />
       </Canvas>
     </SceneBoundary>
-    <div className="scene-labels" aria-hidden="true">{racers.filter(r => !r.eliminated).map(racer => { const owner = room.players.find(p => p.id === racer.playerId), scale = occupancy(racer, racers, racer.position).scale; return <span key={racer.id} ref={element => { if (element) labels.current.set(racer.id, element); else labels.current.delete(racer.id); }} className={`pawn-seat ${active === racer.id ? 'is-active' : ''} ${scale < .5 ? 'is-crowded' : scale < .9 ? 'is-shared' : ''}`} style={{ borderColor: owner?.color }}>{(owner?.seat ?? 0) + 1}</span>; })}<span ref={scoreLabel} className="score-float" style={{ display: beat?.kind === 'score' || beat?.kind === 'finish' ? undefined : 'none' }}>{beat?.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? (beat?.kind === 'finish' ? '冲线！' : '得分！')}</span></div>
+    <div className="scene-labels" aria-hidden="true">{racers.filter(r => !r.eliminated).map(racer => { const owner = room.players.find(p => p.id === racer.playerId), scale = occupancy(racer, racers, racer.position).scale; return <span key={racer.id} data-racer-id={racer.id} ref={element => { if (element) labels.current.set(racer.id, element); else labels.current.delete(racer.id); }} className={`pawn-seat ${active === racer.id ? 'is-active' : ''} ${scale < .5 ? 'is-crowded' : scale < .9 ? 'is-shared' : ''}`} style={{ borderColor: owner?.color }}>{(owner?.seat ?? 0) + 1}</span>; })}<span ref={scoreLabel} className="score-float" style={{ display: beat?.kind === 'score' || beat?.kind === 'finish' ? undefined : 'none' }}>{beat?.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? (beat?.kind === 'finish' ? '冲线！' : '得分！')}</span></div>
     {lost && <div className="scene-fallback"><strong>正在恢复图形画面…</strong><button onClick={() => { setLost(false); setResetKey(n => n + 1); }}>重新载入 3D</button></div>}
     <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}><DiceSpotlight active={dice} beatKey={dice ? beat?.key : undefined} contenders={duelContenders} face={beat?.face ?? room.lastRoll?.face ?? 1} startedAt={startedAt} durationMs={durationMs} reducedMotion={reducedMotion} lowQuality={lowQuality} source={selected ? characterName(selected.characterId) : '运动员'} /></SceneBoundary>
     <ActionBanner beat={beat} racers={racers} />
@@ -122,29 +122,38 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
 
 function PerformanceProbe({ root }: { root: React.RefObject<HTMLElement | null> }) {
   const { gl, scene } = useThree();
+  const frameCount = useRef(0);
   useEffect(() => {
     const previous = scene.onAfterRender;
+    // Model readiness is diagnostic metadata, not a per-frame rendering task.
+    // In an eight-client room, keep graph walks off the animation hot path.
+    const reportModels = () => {
+      if (!root.current) return;
+      let loaded = 0, fallbacks = 0;
+      scene.traverse(object => { if (object.name.startsWith('toy_')) loaded++; if (object.name === 'procedural-racer-fallback') fallbacks++; });
+      root.current.dataset.loadedModels = String(loaded); root.current.dataset.modelFallbacks = String(fallbacks);
+    };
+    reportModels();
+    const modelReport = setInterval(reportModels, 500);
     scene.onAfterRender = function (...args) {
       previous.apply(this, args);
       if (root.current) {
         root.current.dataset.drawCalls = String(gl.info.render.calls); root.current.dataset.triangles = String(gl.info.render.triangles);
-        let loaded = 0, fallbacks = 0;
-        scene.traverse(object => { if (object.name.startsWith('toy_')) loaded++; if (object.name === 'procedural-racer-fallback') fallbacks++; });
-        root.current.dataset.loadedModels = String(loaded); root.current.dataset.modelFallbacks = String(fallbacks);
+        root.current.dataset.renderFrameCount = String(++frameCount.current);
       }
     };
-    return () => { scene.onAfterRender = previous; };
+    return () => { clearInterval(modelReport); scene.onAfterRender = previous; };
   }, [gl, scene, root]);
   return null;
 }
-function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: RoomView; racers: Racer[]; active?: string; beat?: PresentationBeat; startedAt: number; durationMs: number }) {
+function Minimap({ room, racers, active, beat, startedAt, durationMs, reducedMotion }: { room: RoomView; racers: Racer[]; active?: string; beat?: PresentationBeat; startedAt: number; durationMs: number; reducedMotion: boolean }) {
   const [tick, setTick] = useState(1);
   useEffect(() => {
-    if (!beat?.motions.length) { setTick(1); return; }
+    if (reducedMotion || !beat?.motions.length) { setTick(1); return; }
     let animation: number;
     const update = () => { const value = progress(startedAt, durationMs); setTick(value); if (value < 1) animation = requestAnimationFrame(update); };
     update(); return () => cancelAnimationFrame(animation);
-  }, [beat?.key, startedAt, durationMs]);
+  }, [beat?.key, startedAt, durationMs, reducedMotion]);
   const mapPoint = (position: number) => { const point = boardPoint(position, false); return { x: 32 + (point[0] / TILE + 7.5) * 10.3, y: 28 + (point[2] / TILE + 1.5) * 15 }; };
   const currentPosition = (racer: Racer) => {
     const motion = beat?.motions.find(value => value.racerId === racer.id);
@@ -234,7 +243,9 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
   const affected = beat?.targets.includes(racer.id) || beat?.source === racer.id;
   useFrame(() => {
     if (!root.current || !body.current) return;
-    const t = beat ? progress(startedAt, durationMs) : 1;
+    // Demand rendering in reduced-motion mode must show the confirmed endpoint
+    // immediately; it cannot rely on another animation frame to reach it.
+    const t = beat && !reducedMotion ? progress(startedAt, durationMs) : 1;
     let x = from[0] + offset.x, z = from[2] + offset.z, y = .225, scale = offset.scale, tilt = racer.tripped ? -Math.PI / 2 : 0, swing = 0;
     if (motion) {
       const target = boardPoint(motion.to, compact);
@@ -260,6 +271,7 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
     if (beat?.targets.includes(racer.id) && beat.kind === 'eliminate') scale *= 1 - ease(t);
     root.current.position.set(x, y, z); root.current.scale.setScalar(Math.max(.01, scale)); body.current.rotation.set(tilt, swing, 0); body.current.position.y = fall?.lift ?? 0;
     const label = labels.current.get(racer.id);
+    if (label) { label.dataset.worldX = x.toFixed(4); label.dataset.worldZ = z.toFixed(4); }
     if (label) { root.current.updateWorldMatrix(true, false); projection.set(0, .19, .34).applyMatrix4(root.current.matrixWorld).project(camera); label.style.transform = `translate(${(projection.x + 1) * size.width / 2}px,${(1 - projection.y) * size.height / 2}px) translate(-50%,-50%)`; label.style.visibility = projection.z < -1 || projection.z > 1 ? 'hidden' : 'visible'; }
   });
   return <group ref={root} position={[from[0] + offset.x, .225, from[2] + offset.z]} scale={offset.scale} onClick={e => { e.stopPropagation(); if (e.delta <= 5) onDetail(racer.characterId); }}>
@@ -301,9 +313,9 @@ function DiceSpotlight({ active, beatKey, contenders, face, startedAt, durationM
   // Consecutive throws can keep `active` true. Tie their revealed face to the
   // confirmed event, so a new throw never inherits the previous settled frame.
   useEffect(() => { if (!active || !beatKey) return; const timer = setTimeout(() => setSettledKey(beatKey), Math.max(0, startedAt + revealAfterMs - performance.now())); return () => clearTimeout(timer); }, [active, beatKey, startedAt, revealAfterMs]);
-  return <div hidden={!active} className={`dice-spotlight ${settled ? 'is-settled' : ''} ${paired ? 'is-duel' : ''}`} role="status" aria-label={paired ? `${contenders[0]!.name}与${contenders[1]!.name}的决斗骰` : `${source}正在掷骰`} data-dice-event-key={active ? beatKey : ''} data-dice-mode={paired ? 'duel' : 'single'} data-up-face={!paired && settled ? face : ''} data-up-faces={paired && settled ? contenders.map(contender => contender.face).join(',') : ''} data-result-read-ms={paired ? durationMs - revealAfterMs : undefined}>
+  return <div hidden={!active} className={`dice-spotlight ${settled ? 'is-settled' : ''} ${paired ? 'is-duel' : ''}`} role="status" aria-label={paired ? `${contenders[0]!.name}与${contenders[1]!.name}的决斗骰` : `${source}正在掷骰`} data-dice-event-key={active ? beatKey : ''} data-frameloop={active ? reducedMotion ? 'demand' : 'always' : 'never'} data-dice-mode={paired ? 'duel' : 'single'} data-up-face={!paired && settled ? face : ''} data-up-faces={paired && settled ? contenders.map(contender => contender.face).join(',') : ''} data-result-read-ms={paired ? durationMs - revealAfterMs : undefined}>
     {paired ? <div className="duel-contenders">{contenders.map((contender, index) => <div key={contender.racerId} data-duel-racer-id={contender.racerId}><span><Avatar id={contender.characterId} /></span><strong>{contender.name}</strong><small>{index ? '应战方' : '挑战方'}</small></div>)}<b>VS</b></div> : <div className="dice-caption">{source}<strong>{settled ? '点数确认' : '好戏，掷出来！'}</strong></div>}
-    <Canvas frameloop={active ? 'always' : 'never'} shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.5]} camera={{ position: [3.7, 6.5, 5], fov: 38 }} gl={{ alpha: true, antialias: !lowQuality }}><ambientLight intensity={1.5} /><directionalLight position={[-3, 8, 4]} intensity={3} castShadow shadow-mapSize={[512, 512]} shadow-normalBias={.02} /><RoundedBox args={[4.2, .18, 3.6]} position={[0, -.15, 0]} radius={.2} smoothness={3} receiveShadow><meshStandardMaterial color="#315c62" roughness={.9} /></RoundedBox>{[-1, 1].map(side => <group key={side}><mesh position={[side * 2.04, .03, 0]}><boxGeometry args={[.1, .3, 3.7]} /><meshStandardMaterial color="#e4b569" /></mesh><mesh position={[0, .03, side * 1.78]}><boxGeometry args={[4.1, .3, .1]} /><meshStandardMaterial color="#e4b569" /></mesh></group>)}{paired ? contenders.map((contender, index) => <group key={contender.racerId} position={[(index ? 1 : -1) * .95, 0, 0]} scale={.82}><Die face={contender.face} startedAt={startedAt} durationMs={Math.max(1, revealAfterMs)} reducedMotion={reducedMotion || revealAfterMs === 0} side={index ? 1 : -1} /></group>) : <Die {...{ face, startedAt, durationMs, reducedMotion }} />}</Canvas>
+    <Canvas frameloop={active ? reducedMotion ? 'demand' : 'always' : 'never'} shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.5]} camera={{ position: [3.7, 6.5, 5], fov: 38 }} gl={{ alpha: true, antialias: !lowQuality }}><ambientLight intensity={1.5} /><directionalLight position={[-3, 8, 4]} intensity={3} castShadow shadow-mapSize={[512, 512]} shadow-normalBias={.02} /><RoundedBox args={[4.2, .18, 3.6]} position={[0, -.15, 0]} radius={.2} smoothness={3} receiveShadow><meshStandardMaterial color="#315c62" roughness={.9} /></RoundedBox>{[-1, 1].map(side => <group key={side}><mesh position={[side * 2.04, .03, 0]}><boxGeometry args={[.1, .3, 3.7]} /><meshStandardMaterial color="#e4b569" /></mesh><mesh position={[0, .03, side * 1.78]}><boxGeometry args={[4.1, .3, .1]} /><meshStandardMaterial color="#e4b569" /></mesh></group>)}{paired ? contenders.map((contender, index) => <group key={contender.racerId} position={[(index ? 1 : -1) * .95, 0, 0]} scale={.82}><Die face={contender.face} startedAt={startedAt} durationMs={Math.max(1, revealAfterMs)} reducedMotion={reducedMotion || revealAfterMs === 0} side={index ? 1 : -1} /></group>) : <Die {...{ face, startedAt, durationMs, reducedMotion }} />}</Canvas>
     <div className={`dice-result ${paired ? 'duel-result' : ''}`} data-testid={active ? paired ? 'duel-dice-value' : 'dice-value' : undefined}>{paired ? <><span className="duel-values"><b>{settled ? contenders[0]!.face : '·'}</b><i>:</i><b>{settled ? contenders[1]!.face : '·'}</b></span><span>{settled ? '双方点数确认 · 即将结算' : '两人已投骰 · 同时揭晓'}</span></> : settled ? <><b>{face}</b><span>点 · 即将出发</span></> : <span>抛出 · 弹跳 · 停稳</span>}</div>
   </div>;
 }

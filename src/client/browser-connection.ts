@@ -297,7 +297,7 @@ export class BrowserRelayConnection implements RoomConnection {
     for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }
     this.replies.clear();
     this.disconnect();
-    this.onStatus(this.roomExpired ? 'expired' : 'closed', this.roomExpired ? '房间已达到3小时上限，请重新创建。' : this.roomClosedMessage??ROOM_CLOSED);
+    this.onStatus(this.roomExpired ? 'expired' : 'closed', this.roomExpired ? '房间已到期关闭，请重新创建。' : this.roomClosedMessage??ROOM_CLOSED);
   }
   private fail(message: string) { this.blocked = true; this.authenticated = false; this.authorityRole = false; this.onStatus('error', message); this.ws?.close(1011, 'authority unavailable'); this.releaseLock?.(); this.rejectReplies(message); }
 }

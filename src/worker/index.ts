@@ -9,10 +9,12 @@ interface Env { ROOMS: DurableObjectNamespace<RoomRelay>; ASSETS: Fetcher }
 interface StoredMember { isAI?:boolean; id:string; name:string; seat:number; tokenHash:string }
 interface StoredSpectator { id:string; name:string; tokenHash:string }
 interface RoomRecord {
-  mode?:GameMode; code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number;
+  mode?:GameMode; code:string; authorityId:string; adminHostId:string; ownerId?:string; maxPlayers:number; timeoutSeconds:number;
   phase:Phase; createdAt:number; expiresAt:number; members:StoredMember[]; spectators?:StoredSpectator[];
   joiningLockId?:string;
   pendingClose?:{actorId:string;requestId:string;duplicateRequestIds?:string[];envelope:ActionEnvelope};
+  pendingOwnerTransfer?:{actorId:string;targetId:string;actionId:string;requestIds:string[];envelope:ActionEnvelope};
+  ownerTransferVersion?:number;
   closedAt?:number;
   hostLeftAt?:number;
   hostSeenAt?:number;
@@ -148,10 +150,11 @@ export class RoomRelay extends DurableObject<Env> {
     super(ctx,env);
     ctx.blockConcurrencyWhile(async()=>{
       this.record=await ctx.storage.get<RoomRecord>('room')??null;this.closed=await ctx.storage.get<RoomClosure>('closed')??null;
-      if(this.record&&personalRoom(this.record)&&this.record.closedAt!==undefined){await this.closePersonal('dismissed',this.record.closedAt);return;}
+      if(this.record)this.record.ownerId??=this.record.authorityId;
+      if(this.record&&this.record.closedAt!==undefined){await this.closePersonal('dismissed',this.record.closedAt);return;}
       // Hibernation preserves sockets and their platform ping timestamps. A
       // genuine restart without sockets starts (or preserves) owner absence.
-      if(this.record&&personalRoom(this.record)&&this.record.closedAt===undefined)await this.refreshHostPresence(this.record.hostSeenAt===undefined?Date.now():Math.min(Date.now(),this.record.hostSeenAt+AUTHORITY_LEASE_MS));
+      if(this.record&&this.record.closedAt===undefined)await this.refreshHostPresence(this.record.hostSeenAt===undefined?Date.now():Math.min(Date.now(),this.record.hostSeenAt+AUTHORITY_LEASE_MS));
     });
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
   }
@@ -163,7 +166,7 @@ export class RoomRelay extends DurableObject<Env> {
   private participant(playerId:string):StoredMember|StoredSpectator|undefined {return this.record?.members.find(person=>person.id===playerId)??this.spectator(playerId);}
   private summary():RoomSummary {
     const room=this.record!;
-    return {code:room.code,hostName:room.members.find(person=>person.id===room.adminHostId)?.name??room.members[0]?.name??'房主',phase:room.phase,playerCount:room.members.length,maxPlayers:room.maxPlayers,spectatorCount:(room.spectators??[]).filter(person=>this.online(person.id)).length,createdAt:room.createdAt,expiresAt:this.expiry(),authorityOnline:!!this.authority(),mode:room.mode??'multiplayer'};
+    return {code:room.code,hostName:room.members.find(person=>person.id===room.ownerId)?.name??room.members[0]?.name??'房主',phase:room.phase,playerCount:room.members.length,maxPlayers:room.maxPlayers,spectatorCount:(room.spectators??[]).filter(person=>this.online(person.id)).length,createdAt:room.createdAt,expiresAt:this.expiry(),authorityOnline:!!this.authority(),mode:room.mode??'multiplayer'};
   }
   private async publishDirectory():Promise<void> {
     if(!this.env.ROOMS||!this.record)return;
@@ -192,7 +195,7 @@ export class RoomRelay extends DurableObject<Env> {
       for(let offset=0;offset<entries.length;offset+=20){
         const results=await Promise.all(entries.slice(offset,offset+20).map(async entry=>{
           const key='directory:'+entry.code;
-          if(entry.mode==='practice'||(entry.mode==='ai'?entry.expiresAt:Math.min(entry.expiresAt,entry.createdAt+ROOM_TTL_MS))<=Date.now()){await this.ctx.storage.delete(key);return;}
+          if(entry.mode==='practice'){await this.ctx.storage.delete(key);return;}
           try{
             const response=await this.env.ROOMS.get(this.env.ROOMS.idFromName(entry.code)).fetch('https://room.internal/summary/'+entry.code);
             if(response.status===404||response.status===410){await response.body?.cancel();await this.ctx.storage.delete(key);return;}
@@ -235,10 +238,10 @@ export class RoomRelay extends DurableObject<Env> {
     return Math.max(state.hostLeaseAt??state.authorityLeaseAt??state.acceptedAt,this.ctx.getWebSocketAutoResponseTimestamp(socket)?.getTime()??0)+AUTHORITY_LEASE_MS;
   }
   private async refreshHostPresence(leftAt=Date.now()):Promise<void> {
-    const room=this.record;if(!room||!personalRoom(room)||room.closedAt!==undefined)return;
-    const connected=this.sockets().some(socket=>{const state=this.attachment(socket);return state?.playerId===room.adminHostId&&this.hostDeadline(socket,state)>Date.now();});
+    const room=this.record;if(!room||room.closedAt!==undefined)return;
+    const connected=this.sockets().some(socket=>{const state=this.attachment(socket);return !!state&&state.playerId===room.ownerId&&this.hostDeadline(socket,state)>Date.now();});
     if(connected){
-      const hostSeenAt=Math.max(...this.sockets().map(socket=>{const state=this.attachment(socket);return state?.playerId===room.adminHostId?this.hostDeadline(socket,state)-AUTHORITY_LEASE_MS:0;}));
+      const hostSeenAt=Math.max(...this.sockets().map(socket=>{const state=this.attachment(socket);return state&&state.playerId===room.ownerId?this.hostDeadline(socket,state)-AUTHORITY_LEASE_MS:0;}));
       if(room.hostLeftAt!==undefined||hostSeenAt!==(room.hostSeenAt??0)){const next={...room,hostSeenAt};delete next.hostLeftAt;await this.ctx.storage.put('room',next);this.record=next;}
     }
     else if(!connected&&room.hostLeftAt===undefined){const next={...room,hostLeftAt:leftAt};await this.ctx.storage.put('room',next);this.record=next;}
@@ -248,7 +251,7 @@ export class RoomRelay extends DurableObject<Env> {
   private notify(message:RelayServerMessage):void {for(const socket of this.sockets())if(this.attachment(socket)?.playerId)this.send(socket,message);}
   private metadata():RelayMetadata {
     const room=this.record!;
-    return {mode:room.mode??'multiplayer',code:room.code,authorityId:room.authorityId,adminHostId:room.adminHostId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,phase:room.phase,createdAt:room.createdAt,expiresAt:personalRoom(room)&&room.hostLeftAt===undefined?undefined:this.expiry(),hostLeftAt:room.hostLeftAt,members:room.members.map(({id,name,seat,isAI})=>({id,name,seat,...(isAI?{isAI:true}:{}),connected:!!isAI||this.online(id)})),spectators:(room.spectators??[]).map(({id,name})=>({id,name,connected:this.online(id)}))};
+    return {mode:room.mode??'multiplayer',code:room.code,authorityId:room.authorityId,adminHostId:room.adminHostId,ownerId:room.ownerId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,phase:room.phase,createdAt:room.createdAt,expiresAt:room.hostLeftAt===undefined?undefined:this.expiry(),hostLeftAt:room.hostLeftAt,members:room.members.map(({id,name,seat,isAI})=>({id,name,seat,...(isAI?{isAI:true}:{}),connected:!!isAI||this.online(id)})),spectators:(room.spectators??[]).map(({id,name})=>({id,name,connected:this.online(id)}))};
   }
   private view(playerId:string):RoomView {
     const room=this.record!;
@@ -256,7 +259,7 @@ export class RoomRelay extends DurableObject<Env> {
   }
   private decorate(room:RoomView):RoomView {
     const spectator=!!this.spectator(room.selfId);
-    return {...room,...(spectator?{players:room.players.map(({hand,selection,...publicPlayer})=>publicPlayer),pending:undefined}:{}),role:spectator?'spectator':'player',spectators:this.metadata().spectators,createdAt:this.record!.createdAt,expiresAt:this.metadata().expiresAt,hostLeftAt:this.record!.hostLeftAt,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};
+    return {...room,...(spectator?{players:room.players.map(({hand,selection,...publicPlayer})=>publicPlayer),pending:undefined}:{}),role:spectator?'spectator':'player',spectators:this.metadata().spectators,createdAt:this.record!.createdAt,ownerId:this.record!.ownerId,expiresAt:this.metadata().expiresAt,hostLeftAt:this.record!.hostLeftAt,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};
   }
   private async initialView(playerId:string):Promise<RoomView> {
     if(this.spectator(playerId)){
@@ -315,7 +318,8 @@ export class RoomRelay extends DurableObject<Env> {
           const player:StoredMember={id:crypto.randomUUID(),name:nickname,seat:0,tokenHash:await sha256(secret)};
           const mode=(input.mode??'multiplayer') as GameMode;
           const bots:StoredMember[]=Array.from({length:mode==='ai'?(input.aiCount as number??3):0},(_,i)=>({id:crypto.randomUUID(),name:`电脑${i+1}`,seat:i+1,tokenHash:'',isAI:true}));
-          const created:RoomRecord={mode,code,authorityId:player.id,adminHostId:player.id,maxPlayers:input.maxPlayers as number,timeoutSeconds:input.timeoutSeconds as number,phase:'lobby',createdAt:now,expiresAt:now+ROOM_TTL_MS,...(mode!=='multiplayer'?{hostLeftAt:now}:{}),members:[player,...bots],spectators:[]};
+          const created:RoomRecord={mode,code,authorityId:player.id,adminHostId:player.id,ownerId:player.id,maxPlayers:input.maxPlayers as number,timeoutSeconds:input.timeoutSeconds as number,phase:'lobby',createdAt:now,expiresAt:now,hostLeftAt:now,members:[player,...bots],spectators:[]};
+          created.expiresAt=this.expiry(created);
           await this.ctx.storage.transaction(async txn=>{await txn.put('room',created);await txn.setAlarm(this.expiry(created));});
           this.record=created;
           await this.publishDirectory();
@@ -355,7 +359,7 @@ export class RoomRelay extends DurableObject<Env> {
         if(operation==='leave'&&request.method==='POST'){
           const identity=parseIdentity(await body(request)),person=identity?this.participant(identity.playerId):undefined;
           if(!identity||identity.roomCode!==room.code||!person||!constantEqual(person.tokenHash,await sha256(identity.token))||(identity.role!==undefined&&identity.role!==(this.spectator(person.id)?'spectator':'player')))throw new HttpError(401,'退出凭据无效。');
-          const spectator=!!this.spectator(person.id),retainIdentity=!spectator&&(person.id===room.authorityId||room.phase!=='lobby'||!!room.joiningLockId);
+          const spectator=!!this.spectator(person.id),retainIdentity=!spectator&&(person.id===room.ownerId||person.id===room.authorityId||room.phase!=='lobby'||!!room.joiningLockId||person.id===room.pendingOwnerTransfer?.targetId||person.id===room.pendingOwnerTransfer?.actorId);
           if(!retainIdentity){
             const updated={...room,members:room.members.filter(member=>member.id!==person.id),spectators:(room.spectators??[]).filter(viewer=>viewer.id!==person.id)};
             if(updated.adminHostId===person.id)updated.adminHostId=room.authorityId;
@@ -371,8 +375,8 @@ export class RoomRelay extends DurableObject<Env> {
             // reconnect. Credentials retained for players still allow a manual return.
             try{socket.close(4401,'已退出房间');}catch{}
           }
-          this.notify({type:'roster',meta:this.metadata()});if(wasAuthority)this.notify({type:'host-status',online:false});
           await this.refreshHostPresence();
+          this.notify({type:'roster',meta:this.metadata()});if(wasAuthority)this.notify({type:'host-status',online:false});
           await this.publishDirectory();return json({ok:true,retainIdentity});
         }
         if(operation==='ws'&&request.headers.get('Upgrade')?.toLowerCase()==='websocket'){
@@ -415,13 +419,13 @@ export class RoomRelay extends DurableObject<Env> {
           if(parsed.authority===true&&member.id!==room.authorityId){socket.close(4401,'只有创建者可主持');return;}
           const own=this.sockets().filter(s=>this.attachment(s)?.playerId===member.id);
           if(own.length>=5&&(!parsed.authority||!own.some(s=>this.attachment(s)?.authority))){socket.close(4429,'同一身份页面过多');return;}
-          if(parsed.authority||(personalRoom(room)&&member.id===room.adminHostId)){
+          if(parsed.authority||member.id===room.ownerId){
             // Never acknowledge an authority role whose expiry check could not
             // be persisted (for example, when the Free write quota is spent).
             try{await this.ensureAlarmNoLaterThan(now+AUTHORITY_LEASE_MS);}
             catch{this.send(socket,{type:'error',message:'中继暂时无法维护主持连接，请稍后重试。'});socket.close(1013,'主持租约保存失败');return;}
             if(parsed.authority)connection.authorityLeaseAt=now;
-            if(personalRoom(room)&&member.id===room.adminHostId)connection.hostLeaseAt=now;
+            if(member.id===room.ownerId)connection.hostLeaseAt=now;
           }
           // New valid authority replaces a stale connection left by a refresh/network loss.
           if(parsed.authority)for(const previous of own)if(this.attachment(previous)?.authority){const old=this.attachment(previous)!;old.authority=false;old.playerId=undefined;previous.serializeAttachment(old);previous.close(4409,'主持已在另一页面恢复');}
@@ -438,6 +442,7 @@ export class RoomRelay extends DurableObject<Env> {
           // tombstone write/ack failed. Replay the exact durable intent so its
           // existing receipt can finish closure without creating a new action.
           if(connection.authority&&this.record?.pendingClose){const pending=this.record.pendingClose;this.send(socket,{type:'request',playerId:pending.actorId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});}
+          if(connection.authority&&this.record?.pendingOwnerTransfer){const pending=this.record.pendingOwnerTransfer;this.send(socket,{type:'request',playerId:pending.actorId,requestId:pending.requestIds[0]!,operation:'action',envelope:pending.envelope});}
           return;
         }
         if(!connection.playerId){socket.close(4401,'请先认证');return;}
@@ -471,27 +476,31 @@ export class RoomRelay extends DurableObject<Env> {
             // replayed receipt. Authority status alone never authorizes close.
             const closeRequestIds=pending?[pending.requestId,...(pending.duplicateRequestIds??[])]:[];
             if(!pending||pending.actorId!==room.adminHostId||parsed.to!==pending.actorId||!closeRequestIds.includes(parsed.requestId as string)||!parsed.result?.ok)return;
-            const closed:RoomRecord={...room,closedAt:snapshot.closedAt,phase:parsed.phase,expiresAt:this.expiry(room)};
-            delete closed.pendingClose;delete closed.joiningLockId;
-            await this.ctx.storage.transaction(async txn=>{
-              await txn.put('room',closed);
-              await txn.delete([...room.members,...(room.spectators??[])].map(member=>'view:'+member.id));
-              await txn.setAlarm(closed.expiresAt);
-            });
-            this.record=closed;this.snapshots.clear();
-            for(const target of this.sockets())if(this.attachment(target)?.playerId===pending.actorId){
-              for(const closeRequestId of closeRequestIds)this.send(target,{type:'ack',requestId:closeRequestId,result:parsed.result as ActionReply});
-              this.send(target,{type:'snapshot',room:this.decorate(snapshot),requestId:pending.requestId});
-            }
-            this.stopClosedConnections();await this.publishDirectory();return;
+            await this.closePersonal('dismissed',snapshot.closedAt,{hostId:pending.actorId,actionId:pending.envelope.actionId,version:parsed.result.version},()=>{
+              for(const target of this.sockets())if(this.attachment(target)?.playerId===pending.actorId){
+                for(const closeRequestId of closeRequestIds)this.send(target,{type:'ack',requestId:closeRequestId,result:parsed.result as ActionReply});
+              }
+            });return;
           }
           const releaseAdmission=!!room.joiningLockId&&(parsed.phase!=='lobby'||(parsed.requestId===room.joiningLockId&&parsed.result!==undefined));
           const releaseClose=!!room.pendingClose&&parsed.to===room.pendingClose.actorId&&[room.pendingClose.requestId,...(room.pendingClose.duplicateRequestIds??[])].includes(parsed.requestId as string)&&parsed.result?.ok===false;
-          const metadataChanged=room.phase!==parsed.phase||room.adminHostId!==parsed.adminHostId||releaseAdmission||releaseClose;
+          const transfer=room.pendingOwnerTransfer,releaseOwnerTransfer=!!transfer&&parsed.to===transfer.actorId&&transfer.requestIds.includes(parsed.requestId as string)&&parsed.result!==undefined;
+          if(releaseOwnerTransfer&&parsed.result?.ok&&parsed.result.version!==transfer!.envelope.expectedVersion+1)throw Error('移交确认版本不正确。');
+          const metadataChanged=room.phase!==parsed.phase||room.adminHostId!==parsed.adminHostId||releaseAdmission||releaseClose||releaseOwnerTransfer;
           const updated={...room,phase:parsed.phase,adminHostId:parsed.adminHostId};
           // An unrelated stale lobby snapshot must not reopen admission while start is in flight.
           if(releaseAdmission)delete updated.joiningLockId;
           if(releaseClose)delete updated.pendingClose;
+          if(releaseOwnerTransfer){
+            // A replayed receipt may carry today's admin projection but the
+            // original action's version. Apply each ownership change only once.
+            if(parsed.result?.ok&&parsed.result.version!==undefined&&parsed.result.version>(room.ownerTransferVersion??0)){
+              updated.ownerId=transfer!.targetId;updated.ownerTransferVersion=parsed.result.version;
+              if(this.online(updated.ownerId))delete updated.hostLeftAt;else updated.hostLeftAt=Date.now();
+            }
+            delete updated.pendingOwnerTransfer;
+            if(snapshot)snapshot={...snapshot,ownerId:updated.ownerId,hostLeftAt:updated.hostLeftAt,expiresAt:updated.hostLeftAt===undefined?undefined:roomExpiry(updated)};
+          }
           const previous=snapshot?this.snapshots.get(parsed.to):undefined;
           const snapshotChanged=!!snapshot&&(!previous||JSON.stringify(previous)!==JSON.stringify(snapshot));
           if(metadataChanged||snapshotChanged)await this.ctx.storage.transaction(async txn=>{
@@ -499,6 +508,7 @@ export class RoomRelay extends DurableObject<Env> {
             if(snapshotChanged)await txn.put('view:'+parsed.to,snapshot!);
           });
           if(metadataChanged)this.record=updated;
+          if(releaseOwnerTransfer){await this.refreshHostPresence();await this.ensureAlarmNoLaterThan(Date.now()+AUTHORITY_LEASE_MS);}
           if(snapshot)this.snapshots.set(parsed.to,snapshot);
           for(const target of this.sockets())if(this.attachment(target)?.playerId===parsed.to){
             if(snapshot)this.send(target,{type:'snapshot',room:this.decorate(snapshot),...(parsed.requestId?{requestId:parsed.requestId as string}:{})});
@@ -530,11 +540,22 @@ export class RoomRelay extends DurableObject<Env> {
             const pending=room.pendingClose;
             this.send(host,{type:'request',playerId:pending.actorId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});return;
           }
+          if(room.pendingOwnerTransfer){const pending=room.pendingOwnerTransfer;this.send(host,{type:'request',playerId:pending.actorId,requestId:pending.requestIds[0]!,operation:'action',envelope:pending.envelope});return;}
           this.send(host,{type:'request',playerId:connection.playerId,requestId:requestId??crypto.randomUUID(),operation:'sync'});return;
         }
         if(parsed.type==='action'){
           if(this.spectator(connection.playerId))throw Error('观战者不能进行比赛操作。');
           if(!only(parsed,['type','requestId','envelope'])||!requestId||!actionEnvelope(parsed.envelope))throw Error('操作格式不正确。');
+          if(room.pendingClose&&parsed.envelope.action.type!=='close')throw Error('房间正在解散，请等待确认。');
+          if(parsed.envelope.action.type==='transfer'){
+            const targetId=parsed.envelope.action.playerId,target=room.members.find(person=>person.id===targetId);
+            if(connection.playerId!==room.adminHostId)throw Error('只有当前管理房主能移交房间。');
+            if(!target||target.isAI||!this.sockets().some(candidate=>{const state=this.attachment(candidate);return !!state&&state.playerId===targetId&&this.hostDeadline(candidate,state)>Date.now();}))throw Error('请选择在线玩家。');
+            const pending=room.pendingOwnerTransfer;
+            if(pending&&(pending.actorId!==connection.playerId||pending.actionId!==parsed.envelope.actionId||pending.targetId!==targetId||pending.envelope.expectedVersion!==parsed.envelope.expectedVersion))throw Error('房主管理权正在移交，请等待确认。');
+            const requestIds=[...new Set([...(pending?.requestIds??[]),requestId])];if(requestIds.length>8)throw Error('移交请求正在确认，请等待结果。');
+            await this.save({...room,pendingOwnerTransfer:{actorId:connection.playerId,targetId,actionId:parsed.envelope.actionId,requestIds,envelope:parsed.envelope}});
+          }
           if(parsed.envelope.action.type==='close'){
             if(connection.playerId!==room.adminHostId)throw Error('只有当前管理房主能解散房间。');
             if(room.pendingClose&&(room.pendingClose.actorId!==connection.playerId||room.pendingClose.envelope.actionId!==parsed.envelope.actionId))throw Error('房间正在解散，请等待确认。');
@@ -572,11 +593,7 @@ export class RoomRelay extends DurableObject<Env> {
   async webSocketError(socket:WebSocket):Promise<void>{await this.webSocketClose(socket,1011,'连接中断',false);}
   private async expire(updateDirectory=true):Promise<void>{
     if(!this.record)return;
-    if(personalRoom(this.record)){await this.closePersonal('host-away',this.expiry());return;}
-    const notice:RelayServerMessage={type:'room-closed',code:this.record.code,closedAt:this.expiry(),reason:'expired'};
-    for(const socket of this.sockets()){this.send(socket,notice);try{socket.close(4404,'房间已过期');}catch{}}
-    if(updateDirectory)await this.publishDirectory();
-    await this.ctx.storage.deleteAlarm();await this.ctx.storage.deleteAll();this.snapshots.clear();this.record=null;
+    await this.closePersonal(this.record.closedAt===undefined?'host-away':'dismissed',this.record.closedAt??this.expiry());return;
   }
   private async closePersonal(reason:RoomCloseReason,closedAt:number,receipt:Partial<RoomClosure>={},acknowledge?:()=>void):Promise<void>{
     if(this.closed){acknowledge?.();return;}
@@ -594,12 +611,12 @@ export class RoomRelay extends DurableObject<Env> {
       if(!this.record)return;
       const now=Date.now();if(this.expiry()<=now){await this.expire();return;}
       if(this.record.closedAt!==undefined){this.stopClosedConnections();await this.ctx.storage.setAlarm(this.expiry());return;}
-      let next=this.expiry(),lastHostDeadline=0;
+      let next=this.expiry(),lastHostDeadline=0,ownerRetired=false;
       for(const socket of this.sockets()){
         const state=this.attachment(socket);if(!state)continue;
-        if(personalRoom(this.record)&&state.playerId===this.record.adminHostId){
+        if(state.playerId===this.record.ownerId){
           const deadline=this.hostDeadline(socket,state);lastHostDeadline=Math.max(lastHostDeadline,deadline);
-          if(deadline<=now){state.authority=false;delete state.playerId;socket.serializeAttachment(state);socket.close(4408,'房主网页心跳已超时，等待重连');continue;}
+          if(deadline<=now){ownerRetired=true;if(state.authority)this.retireAuthority(socket,4408,'房主网页心跳已超时，等待重连');else{delete state.playerId;socket.serializeAttachment(state);socket.close(4408,'房主网页心跳已超时，等待重连');}continue;}
           next=Math.min(next,deadline);
         }
         if(state.authority){
@@ -612,6 +629,7 @@ export class RoomRelay extends DurableObject<Env> {
         }
       }
       await this.refreshHostPresence(lastHostDeadline||now);
+      if(ownerRetired){this.notify({type:'roster',meta:this.metadata()});this.notify({type:'host-status',online:!!this.authority()});}
       if(this.record&&this.expiry()<=now){await this.expire();return;}
       next=Math.min(next,this.expiry());
       try{if(next===Number.MAX_SAFE_INTEGER)await this.ctx.storage.deleteAlarm();else await this.ctx.storage.setAlarm(next);}

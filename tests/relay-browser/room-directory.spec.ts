@@ -1,5 +1,7 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import type { Identity, Room, RoomView } from '../../src/shared/types.js';
+import type { RelayMetadata } from '../../src/shared/relay.js';
 
 const url = process.env.RELAY_URL ?? 'http://127.0.0.1:8787';
 
@@ -134,6 +136,54 @@ test('spectators can exit while offline and return with their retained viewing i
     await viewer.getByRole('tab', { name: '加入朋友', exact: true }).click();
     await viewer.getByTestId(`directory-room-${peers.code}`).getByRole('button', { name: '观战', exact: true }).click();
     await expect(viewer.locator('.connection.is-online')).toBeVisible(); expect(await identity(viewer, peers.code)).toEqual(before);
+    expect(peers.errors).toEqual([]);
+  } finally { await Promise.all(peers.contexts.map(context => context.close())); }
+});
+
+test('multiplayer owner exit preserves a second tab and resumes the same owner identity after the final tab leaves', async ({ browser }, testInfo) => {
+  test.setTimeout(90_000);
+  const peers = await roomPeers(browser), [host, guest] = peers.pages, metadata: RelayMetadata[] = [], snapshots: RoomView[] = [];
+  guest.on('websocket', socket => socket.on('framereceived', frame => {
+    try {
+      const message = JSON.parse(String(frame.payload));
+      if ((message.type === 'auth-ok' || message.type === 'roster') && message.meta) metadata.push(message.meta);
+      if (message.type === 'snapshot') snapshots.push(message.room);
+    } catch { /* Raw heartbeat frames. */ }
+  }));
+  try {
+    const originalOwner = await identity(host, peers.code), originalGuest = await identity(guest, peers.code);
+    await guest.reload(); await expect(guest.locator('.connection.is-online')).toBeVisible();
+    await expect.poll(() => metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);
+    const ownerTab = await peers.contexts[0]!.newPage(); ownerTab.on('pageerror', error => peers.errors.push(error.stack ?? error.message));
+    await ownerTab.goto(`${url}/room/${peers.code}`); await expect(ownerTab.locator('.connection.is-online')).toBeVisible();
+    expect(await identity(ownerTab, peers.code)).toEqual(originalOwner);
+    await host.getByRole('button', { name: '退出房间', exact: true }).click();
+    await expect(host.getByRole('dialog')).toContainText('30 分钟');
+    await expect(host.getByRole('dialog')).toContainText('最后一个有效连接');
+    await host.screenshot({ path: testInfo.outputPath('multiplayer-owner-exit-confirm.png'), fullPage: true });
+    await host.getByRole('button', { name: '确认退出房间', exact: true }).click(); await expect(host).toHaveURL(`${url}/`);
+    expect(await identity(host, peers.code)).toEqual(originalOwner);
+    await expect(ownerTab.locator('.connection.is-online')).toBeVisible(); await expect(guest.locator('.connection.is-online')).toBeVisible();
+    await ownerTab.getByRole('button', { name: '我准备好了', exact: true }).click();
+    await expect(ownerTab.getByRole('button', { name: '取消准备', exact: true })).toBeVisible();
+    await expect.poll(async () => (await saved(ownerTab, peers.code)).game.players.find(player => player.id === originalOwner.playerId)?.connected).toBe(true);
+    expect(metadata.at(-1)?.hostLeftAt).toBeUndefined(); expect(metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);
+    const beforeFinalLeave = metadata.length;
+    await ownerTab.close();
+    await expect(guest.getByText('计算房主网页离线，等待其返回。', { exact: false })).toBeVisible();
+    await expect.poll(() => metadata.length).toBeGreaterThan(beforeFinalLeave);
+    await expect.poll(() => typeof metadata.at(-1)?.hostLeftAt).toBe('number');
+    const away = metadata.at(-1)!; expect(away.ownerId).toBe(originalOwner.playerId); expect(away.ownerId).not.toBe(originalGuest.playerId);
+    // Any automatic management change on disconnect must preserve this owner.
+    for (const snapshot of snapshots) if (snapshot.ownerId !== undefined) expect(snapshot.ownerId).toBe(originalOwner.playerId);
+    await host.goto(`${url}/room/${peers.code}`); await expect(host.locator('.connection.is-online')).toBeVisible();
+    await expect(guest.locator('.connection.is-online')).toBeVisible(); expect(await identity(host, peers.code)).toEqual(originalOwner); expect(await identity(guest, peers.code)).toEqual(originalGuest);
+    await expect.poll(() => metadata.at(-1)?.hostLeftAt).toBeUndefined(); expect(metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);
+    const restored = await saved(host, peers.code); expect(restored.ownerId).toBe(originalOwner.playerId); expect(restored.game.players).toHaveLength(2); expect(restored.game.players.find(player => player.id === originalOwner.playerId)?.connected).toBe(true);
+    await host.screenshot({ path: testInfo.outputPath('multiplayer-owner-return.png'), fullPage: true });
+    const presence = JSON.stringify({ ownerId: originalOwner.playerId, guestId: originalGuest.playerId, awayOwnerId: away.ownerId, awayAt: away.hostLeftAt, restoredOwnerId: restored.ownerId, metadata: metadata.map(({ ownerId, adminHostId, hostLeftAt }) => ({ ownerId, adminHostId, hostLeftAt })) });
+    mkdirSync('docs/qa/duo-upgrade', { recursive: true });writeFileSync('docs/qa/duo-upgrade/multiplayer-owner-presence.json', presence);
+    await testInfo.attach('multiplayer-owner-presence', { body: presence, contentType: 'application/json' });
     expect(peers.errors).toEqual([]);
   } finally { await Promise.all(peers.contexts.map(context => context.close())); }
 });

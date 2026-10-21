@@ -155,6 +155,9 @@ test('loaded Blender figures and smooth corner movement render in desktop and mo
   test.setTimeout(120_000);
   for (const mobile of [false, true]) {
     const pair = await setup(browser, mobile, false, mobile), page = pair.host;
+    const modelRequests: string[] = [], modelResponses: { path: string; status: number }[] = [];
+    page.on('request', request => { const path = new URL(request.url()).pathname; if (path.endsWith('.glb')) modelRequests.push(path); });
+    page.on('response', response => { const path = new URL(response.url()).pathname; if (path.endsWith('.glb')) modelResponses.push({ path, status: response.status() }); });
     try {
       publish(pair, room => {
         const previous = room.game.logs.at(-1)?.id ?? 0;
@@ -168,6 +171,9 @@ test('loaded Blender figures and smooth corner movement render in desktop and mo
       });
       const board = page.getByTestId('board-3d'), device = mobile ? 'mobile' : 'desktop';
       await expect(board).toHaveAttribute('data-loaded-models', '4'); await expect(board).toHaveAttribute('data-model-fallbacks', '0');
+      const expectedModel = mobile ? '/models/toy-racers-economy.glb' : '/models/toy-racers.glb';
+      await expect.poll(() => modelResponses.some(response => response.path === expectedModel && response.status === 200)).toBe(true);
+      expect(modelRequests.length).toBeGreaterThan(0); expect(modelRequests.every(path => path === expectedModel)).toBe(true);
       await expect(board).toHaveAttribute('data-camera-state', 'self');
       await page.screenshot({ path: `${output}/blender-game-${device}.png` });
       await page.evaluate(() => {
@@ -193,8 +199,128 @@ test('loaded Blender figures and smooth corner movement render in desktop and mo
         const scope = window as unknown as { __motionQA: unknown[]; __motionRunning: boolean };
         scope.__motionRunning = false; return scope.__motionQA;
       });
-      writeFileSync(`${output}/movement-${device}.json`, JSON.stringify({ viewport: page.viewportSize(), loadedModels: await board.getAttribute('data-loaded-models'), triangles: await board.getAttribute('data-triangles'), drawCalls: await board.getAttribute('data-draw-calls'), samples }, null, 2));
+      writeFileSync(`${output}/movement-${device}.json`, JSON.stringify({ viewport: page.viewportSize(), modelRequests, modelResponses, loadedModels: await board.getAttribute('data-loaded-models'), triangles: await board.getAttribute('data-triangles'), drawCalls: await board.getAttribute('data-draw-calls'), samples }, null, 2));
       await page.screenshot({ path: `${output}/follow-second-${device}.png` });
+    } finally { await Promise.all(pair.contexts.map(context => context.close())); }
+  }
+});
+
+interface ReducedMotionSample { at: number; phase: string; frames: number; diceLoop: string; upFace: string; positions: Record<string, { x: number; z: number }> }
+async function recordReducedMotion(page: Page) {
+  await page.evaluate(() => {
+    const scope = window as unknown as { __reducedSamples: ReducedMotionSample[]; __reducedRecording: boolean };
+    scope.__reducedSamples = []; scope.__reducedRecording = true;
+    const save = () => {
+      const board = document.querySelector<HTMLElement>('[data-testid="board-3d"]')!, dice = board.querySelector<HTMLElement>('.dice-spotlight');
+      const positions = Object.fromEntries(Array.from(board.querySelectorAll<HTMLElement>('.pawn-seat[data-racer-id]')).map(label => [label.dataset.racerId!, { x: Number(label.dataset.worldX), z: Number(label.dataset.worldZ) }]));
+      scope.__reducedSamples.push({ at: performance.now(), phase: board.dataset.phase!, frames: Number(board.dataset.renderFrameCount), diceLoop: dice?.dataset.frameloop ?? '', upFace: dice?.dataset.upFace ?? '', positions });
+      if (scope.__reducedRecording) requestAnimationFrame(save);
+    }; requestAnimationFrame(save);
+  });
+}
+async function stopReducedMotion(page: Page): Promise<ReducedMotionSample[]> {
+  return page.evaluate(() => { const scope = window as unknown as { __reducedSamples: ReducedMotionSample[]; __reducedRecording: boolean }; scope.__reducedRecording = false; return scope.__reducedSamples; });
+}
+async function settledRenderFrames(page: Page) {
+  return page.evaluate(async () => new Promise<number[]>(resolve => {
+    const board = document.querySelector<HTMLElement>('[data-testid="board-3d"]')!, started = performance.now(), frames: number[] = [];
+    const sample = () => { frames.push(Number(board.dataset.renderFrameCount)); if (performance.now() - started >= 400) resolve(frames); else requestAnimationFrame(sample); }; requestAnimationFrame(sample);
+  }));
+}
+
+test('reduced motion demand rendering reaches move warp and swap destinations, shows the die and becomes idle', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const pair = await setup(browser, true, true, true), page = pair.host, evidence: unknown[] = [], errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.stack ?? error.message));
+  try {
+    for (const kind of ['move', 'warp', 'swap'] as const) {
+      publish(pair, room => {
+        const previous = room.game.logs.at(-1)?.id ?? 0;
+        const characters = [kind === 'move' ? 'alchemist' : kind === 'warp' ? 'hypnotist' : 'flip-flop', 'banana', 'coach', 'blimp'];
+        const game: GameState = {
+          phase: 'race', round: 1, track: 'mild', players: room.game.players, deck: [], discard: [], turn: 0, turnCount: 0,
+          currentRacerId: 'reduced-0', baseTurnOrder: [0, 1, 2, 3].map(index => `reduced-${index}`),
+          racers: characters.map((characterId, index) => ({ id: `reduced-${index}`, playerId: pair.ids[Math.floor(index / 2)]!, characterId, position: [kind === 'move' ? 10 : 4, 22, 20, 25][index]!, tripped: false, finished: false, eliminated: false, flags: {} })),
+          queue: [{ kind: 'beginTurn', racerId: 'reduced-0' }], logs: [], results: [], flags: { testDice: [4] }, rngState: 1234, randomLog: [],
+        };
+        resolveTasks(game); game.logs.forEach(event => { event.id += previous; }); room.game = game;
+      });
+      const board = page.getByTestId('board-3d');
+      await expect(board).toHaveAttribute('data-loaded-models', '4'); await expect(board).toHaveAttribute('data-model-fallbacks', '0');
+      await page.getByRole('button', { name: '自己', exact: true }).click();
+      if (kind === 'move') {
+        await page.getByTestId('presentation-settings').click(); await page.getByLabel('动画速度', { exact: true }).selectOption('1'); await page.getByRole('button', { name: '关闭', exact: true }).click();
+      }
+      await expect(board).toHaveAttribute('data-frameloop', 'demand');
+      await recordReducedMotion(page);
+      if (kind === 'move') await page.getByRole('button', { name: '掷骰子', exact: true }).click();
+      else {
+        const pending = application.rooms.get(pair.code).game.pending!, option = pending.options.find(option => option.id === 'reduced-2')!;
+        await page.getByTestId('skill-choice').getByRole('button', { name: option.label, exact: true }).click();
+      }
+      // Reduced beats are shorter than Playwright's later polling intervals;
+      // assert the in-page RAF record so a completed beat cannot be missed.
+      await expect.poll(() => page.evaluate(phase => (window as unknown as { __reducedSamples: ReducedMotionSample[] }).__reducedSamples.some(sample => sample.phase === phase), kind)).toBe(true);
+      await expect(board).toHaveAttribute('data-frameloop', 'demand');
+      await expect(board).toHaveAttribute('data-phase', 'idle', { timeout: 20000 });
+      const game = application.rooms.get(pair.code).game, targets = kind === 'move' ? ['reduced-0'] : kind === 'warp' ? ['reduced-2'] : ['reduced-0', 'reduced-2'];
+      for (const id of targets) {
+        const racer = game.racers.find(racer => racer.id === id)!, expected = pawnWorldPoint(racer, game.racers, racer.position, true);
+        const marker = page.locator(`.pawn-seat[data-racer-id="${id}"]`);
+        await expect.poll(async () => Math.hypot(Number(await marker.getAttribute('data-world-x')) - expected[0], Number(await marker.getAttribute('data-world-z')) - expected[2])).toBeLessThan(.01);
+      }
+      const samples = await stopReducedMotion(page), phaseSamples = samples.filter(sample => sample.phase === kind);
+      expect(phaseSamples.length).toBeGreaterThan(0);
+      for (const id of targets) {
+        const racer = game.racers.find(racer => racer.id === id)!, expected = pawnWorldPoint(racer, game.racers, racer.position, true);
+        expect(phaseSamples.some(sample => Math.hypot((sample.positions[id]?.x ?? Infinity) - expected[0], (sample.positions[id]?.z ?? Infinity) - expected[2]) < .01)).toBe(true);
+      }
+      if (kind === 'move') { expect(samples.some(sample => sample.phase === 'dice' && sample.upFace === '4')).toBe(true); expect(samples.filter(sample => sample.phase === 'dice').every(sample => sample.diceLoop === 'demand')).toBe(true); }
+      // Demand rendering can finish a final camera invalidation, but must stop
+      // redrawing the scene once the confirmed pose and camera have settled.
+      await expect(board).toHaveAttribute('data-camera-state', 'self');
+      await settledRenderFrames(page); const idleFrames = await settledRenderFrames(page);
+      expect(idleFrames.at(-1)! - idleFrames[0]!).toBeLessThanOrEqual(1);
+      evidence.push({ kind, positions: game.racers.map(({ id, position }) => ({ id, position })), samples, idleFrames });
+      if (kind === 'swap') await page.screenshot({ path: `${output}/reduced-demand-swap-mobile.png` });
+    }
+    expect(errors).toEqual([]);writeFileSync(`${output}/reduced-motion-demand.json`, JSON.stringify(evidence, null, 2));
+  } finally { await Promise.all(pair.contexts.map(context => context.close())); }
+});
+
+test('host results give rematch and confirmed dissolution equal desktop and mobile prominence', async ({ browser }) => {
+  test.setTimeout(90_000);
+  for (const mobile of [false, true]) {
+    const pair = await setup(browser, mobile);
+    const finish = () => publish(pair, room => {
+      room.game.phase = 'finished'; room.game.round = 4; room.game.racers = []; room.game.queue = [];
+      room.game.logs = []; room.game.results = []; room.game.flags = {}; delete room.game.pending; delete room.game.currentRacerId;
+      room.game.players.forEach((player, index) => { player.score = 12 - index; });
+    });
+    try {
+      finish();
+      const actions = pair.host.getByTestId('results-host-actions');
+      const rematch = actions.getByRole('button', { name: '原房间，再来一局', exact: true });
+      const dissolve = actions.getByRole('button', { name: '解散房间', exact: true });
+      await expect(rematch).toBeVisible(); await expect(dissolve).toBeVisible();
+      const bounds = await Promise.all([rematch.boundingBox(), dissolve.boundingBox()]);
+      expect(Math.abs(bounds[0]!.width - bounds[1]!.width)).toBeLessThan(1);
+      expect(Math.abs(bounds[0]!.height - bounds[1]!.height)).toBeLessThan(1);
+      expect(Math.abs(bounds[0]!.y - bounds[1]!.y)).toBeLessThan(1);
+      expect(await rematch.getAttribute('class')).not.toContain('button-secondary');
+      expect(await dissolve.getAttribute('class')).not.toContain('button-secondary');
+      await expect(pair.guest.getByTestId('results-host-actions')).toHaveCount(0);
+      await pair.host.screenshot({ path: `${output}/results-equal-actions-${mobile ? 'mobile' : 'desktop'}.png` });
+      await rematch.click(); await expect.poll(() => application.rooms.get(pair.code).game.phase).toBe('lobby');
+      expect(application.rooms.get(pair.code).code).toBe(pair.code);
+      finish(); await expect(dissolve).toBeVisible(); await dissolve.click();
+      const confirmation = pair.host.getByRole('dialog', { name: '结束此房间？', exact: true });
+      await expect(confirmation).toBeVisible(); await confirmation.getByRole('button', { name: '取消', exact: true }).click();
+      expect(application.rooms.get(pair.code).closedAt).toBeUndefined();
+      await dissolve.click(); await confirmation.getByRole('button', { name: '确认结束', exact: true }).click();
+      for (const page of pair.pages) await expect(page.locator('[data-room-closed="true"]')).toBeVisible();
+      expect(application.rooms.list().some(room => room.code === pair.code)).toBe(false);
+      await pair.host.reload(); await expect(pair.host.locator('[data-room-closed="true"]')).toBeVisible();
     } finally { await Promise.all(pair.contexts.map(context => context.close())); }
   }
 });

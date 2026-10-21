@@ -5,7 +5,7 @@ import { projectRoom, reduceRoomAction, setRoomDeadline } from '../shared/room-c
 import { createGame, startGame, automaticAction } from '../engine/index.js';
 import { Store } from './store.js';
 import { MAX_SPECTATORS, ROOM_TTL_MS } from '../shared/constants.js';
-import { personalRoom, roomExpiry, type RoomCloseReason, type RoomClosure } from '../shared/room-lifecycle.js';
+import { roomExpiry, type RoomCloseReason, type RoomClosure } from '../shared/room-lifecycle.js';
 
 export const PLAYER_COLORS = ['#df3c32','#175bd1','#159269','#b34fa6','#eb8a19','#6d57c7','#008eaa','#77503c'];
 export { ROOM_TTL_MS } from '../shared/constants.js';
@@ -17,11 +17,12 @@ export class Rooms {
   constructor(readonly store: Store, readonly defaultTimeout = 120, readonly now=Date.now) {
     const restoredAt=this.now();
     for(const room of store.load()) {
-      if(personalRoom(room)&&room.closedAt!==undefined){store.closeRoom({code:room.code,closedAt:room.closedAt,reason:room.closeReason??'dismissed',hostId:room.hostId,version:room.version});continue;}
+      room.ownerId??=room.game.players.find(player=>player.seat===0)?.id??room.hostId;
+      if(room.closedAt!==undefined){store.closeRoom({code:room.code,closedAt:room.closedAt,reason:room.closeReason??'dismissed',hostId:room.hostId,version:room.version});continue;}
       // A restart ends all Node connections. Preserve an existing absence;
       // rooms whose owner was online begin their absence at this restart.
-      if(personalRoom(room)&&room.closedAt===undefined)room.hostLeftAt??=(room as PresenceRoom).hostSeenAt??room.updatedAt;
-      if(roomExpiry(room)<=restoredAt){if(personalRoom(room))store.closeRoom({code:room.code,closedAt:roomExpiry(room),reason:'host-away'});else store.delete(room.code);continue;}
+      if(room.closedAt===undefined)room.hostLeftAt??=(room as PresenceRoom).hostSeenAt??room.updatedAt;
+      if(roomExpiry(room)<=restoredAt){store.closeRoom({code:room.code,closedAt:room.closedAt??roomExpiry(room),reason:room.closeReason??'host-away'});continue;}
       if(room.closedAt===undefined){room.game.players.forEach(p => p.connected = !!p.isAI);room.spectators?.forEach(p=>p.connected=false);store.save(room);}
       this.rooms.set(room.code, room);
     }
@@ -29,8 +30,8 @@ export class Rooms {
   expire(code:string,now=this.now()):boolean {
     const room=this.rooms.get(code);
     if(!room||roomExpiry(room)>now)return false;
-    const at=roomExpiry(room),reason=personalRoom(room)?'host-away':'expired';
-    if(personalRoom(room))this.closePersonal(room,reason,at);else{this.store.delete(code);this.rooms.delete(code);}
+    const at=room.closedAt??roomExpiry(room),reason=room.closeReason??'host-away';
+    this.closePersonal(room,reason,at);
     this.onExpired?.(code,at,reason);return true;
   }
   closed(code:string):RoomClosure|undefined {return this.store.closed(code);}
@@ -41,7 +42,7 @@ export class Rooms {
   list(now=this.now()):RoomSummary[] {
     for(const code of this.rooms.keys())this.expire(code,now);
     return [...this.rooms.values()].filter(room=>room.closedAt===undefined&&room.mode!=='practice').sort((a,b)=>b.createdAt-a.createdAt).map(room=>({
-      code:room.code,hostName:room.game.players.find(p=>p.id===room.hostId)?.name??'房主',phase:room.game.phase,
+      code:room.code,hostName:room.game.players.find(p=>p.id===(room.ownerId??room.hostId))?.name??'房主',phase:room.game.phase,
       playerCount:room.game.players.length,maxPlayers:room.maxPlayers,spectatorCount:room.spectators?.filter(p=>p.connected).length??0,
       createdAt:room.createdAt,expiresAt:roomExpiry(room),authorityOnline:true,mode:room.mode??'multiplayer',
     }));
@@ -56,7 +57,7 @@ export class Rooms {
     if(mode!=='multiplayer')maxPlayers=mode==='practice'?1:aiCount+1;
     const p = this.player(name,0); const now=this.now();
     const players=[p,...Array.from({length:mode==='ai'?aiCount:0},(_,i)=>({...this.player(`电脑${i+1}`,i+1),isAI:true,ready:true,connected:true}))];
-    const room:Room = {mode,code,hostId:p.id,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,...(mode!=='multiplayer'?{hostLeftAt:now}:{}),game:createGame(players,randomBytes(4).readUInt32LE(),mode)};
+    const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,randomBytes(4).readUInt32LE(),mode)};
     if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);this.deadline(room);}
     const token = randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(code,room);
     return {identity:{roomCode:code,playerId:p.id,token,role:'player'},room:this.view(room,p.id)};
@@ -90,9 +91,9 @@ export class Rooms {
     if(this.expire(code))return;
     const original=this.rooms.get(code);if(!original||original.closedAt!==undefined)return;
     const member=original.game.players.find(p=>p.id===id)??original.spectators?.find(p=>p.id===id);
-    if(!member||(member.connected===connected&&!(personalRoom(original)&&original.hostId===id&&connected&&original.hostLeftAt!==undefined)))return;
+    if(!member||(member.connected===connected&&!(original.ownerId===id&&connected&&original.hostLeftAt!==undefined)))return;
     const room=structuredClone(original);(room.game.players.find(p=>p.id===id)??room.spectators!.find(p=>p.id===id)!).connected=connected;
-    if(personalRoom(room)&&room.hostId===id){if(connected){delete room.hostLeftAt;(room as PresenceRoom).hostSeenAt=this.now();}else room.hostLeftAt??=this.now();}
+    if(room.ownerId===id){if(connected){delete room.hostLeftAt;(room as PresenceRoom).hostSeenAt=this.now();}else room.hostLeftAt??=this.now();}
     if(original.game.players.some(p=>p.id===id)&&!room.game.players.some(p=>p.id===room.hostId && p.connected)) {
       const next=room.game.players.find(p=>p.connected&&!p.isAI); if(next) room.hostId=next.id;
     }
@@ -101,11 +102,11 @@ export class Rooms {
   leave(identity:Identity):{ok:true;retainIdentity:boolean} {
     const original=this.authenticate(identity),room=structuredClone(original),id=identity.playerId;
     const spectator=room.spectators?.some(p=>p.id===id)??false;
-    const retainIdentity=!spectator&&room.game.phase!=='lobby';
+    const retainIdentity=!spectator&&(room.game.phase!=='lobby'||room.ownerId===id);
     if(spectator)room.spectators=room.spectators!.filter(p=>p.id!==id);
     else if(retainIdentity)room.game.players.find(p=>p.id===id)!.connected=false;
     else room.game.players=room.game.players.filter(p=>p.id!==id);
-    if(personalRoom(room)&&room.hostId===id)room.hostLeftAt??=this.now();
+    if(room.ownerId===id)room.hostLeftAt??=this.now();
     if(!spectator&&!room.game.players.some(p=>p.id===room.hostId&&p.connected)) {
       const next=room.game.players.find(p=>p.connected&&!p.isAI)??room.game.players.find(p=>!p.isAI);
       if(next)room.hostId=next.id;
@@ -125,7 +126,8 @@ export class Rooms {
     if(original.version!==envelope.expectedVersion) return {ok:false,error:'画面已更新，请同步后重试。',version:original.version};
     try {
       const room=reduceRoomAction(original,id,envelope.action,{now:this.now(),rematchSeed:envelope.action.type==='rematch'?randomBytes(4).readUInt32LE():0,automatic});
-      if(personalRoom(room)&&room.closedAt!==undefined){this.closePersonal(room,'dismissed',room.closedAt,envelope.actionId);return{ok:true,version:room.version};}
+      if(envelope.action.type==='transfer')(room as PresenceRoom).hostSeenAt=this.now();
+      if(room.closedAt!==undefined){this.closePersonal(room,'dismissed',room.closedAt,envelope.actionId);return{ok:true,version:room.version};}
       const result={ok:true,version:room.version};this.store.commitAction(room,id,envelope.actionId,request,result);this.rooms.set(code,room);return result;
     }catch(e){return{ok:false,error:e instanceof Error?e.message:'操作失败，请重试。',version:original.version};}
   }
@@ -137,7 +139,7 @@ export class Rooms {
       if(original.closedAt!==undefined)continue;
       // Persist owner liveness independently of AI turns. After a crash the
       // restart can count downtime instead of resetting the thirty-minute clock.
-      if(personalRoom(original)&&original.game.players.some(p=>p.id===original.hostId&&p.connected)&&now-((original as PresenceRoom).hostSeenAt??0)>=15_000){
+      if(original.game.players.some(p=>p.id===original.ownerId&&p.connected)&&now-((original as PresenceRoom).hostSeenAt??0)>=15_000){
         (original as PresenceRoom).hostSeenAt=now;this.store.save(original);
       }
       // Local server bots pause when the human leaves; no unattended match
