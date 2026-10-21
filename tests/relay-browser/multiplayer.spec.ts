@@ -19,7 +19,7 @@ async function saved(page:Page,code:string):Promise<Room>{
 for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
   // CI smoke completes one full race on eight isolated software WebGL clients.
   // The default manual mode retains the complete four-race game and rematch.
-  if(process.env.CI&&n===8)test.setTimeout(360_000);
+  if(process.env.CI&&n===8)test.setTimeout(900_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
   const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
   let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};

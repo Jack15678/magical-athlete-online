@@ -25,12 +25,35 @@
 
 生产网站已自动发布为 `55fa9883-e669-437b-b471-8f6acbbecf0a`。公网入口 `/assets/index-TzQNhr8y.js` 与本地最终构建一致，模型 465,736 字节及 SHA-256 与本地验证资产相同，房间健康检查通过。公网八人截图来自这次实际对局。
 
-旧 Linux CI 因多窗口软件渲染出现 WebGL 上下文丢失、`ReadPixels` 卡顿及短暂动画阶段观测超时，未计为通过。CI 正在修正软件渲染设置和事件观测；遵循本次控制测试数量的要求，仅保留两项关键动画与一次八人中继作为浏览器发布检查，完整矩阵仍可手动执行。修正后结果另行补充。
+Linux 软件渲染环境和短动画阶段观测修正后，[两个动画专项通过](https://github.com/qiuh23/magical-athlete-online/actions/runs/39537599667)。后续完整八人四场持续推进到第四场、第 421 次操作，因 600 秒总时限结束，未计为通过；换场 checkpoint 与原始错误现已保留，关页清理不会再遮住原始失败。另修复黏液怪头像 SVG 曲线缺少终点的问题，153 条字面量路径参数静态检查通过。
+
+按用户要求，最终默认 CI 收敛为一场八人联机。[最终单场 CI 已通过](https://github.com/qiuh23/magical-athlete-online/actions/runs/39540261380)：**1 项通过，约 1.6 分钟，0 页面错误**，覆盖房主关闭返回、第二标签页、客人断线恢复、隐私和桌面/手机布局；未重复单元与动画专项。完整四场结论以上述本地 Edge 和公网实际验收为准。之后仅按用户要求调整总时限为用例 15 分钟、任务 30 分钟，没有为时限配置再次运行测试。
+
+最终头像修复已通过现有 Wrangler 流程发布为 `0579106f-119f-4219-b1ce-4683c6d1eb02`，入口为 `/assets/index-CF-LIG6R.js`；3D 模型内容保持相同。部署核对结果记录在 `deployment.json`。
 
 - [最终高画质双直角 3D 棋盘](qa/3d-board-desktop.png)
 - [3D 骰盘停稳特写](qa/3d-dice.png)
 - [最终八人手机棋盘](qa/3d-board-mobile.png)
 - [正式网站八人四场成绩](qa/3d-public-final-8.png)
+
+### 控制浏览器复验数量
+
+按用户要求，默认 CI 仅执行 **一场八人联机检查**，包含房主/客人恢复、快照隐私和桌面/手机布局；保留必要的类型检查、构建和部署预演。单元测试、掷骰/动画专项及完整四场矩阵均为手动按需执行。八人用例总时限为 **15 分钟**，整个 CI 任务上限为 **30 分钟**；单步动作仍限 20 秒，便于及时发现具体操作异常。
+
+默认浏览器检查：
+
+```sh
+RELAY_SMOKE=1 pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"
+```
+
+需要时才执行的专项与完整四场检查：
+
+```sh
+pnpm exec playwright test tests/browser/three-scene.spec.ts --grep "3D dice settles|3D simultaneous"
+pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"
+```
+
+GitHub Actions 的 **Run workflow** 默认选择 `browser_suite: eight-only`，只运行上述一场。只有明确需要追加检查时才选择 `all`，增加单元和两个动画专项。复验失败时先检查原始错误和换场 checkpoint，修复后仅重跑必要用例。
 
 
 ## 已完成的本地自动化
