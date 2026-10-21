@@ -357,7 +357,7 @@ function processChoice(s:GameState,c:PendingChoice,id:string) {
   }
   if(c.kind==='duelist'){
     if(id==='skip')return;const target=racer(s,id);if(!target||!live(target)||!live(r)||target.position!==r.position)throw Error('决斗对象已经不在同格');
-    const a=random(s,`${name(r)}决斗`),b=random(s,`${name(target)}决斗`);log(s,'duel',`${name(r)} ${a} : ${b} ${name(target)}`);
+    const a=random(s,`${name(r)}决斗`),b=random(s,`${name(target)}决斗`);log(s,'duel',`${name(r)} ${a} : ${b} ${name(target)}`,{source:r.id,targets:[target.id],cause:'duelist'});
     usePower(s,r,[{kind:'move',racerId:a>=b?r.id:target.id,distance:2,cause:'duelist'}]);return;
   }
   if(id==='skip')return;

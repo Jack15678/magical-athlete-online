@@ -10,6 +10,9 @@ async function saved(page: Page, code: string): Promise<Room> {
     finally { db.close(); }
   }, code)) as Room;
 }
+async function synced(page: Page, version: number) {
+  await expect.poll(async () => Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);
+}
 
 async function pair(browser: Browser, mobileHost = false) {
   const contexts: BrowserContext[] = [];
@@ -20,7 +23,7 @@ async function pair(browser: Browser, mobileHost = false) {
     for (let seat = 0; seat < 2; seat++) {
       const context = await browser.newContext({ viewport: seat === 0 && mobileHost ? { width: 390, height: 844 } : { width: 1280, height: 900 } });
       contexts.push(context); const page = await context.newPage(); pages.push(page);
-      page.on('pageerror', error => errors.push(error.message));
+      page.on('pageerror', error => errors.push(error.stack ?? error.message));
       page.on('websocket', socket => socket.on('framesent', frame => { try { const message = JSON.parse(String(frame.payload)); if (message.type === 'action' && message.envelope.action.type === 'close') closeRequests[seat] = closeRequests[seat]! + 1; } catch { /* Raw ping frames are outside the action protocol. */ } }));
     }
     const [host, guest] = pages as [Page, Page];
@@ -67,15 +70,17 @@ test('close: lobby confirmation can cancel, management transfer applies, and bot
 test('close: the management host can dissolve an active race without rolling or completing a game', async ({ browser }) => {
   const room = await pair(browser); const [host, guest] = room.pages;
   try {
-    for (const page of room.pages) { await page.getByRole('button', { name: '我准备好了', exact: true }).click(); await expect(page.getByRole('button', { name: '取消准备', exact: true })).toBeVisible(); }
+    for (const page of room.pages) { await synced(page, (await saved(host, room.code)).version); await page.getByRole('button', { name: '我准备好了', exact: true }).click(); await expect(page.getByRole('button', { name: '取消准备', exact: true })).toBeVisible(); }
     const ids = await Promise.all(room.pages.map(page => page.evaluate(code => JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId as string, room.code)));
-    await host.getByRole('button', { name: '开始选秀', exact: true }).click(); await expect.poll(async () => (await saved(host, room.code)).game.phase).toBe('draft');
+    await synced(host, (await saved(host, room.code)).version); await host.getByRole('button', { name: '开始选秀', exact: true }).click(); await expect.poll(async () => (await saved(host, room.code)).game.phase).toBe('draft');
     while ((await saved(host, room.code)).game.phase === 'draft') {
       const draft = (await saved(host, room.code)).game.draft!; const picker = room.pages[ids.indexOf(draft.order[draft.cursor]!)]!;
+      await synced(picker, (await saved(host, room.code)).version);
       await picker.locator('.character-grid .character-art:not([disabled])').first().click(); await picker.getByRole('button', { name: /^确认选择/ }).click();
       await expect.poll(async () => (await saved(host, room.code)).game.draft?.cursor ?? -1).not.toBe(draft.cursor);
     }
     for (const page of room.pages) {
+      await synced(page, (await saved(host, room.code)).version);
       await expect(page.locator('.hand-selection')).toBeVisible();
       for (let count = 0; count < 2; count++) await page.locator('.hand-selection .character-art[aria-pressed="false"]:not([disabled])').first().click();
       await page.getByRole('button', { name: '锁定上场角色', exact: true }).click();
