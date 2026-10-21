@@ -4,10 +4,16 @@ export interface Spectator { id: string; name: string; connected: boolean; }
 export interface RoomSummary { code: string; hostName: string; phase: Phase; playerCount: number; maxPlayers: number; spectatorCount: number; createdAt: number; expiresAt: number; authorityOnline: boolean; mode?: GameMode; }
 export type Phase = 'lobby' | 'draft' | 'selection' | 'race' | 'results' | 'finished' | 'paused';
 export interface Player { isAI?: boolean; id: string; name: string; seat: number; color: string; ready: boolean; connected: boolean; score: number; hand: string[]; used: string[]; selection: string[]; }
-export interface Racer { id: string; playerId: string; characterId: string; position: number; tripped: boolean; finished: boolean; eliminated: boolean; rank?: number; flags: Record<string, unknown>; }
+export interface RacerFlags extends Record<string, unknown> {
+  /** Printed card selected by Egg this race; never replaced by later inheritance. */
+  eggCardId?: string;
+  /** Printed previous-champion card selected through Twin this race. */
+  twinCardId?: string;
+}
+export interface Racer { id: string; playerId: string; characterId: string; position: number; tripped: boolean; finished: boolean; eliminated: boolean; rank?: number; flags: RacerFlags; }
 export interface ChoiceOption { id: string; label: string; }
 export interface PendingChoice { id: string; playerId: string; racerId?: string; title: string; options: ChoiceOption[]; optional: boolean; kind: string; context: Record<string, unknown>; }
-export interface GameEvent { id: number; type: string; text: string; source?: string; targets?: string[]; faces?: number[]; before?: number[]; after?: number[]; group?: string; cause?: string; }
+export interface GameEvent { id: number; type: string; text: string; source?: string; targets?: string[]; faces?: number[]; before?: number[]; after?: number[]; group?: string; cause?: string; selectedCardId?: string; }
 export interface Draft { market: string[]; order: string[]; cursor: number; batch: number; }
 export interface RaceResult { round: number; placements: { racerId: string; playerId: string; characterId: string; rank: number; points: number }[]; }
 export interface GameState { mode?: GameMode; phase: Phase; round: number; players: Player[]; deck: string[]; discard: string[]; draft?: Draft; racers: Racer[]; baseTurnOrder?: string[]; turn: number; turnCount: number; currentRacerId?: string; pending?: PendingChoice; queue: Task[]; logs: GameEvent[]; results: RaceResult[]; rngState: number; randomLog: { index: number; reason: string; value: number }[]; lastRoll?: { racerId: string; face: number; distance: number }; track: 'mild' | 'wild'; flags: Record<string, unknown>; }

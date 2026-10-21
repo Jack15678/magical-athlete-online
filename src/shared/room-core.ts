@@ -3,6 +3,7 @@ import { MAX_SPECTATORS, PLAYER_COLORS, RULES_STATUS } from './constants.js';
 import type { ActionEnvelope, GameAction, Player, Room, RoomView } from './types.js';
 import type { RelayMember, RelayMetadata } from './relay.js';
 import { personalRoom, roomExpiry } from './room-lifecycle.js';
+import { publicCopyCardIds } from './character-info.js';
 
 /** Pure room policy shared by browser authority and future server adapters.
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
@@ -160,7 +161,7 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.hostLeftAt===undefined?undefined:expiry,ownerId:room.ownerId??room.hostId,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
-    draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
+    draft:g.draft ? structuredClone(g.draft) : undefined, racers:g.racers.map(r=>({...structuredClone(r),flags:{...structuredClone(r.flags),...publicCopyCardIds(r,g.logs)}})), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
     pending:pending?.playerId===playerId ? {id:pending.id,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,options:structuredClone(pending.options),optional:pending.optional,kind:pending.kind} : undefined,
     waitingFor:pending?.playerId, logs:structuredClone(g.logs.slice(-120)), results:structuredClone(g.results), lastRoll:g.lastRoll ? {...g.lastRoll} : undefined, rulesStatus:RULES_STATUS };
 }

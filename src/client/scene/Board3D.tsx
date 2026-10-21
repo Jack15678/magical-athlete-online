@@ -32,7 +32,7 @@ interface Props extends ScenePlayback {
   lowQuality: boolean;
   reducedMotion: boolean;
   muted: boolean;
-  onDetail: (id: string) => void;
+  onDetail: (id: string, racerId?: string) => void;
 }
 const characterName = (id: string) => CHARACTERS.find(c => c.id === id)?.nameZh ?? id;
 /** Presentation captions describe the existing effect; they are not new rule names. */
@@ -225,7 +225,7 @@ function ActionBanner({ beat, racers }: { beat?: PresentationBeat; racers: Racer
   return <div key={beat.key} className={`scene-action-banner banner-${beat.kind}`} data-testid="skill-banner" role="status">{actor && <span className="skill-banner-avatar"><Avatar id={actor.characterId} /></span>}<div><small>{caption}</small><strong>{title}</strong><span>{detail}</span></div><b aria-hidden="true">✦</b></div>;
 }
 
-function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQuality, reducedMotion, active, onDetail, labels }: { racer: Racer; racers: Racer[]; room: RoomView; compact: boolean; beat?: PresentationBeat; startedAt: number; durationMs: number; lowQuality: boolean; reducedMotion: boolean; active: boolean; onDetail: (id: string) => void; labels: React.RefObject<Map<string, HTMLSpanElement>> }) {
+function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQuality, reducedMotion, active, onDetail, labels }: { racer: Racer; racers: Racer[]; room: RoomView; compact: boolean; beat?: PresentationBeat; startedAt: number; durationMs: number; lowQuality: boolean; reducedMotion: boolean; active: boolean; onDetail: (id: string, racerId?: string) => void; labels: React.RefObject<Map<string, HTMLSpanElement>> }) {
   const root = useRef<THREE.Group>(null), body = useRef<THREE.Group>(null);
   const { camera, size } = useThree(); const projection = useMemo(() => new THREE.Vector3(), []);
   const owner = room.players.find(p => p.id === racer.playerId);
@@ -274,7 +274,7 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
     if (label) { label.dataset.worldX = x.toFixed(4); label.dataset.worldZ = z.toFixed(4); }
     if (label) { root.current.updateWorldMatrix(true, false); projection.set(0, .19, .34).applyMatrix4(root.current.matrixWorld).project(camera); label.style.transform = `translate(${(projection.x + 1) * size.width / 2}px,${(1 - projection.y) * size.height / 2}px) translate(-50%,-50%)`; label.style.visibility = projection.z < -1 || projection.z > 1 ? 'hidden' : 'visible'; }
   });
-  return <group ref={root} position={[from[0] + offset.x, .225, from[2] + offset.z]} scale={offset.scale} onClick={e => { e.stopPropagation(); if (e.delta <= 5) onDetail(racer.characterId); }}>
+  return <group ref={root} position={[from[0] + offset.x, .225, from[2] + offset.z]} scale={offset.scale} onClick={e => { e.stopPropagation(); if (e.delta <= 5) onDetail(racer.characterId, racer.id); }}>
     <PawnContact />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .018, 0]}><ringGeometry args={[.31, active ? .43 : .38, 24]} /><meshBasicMaterial color={active ? '#ffda27' : color} side={THREE.DoubleSide} /></mesh>
     <group ref={body} position={[0, 0, 0]}><ToyCharacter characterId={racer.characterId} color={color} lowQuality={lowQuality} /></group>

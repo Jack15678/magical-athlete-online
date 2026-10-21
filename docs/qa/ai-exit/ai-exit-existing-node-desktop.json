@@ -1,0 +1,11 @@
+{
+  "backend": "node",
+  "viewport": "1280x900 Edge",
+  "topExitReachesDissolve": true,
+  "retainedRoomCode": "D55MHG",
+  "sameIdentityAfterRefresh": true,
+  "ownerUnchanged": true,
+  "closeRequests": 1,
+  "closedStatus": 410,
+  "pageErrors": []
+}

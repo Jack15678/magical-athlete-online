@@ -355,7 +355,8 @@ function processChoice(s:GameState,c:PendingChoice,id:string) {
   }
   if(c.kind==='egg'||c.kind==='twin'){
     if(id==='skip')return;const hist=s.flags.historyPowers as Record<string,string>|undefined;
-    r.flags.power=c.kind==='twin'?(hist?.[id]??id):id;log(s,'copy',`${name(r)}本场复制${character(id)?.nameZh??id}`,{source:r.id,cause:c.kind});push(s,{kind:'beforeRace',racerId:r.id},{kind:'powerDone',racerId:r.id,power:c.kind});return;
+    if(c.kind==='egg')r.flags.eggCardId??=id;else r.flags.twinCardId=id;
+    r.flags.power=c.kind==='twin'?(hist?.[id]??id):id;log(s,'copy',`${name(r)}本场复制${character(id)?.nameZh??id}`,{source:r.id,cause:c.kind,selectedCardId:id});push(s,{kind:'beforeRace',racerId:r.id},{kind:'powerDone',racerId:r.id,power:c.kind});return;
   }
   if(c.kind==='mastermind'){r.flags.prediction=id;log(s,'prediction',`${name(r)}预测${name(racer(s,id)!)}夺冠`,{source:r.id,targets:[id]});return;}
   if(c.kind==='genius'){if(id!=='skip')r.flags.geniusGuess=Number(id);return;}
