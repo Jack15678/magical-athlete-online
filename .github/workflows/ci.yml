@@ -1,5 +1,14 @@
 name: Checks
 on:
+  workflow_dispatch:
+    inputs:
+      browser_suite:
+        description: Browser checks to run
+        type: choice
+        default: all
+        options:
+          - all
+          - eight-only
   push:
     paths-ignore:
       - README.md
@@ -34,12 +43,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+        if: inputs.browser_suite != 'eight-only'
       - run: pnpm build
       - run: pnpm exec wrangler deploy --dry-run
       - run: pnpm exec playwright install --with-deps chromium
       # Keep CI to two focused rendering cases and one complete eight-player
       # relay game; the full 2/6/8-player suites remain available manually.
       - run: pnpm exec playwright test tests/browser/three-scene.spec.ts --grep "3D dice settles|3D simultaneous"
+        if: inputs.browser_suite != 'eight-only'
         env:
           CI: true
       - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"

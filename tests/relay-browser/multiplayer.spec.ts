@@ -16,7 +16,14 @@ async function saved(page:Page,code:string):Promise<Room>{
 }
 
 for(const n of [2,6,8])test(`browser authority ${n} independent players: four races, host recovery, privacy and rematch`,async({browser})=>{
+  // Software WebGL CI reached race three with 633 normal events at six
+  // minutes. Keep the assertion timeout and execution budget unchanged.
+  if(process.env.CI&&n===8)test.setTimeout(600_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
+  const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
+  let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};
+  const mark=(stage:string,action:string,room?:Room,step=checkpoint.step)=>{checkpoint={stage,action,phase:room?.game.phase??checkpoint.phase,round:room?.game.round??checkpoint.round,step,version:room?.version??checkpoint.version,logId:room?.game.logs.at(-1)?.id??checkpoint.logId,elapsedMs:Date.now()-startedAt};};
+  const progress=()=>console.log(`[relay-${n}] checkpoint ${JSON.stringify(checkpoint)}`);
   const observe=(page:Page)=>{
     page.on('pageerror',e=>errors.push(e.stack??e.message));
     page.on('websocket',ws=>{
@@ -36,10 +43,12 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
       const page=await context.newPage();pages.push(page);observe(page);
     }
     const host=pages[0]!;
+    mark('setup','create-room');
     await host.goto(url);await host.getByLabel('你的昵称').fill('浏览器计算房主');await host.getByLabel('房间人数上限').selectOption(String(n));await host.getByLabel('每次操作时限').selectOption('0');
     await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;
     await expect(host.getByText('已连接',{exact:true})).toBeVisible();
     for(let i=1;i<n;i++){
+      mark('setup',`join-${i}`);
       const p=pages[i]!;await p.goto(`${url}/room/${code}`);await p.getByLabel('你的昵称').fill(`网页同学${i}`);await p.getByRole('button',{name:'加入这场胡闹'}).click();await expect(p.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
     }
     for(const p of pages){await synced(p,(await saved(host,code)).version);await p.getByRole('button',{name:'我准备好了',exact:true}).click();await expect(p.getByRole('button',{name:'取消准备',exact:true})).toBeVisible();}
@@ -48,46 +57,75 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
     for(const guest of pages.slice(1))expect(await guest.evaluate(async()=>(await indexedDB.databases()).some(db=>db.name==='magical-athlete-browser-authority-v1'))).toBe(false);
     await synced(host,(await saved(host,code)).version);await host.getByRole('button',{name:'开始选秀',exact:true}).click();await expect.poll(async()=>(await saved(host,code)).game.phase).toBe('draft');
     while((await saved(host,code)).game.phase==='draft'){
-      const d=(await saved(host,code)).game.draft!;const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;await synced(p,(await saved(host,code)).version);
+      const draftRoom=await saved(host,code),d=draftRoom.game.draft!;mark('draft',`pick-${d.cursor}`,draftRoom);const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;await synced(p,(await saved(host,code)).version);
       await p.locator('.character-card .character-art').first().click();const confirm=p.getByRole('button',{name:/确认选择/});if(await confirm.count())await confirm.click();
       await expect.poll(async()=>(await saved(host,code)).game.draft?.cursor??-1).not.toBe(d.cursor);
     }
     let steps=0,hostRecovered=false,guestRecovered=false,raceShot=false;
     while((await saved(host,code)).game.phase!=='finished'){
-      const room=await saved(host,code),g=room.game;if(++steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
+      const room=await saved(host,code),g=room.game;mark('play',g.pending?`choose-${g.pending.kind}`:g.phase==='selection'?'select':g.phase==='results'?'next':'roll',room,++steps);
+      if(g.round!==lastPrintedRound||steps%50===0){lastPrintedRound=g.round;progress();}
+      if(steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
       if(g.phase==='selection'){
+        mark('selection','lock-racer',room,steps);
         const player=g.players.find(p=>!p.selection.length)!;const p=pages[ids.indexOf(player.id)]!;const count=n===2?2:1;await synced(p,room.version);
         for(let i=0;i<count;i++)await p.locator('.hand-selection .character-card').filter({has:p.getByRole('button',{name:/选择/})}).nth(i).getByRole('button',{name:/选择/}).click();
         await p.getByRole('button',{name:'锁定上场角色',exact:true}).click();await expect.poll(async()=>{const next=(await saved(host,code)).game;return next.phase==='selection'?next.players.find(x=>x.id===player.id)?.selection.length:count;}).toBe(count);continue;
       }
       if(!hostRecovered&&g.phase==='race'){
+        mark('host-recovery','duplicate-tab',room,steps);
         const duplicate=await contexts[0]!.newPage();observe(duplicate);await duplicate.goto(`${url}/room/${code}`);await expect(duplicate.getByText('已连接',{exact:true})).toBeVisible();await duplicate.close();
         const before=(await saved(host,code)).game;
+        mark('host-recovery','host-offline',room,steps);
         await host.goto('about:blank');await expect(pages[1]!.getByText('计算房主网页离线，等待其返回。',{exact:false})).toBeVisible();
+        mark('host-recovery','host-return',room,steps);
         await host.goto(`${url}/room/${code}`);await expect(host.getByText('已连接',{exact:true})).toBeVisible();
         const after=(await saved(host,code)).game;
         for(const key of ['rngState','randomLog','pending','queue','racers','round','results'] as const)expect(after[key]).toEqual(before[key]);
         hostRecovered=true;continue;
       }
       if(!guestRecovered&&g.phase==='race'){
+        mark('guest-recovery','offline-reload',room,steps);
         const p=pages.at(-1)!;await contexts.at(-1)!.setOffline(true);await p.reload().catch(()=>{});await contexts.at(-1)!.setOffline(false);await p.goto(`${url}/room/${code}`);await expect(p.getByText('已连接',{exact:true})).toBeVisible();
         expect(await p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)).toBe(ids.at(-1));guestRecovered=true;continue;
       }
+      if(!raceShot&&g.phase==='race')mark('scene','capture-desktop-mobile',room,steps);
       if(!raceShot&&g.phase==='race'){for(const scene of [host,pages.at(-1)!]){await expect(scene.getByTestId('board-3d').locator('.board-webgl canvas')).toBeVisible();await expect(scene.getByTestId('scene-racer')).toHaveCount(n===2?4:n);}await captureRace(host,`test-results/browser-authority/race-${n}.png`);await captureRace(pages.at(-1)!,`test-results/browser-authority/race-mobile-${n}.png`);raceShot=true;}
       let playerId:string,action:GameAction;
       if(g.pending){playerId=g.pending.playerId;const option=g.pending.options.find(o=>['skip','pass','decline'].includes(o.id))??g.pending.options[0]!;action={type:'choose',choiceId:g.pending.id,optionId:option.id};}
       else if(g.phase==='results'){playerId=room.hostId;action={type:'next'};}
       else{playerId=g.racers.find(r=>r.id===g.currentRacerId)!.playerId;action={type:'roll'};}
+      const actionLabel=action.type==='choose'?`choose-${g.pending!.kind}-${action.optionId}`:action.type;
+      mark('submit',actionLabel,room,steps);
       const p=pages[ids.indexOf(playerId)]!;await synced(p,room.version);
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click();
       else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click();
       else await p.getByRole('button',{name:'掷骰子',exact:true}).click();
+      mark('confirm',actionLabel,room,steps);
       await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);await p.waitForTimeout(180);
     }
-    expect((await saved(host,code)).game.results).toHaveLength(4);expect(errors).toEqual([]);
+    const finalRoom=await saved(host,code);mark('finished','assert-four-results',finalRoom,steps);progress();
+    expect(finalRoom.game.results).toHaveLength(4);expect(errors).toEqual([]);
     await host.screenshot({path:`test-results/browser-authority/final-${n}.png`,fullPage:true});
+    mark('rematch','request-rematch',finalRoom,steps);
     const admin=pages[ids.indexOf((await saved(host,code)).hostId)]!;await synced(admin,(await saved(host,code)).version);await admin.getByRole('button',{name:'原房间，再来一局',exact:true}).click();await expect(admin.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
     expect((await saved(host,code)).game.players.every(p=>p.score===0&&p.hand.length===0)).toBe(true);
+    mark('layout','check-overflow',await saved(host,code),steps);
     for(const p of pages)expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  }finally{await Promise.all(contexts.map(c=>c.close()));}
+  }catch(error){
+    bodyFailed=true;
+    console.error(`[relay-${n}] original-error ${error instanceof Error?error.stack??error.message:String(error)}\n[relay-${n}] last-checkpoint ${JSON.stringify({...checkpoint,elapsedMs:Date.now()-startedAt})}`);
+    throw error;
+  }finally{
+    let cleanupTimer:ReturnType<typeof setTimeout>|undefined;
+    const cleanup=await Promise.race([Promise.allSettled(contexts.map(context=>context.close())),new Promise<null>(resolve=>{cleanupTimer=setTimeout(()=>resolve(null),10_000);})]);
+    if(cleanupTimer)clearTimeout(cleanupTimer);
+    if(cleanup===null){
+      console.error(`[relay-${n}] context cleanup exceeded 10s; last-checkpoint ${JSON.stringify(checkpoint)}`);
+      if(!bodyFailed)throw Error('Browser context cleanup exceeded 10s after the test body completed.');
+    }else{
+      const rejected=cleanup.filter((result):result is PromiseRejectedResult=>result.status==='rejected');
+      if(rejected.length){console.error(`[relay-${n}] context cleanup errors: ${rejected.map(result=>String(result.reason)).join(' | ')}`);if(!bodyFailed)throw new AggregateError(rejected.map(result=>result.reason),'Browser context cleanup failed after the test body completed.');}
+    }
+  }
 });
