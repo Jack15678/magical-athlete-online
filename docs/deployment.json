@@ -6,20 +6,90 @@
   "firstVersion": "329ab155-6bd6-43f3-82c7-3763f7e022ab",
   "deployedAt": "2026-10-21",
   "planVerification": "User confirmed Workers Free in dashboard",
-  "verifiedDeploymentVersion": "0579106f-119f-4219-b1ce-4683c6d1eb02",
+  "verifiedDeploymentVersion": "0f9af3c5-0fc9-4651-bf49-c6be2787ff87",
   "publicGameVerifiedVersion": "55fa9883-e669-437b-b471-8f6acbbecf0a",
   "githubAutoDeploy": true,
-  "verifiedCommit": "8f0d8742f226e507bc6035eeec6528a43ecaeff3",
-  "runtimeCommit": "8f0d8742f226e507bc6035eeec6528a43ecaeff3",
-  "browserBundle": "/assets/index-CF-LIG6R.js",
-  "publicMultiplayer": [8],
-  "localMultiplayer": [2, 6, 8],
-  "boardCorners": [12, 15],
+  "verifiedCommit": "be822c422d15e75699ac028ad148329d7c56b1d2",
+  "runtimeCommit": "be822c422d15e75699ac028ad148329d7c56b1d2",
+  "browserBundle": "/assets/index-B3lVTEqk.js",
+  "publicMultiplayer": [
+    8
+  ],
+  "localMultiplayer": [
+    2,
+    6,
+    8
+  ],
+  "boardCorners": [
+    12,
+    15
+  ],
   "modelBytes": 465736,
   "modelSha256": "02f6391d21c87fa43fe80849462adc9a175a203f6422646845b9fbbaabba15ac",
-  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39540261380",
+  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39552190668",
   "ciConclusion": "success",
-  "ciScope": "one eight-player race, host/guest recovery, privacy and layout",
+  "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race",
   "ciCaseTimeoutMinutes": 15,
-  "ciJobTimeoutMinutes": 30
+  "ciJobTimeoutMinutes": 30,
+  "immersivePracticeUpdate": {
+    "date": "2026-10-21",
+    "buildId": "62d8f0d9-b24b-401a-ac5a-e12857fe1a3b",
+    "deploymentId": "8a59fe2a-4f10-4b28-ac23-06c1b210b665",
+    "deploymentPercent": 100,
+    "unitChecks": 189,
+    "unitConclusion": "success",
+    "desktopViewport": [
+      1440,
+      1000
+    ],
+    "mobileViewport": [
+      390,
+      844
+    ],
+    "mobileVerification": "Edge viewport simulation",
+    "localMultiplayerSmoke": {
+      "players": 8,
+      "races": 1,
+      "elapsedSeconds": 44.0,
+      "recovery": true,
+      "privacy": true
+    },
+    "localAIFullMatch": {
+      "humanPlayers": 1,
+      "aiPlayers": 3,
+      "races": 4,
+      "elapsedSeconds": 203.031,
+      "pageErrors": 0
+    },
+    "publicPractice": {
+      "elapsedSeconds": 7.9,
+      "pageErrors": 0,
+      "viewport": [
+        390,
+        844
+      ],
+      "fullViewport": true
+    },
+    "demo": {
+      "url": "https://magical-athlete.qiuh23.workers.dev/demo/immersive.webm",
+      "bytes": 817526,
+      "seconds": 20,
+      "sha256": "9c32aaaf688097cbcac3f9313c7cbb474a42b95a7cf3c0d40e800f1ac8c9b302"
+    },
+    "boardBundle": "/assets/Board3D-C9aVuMuy.js",
+    "features": [
+      "viewport-board",
+      "self-overview-camera",
+      "action-chain-follow",
+      "manual-camera-pause",
+      "choice-priority",
+      "full-tile-special-art",
+      "practice",
+      "1-7-ai"
+    ],
+    "ciRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39552190668",
+    "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race",
+    "ciConclusion": "success",
+    "ciBrowserElapsedMinutes": 4.5
+  }
 }
