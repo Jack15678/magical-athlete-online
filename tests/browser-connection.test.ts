@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { BrowserRelayConnection } from '../src/client/browser-connection.js';
 import type { ActionEnvelope, ActionReply, RoomView } from '../src/shared/types.js';
 import type { RelayServerMessage } from '../src/shared/relay.js';
+import { sendAction, type RoomConnection } from '../src/client/network.js';
 
 const stale = (version: number): ActionReply => ({ ok: false, error: '画面已更新，请同步后重试。', version });
 const lobby = (version: number, phase: RoomView['phase'] = 'lobby') => ({ version, phase }) as RoomView;
@@ -103,10 +104,59 @@ test('another room closure does not terminate this room', () => {
   assert.deepEqual(client.events, []);
 });
 
+test('owner absence closure reports its own terminal reason and never reconnects',()=>{
+  const client=closingTransport(),statuses:{state:string;message?:string}[]=[];
+  Reflect.set(client.connection,'onStatus',(state:string,message?:string)=>statuses.push({state,message}));
+  client.receive({type:'room-closed',code:'ABC234',closedAt:123,reason:'host-away'});
+  assert.deepEqual(statuses,[{state:'closed',message:'房主连续离开超过30分钟，房间已关闭。'}]);
+  const events=[...client.events];client.connection.connect();assert.deepEqual(client.events,events);
+});
+
 test('expiration is terminal and reports the lifetime limit without offering reconnection', () => {
   const client = closingTransport();
   client.receive({ type: 'room-closed', code: 'ABC234', closedAt: 123, reason: 'expired' });
   assert.equal(client.events.at(-1), 'expired');
   assert.equal(client.connection.connected, false);
   const events = [...client.events]; client.connection.connect(); assert.deepEqual(client.events, events);
+});
+
+function offlineOwnerTransport(mode:'ai'|'practice'='ai'){
+  const sent:any[]=[];
+  const connection=Object.assign(Object.create(BrowserRelayConnection.prototype),{
+    identity:{roomCode:'ABC234',playerId:'owner',role:'player'},
+    metadata:{code:'ABC234',mode,adminHostId:'owner'},
+    disposed:false,blocked:false,roomClosed:false,authenticated:true,synchronized:false,authorityOnline:false,
+    replies:new Map(),
+    ws:{readyState:WebSocket.OPEN,send(value:string){
+      const message=JSON.parse(value);sent.push(message);
+      Reflect.get(connection,'receive').call(connection,{type:'ack',requestId:message.requestId,result:{ok:true,version:7}});
+    }},
+  }) as BrowserRelayConnection;
+  return{connection,sent};
+}
+test('an authenticated personal-room owner can dismiss without a synchronized gameplay authority, while all gameplay stays paused',async()=>{
+  for(const mode of ['ai','practice'] as const){
+    const client=offlineOwnerTransport(mode);assert.equal(client.connection.connected,false);assert.equal(client.connection.canClose,true);
+    const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:6,action:{type:'close'}};
+    assert.deepEqual(await client.connection.request(envelope),{ok:true,version:7});assert.deepEqual(client.sent[0].envelope,envelope);
+    await assert.rejects(client.connection.request({...envelope,action:{type:'roll'}}),/计算房主网页离线/);
+    assert.equal(client.sent.length,1);
+  }
+});
+test('personal close availability requires the authenticated owner and a usable relay socket',()=>{
+  const restrictions=[
+    {authenticated:false},{blocked:true},{disposed:true},{roomClosed:true},{ws:{readyState:WebSocket.CLOSED}},
+    {metadata:{code:'ABC234',mode:'multiplayer',adminHostId:'owner'}},
+    {metadata:{code:'ABC234',mode:'ai',adminHostId:'other'}},
+    {metadata:{code:'DEF567',mode:'ai',adminHostId:'owner'}},
+    {identity:{roomCode:'ABC234',playerId:'owner',role:'spectator'}},
+  ];
+  for(const restriction of restrictions){const client=offlineOwnerTransport();Object.assign(client.connection,restriction);assert.equal(client.connection.canClose,false);}
+});
+test('a lost personal-close acknowledgement retries the identical action through the relay even with gameplay offline',async()=>{
+  const envelopes:ActionEnvelope[]=[];
+  const connection:RoomConnection={connected:false,canClose:true,connect(){},disconnect(){},emit(){},async request(envelope){envelopes.push(envelope);if(envelopes.length===1)throw Error('ack lost');return{ok:true,version:8};}};
+  assert.deepEqual(await sendAction(connection,lobby(7),{type:'close'}),{ok:true,version:8});
+  assert.equal(envelopes.length,2);assert.strictEqual(envelopes[0],envelopes[1]);
+  envelopes.length=0;await assert.rejects(sendAction(connection,lobby(7),{type:'roll'}),/连接已中断/);assert.equal(envelopes.length,1);
 });

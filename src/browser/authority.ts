@@ -1,6 +1,6 @@
 import { publicEventBatch } from '../shared/public-events.js';
 import { immediateRoomAction } from '../shared/automation.js';
-import { ROOM_TTL_MS } from '../shared/constants.js';
+import { personalRoom, roomExpiry } from '../shared/room-lifecycle.js';
 import { automaticAction } from '../engine/index.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
 import type { ActionEnvelope, ActionReply, Room, RoomView } from '../shared/types.js';
@@ -53,7 +53,7 @@ export class BrowserAuthority {
   static load(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,false,options); }
   private static async initialize(meta: RelayMetadata, allowCreate: boolean, options: AuthorityOptions): Promise<BrowserAuthority> {
     validateMetadata(meta); const factory=options.indexedDB ?? globalThis.indexedDB;
-    if ((options.now ?? Date.now)() >= meta.createdAt + ROOM_TTL_MS) throw Error('房间已达到3小时上限，请重新创建。');
+    if ((options.now ?? Date.now)() >= roomExpiry(meta)) throw Error(personalRoom(meta)?'房主离开超过30分钟，房间已关闭。':'房间已达到3小时上限，请重新创建。');
     if (!factory) throw Error('这个浏览器无法使用本地存档，不能主持比赛。请使用允许 IndexedDB 的正常浏览窗口。');
     const db=await open(factory,options.databaseName ?? AUTHORITY_DATABASE);
     try {
@@ -168,7 +168,7 @@ export class BrowserAuthority {
     return this.serial(async() => {
       if(!this.meta.members.some(m=>m.id===this.meta.authorityId&&m.connected))return false;
       const cached=this.record.room;
-      if(now>=cached.createdAt+ROOM_TTL_MS)return false;
+      if(now>=roomExpiry({...cached,hostLeftAt:this.meta.hostLeftAt}))return false;
       if(cached.closedAt!==undefined)return false;
       if(!immediateRoomAction(cached,now)&&(cached.deadline===null||cached.deadline>now))return false;
       return this.commit<boolean>((record,receipts,save) => {

@@ -4,6 +4,7 @@ import { registerHooks } from 'node:module';
 import type { ActionEnvelope, Identity, RoomView } from '../src/shared/types.js';
 import type { RelayJoinReply } from '../src/shared/relay.js';
 import { MAX_SPECTATORS, ROOM_TTL_MS } from '../src/shared/constants.js';
+import { PERSONAL_ROOM_AWAY_MS } from '../src/shared/room-lifecycle.js';
 
 // Exercise the real relay handlers. Only the platform base class, persistent
 // storage, and socket transport are substituted; rule/network logic is not.
@@ -418,10 +419,12 @@ async function listedRooms(env:any){const response=await worker.default.fetch(ne
 function deferred(){let resolve!:()=>void;const promise=new Promise<void>(done=>{resolve=done;});return {promise,resolve};}
 async function bounded<T>(operation:Promise<T>):Promise<T>{let timeout:ReturnType<typeof setTimeout>|undefined;try{return await Promise.race([operation,new Promise<never>((_,reject)=>{timeout=setTimeout(()=>reject(Error('directory operation deadlocked')),1000);})]);}finally{clearTimeout(timeout);}}
 
-test('worker room directory lists all live modes, fresh presence and spectator counts, and hides closed/expired rooms',async()=>{
+test('worker room directory excludes practice rooms and lists fresh public presence, hiding closed/expired rooms',async()=>{
   const ns=await namespace(),created:RelayJoinReply[]=[];
   for(const mode of ['multiplayer','practice','ai']){const response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:mode,mode,aiCount:1})}),ns.env);assert.equal(response.status,201);created.push(await response.json() as RelayJoinReply);}
-  let rooms=await listedRooms(ns.env);assert.equal(rooms.length,3);assert(rooms.every(room=>room.expiresAt-room.createdAt===ROOM_TTL_MS&&!room.authorityOnline));assert.deepEqual(rooms.map(room=>room.mode).sort(),['ai','multiplayer','practice']);
+  let rooms=await listedRooms(ns.env);assert.equal(rooms.length,2);assert(rooms.every(room=>!room.authorityOnline));assert.deepEqual(rooms.map(room=>room.mode).sort(),['ai','multiplayer']);
+  assert.equal(rooms.find(room=>room.mode==='ai')!.expiresAt-rooms.find(room=>room.mode==='ai')!.createdAt,PERSONAL_ROOM_AWAY_MS);
+  assert.equal(rooms.find(room=>room.mode==='multiplayer')!.expiresAt-rooms.find(room=>room.mode==='multiplayer')!.createdAt,ROOM_TTL_MS);
   const first=created[0]!,active=ns.instances.get(first.identity.roomCode)!,env={...active,created:first},host=await authenticate(env,first.identity,true);
   const spectatorResponse=await worker.default.fetch(new Request(`https://game.test/api/browser/rooms/${first.identity.roomCode}/join`,{method:'POST',body:'{"name":"观众","role":"spectator"}'}),ns.env);assert.equal(spectatorResponse.status,201);
   assert.equal((await listedRooms(ns.env)).find(room=>room.code===first.identity.roomCode)!.spectatorCount,0);
@@ -450,4 +453,75 @@ test('directory summary refresh cannot resurrect a room removed after the summar
   ns.hooks.after=async(_code,request)=>{if(new URL(request.url).pathname.startsWith('/summary/')){reading.resolve();await release.promise;}};
   const listing=listedRooms(ns.env);await reading.promise;await closeIntent(env,host,'raced-close');await deliver(env,host,created.identity.playerId,{...created.room,version:2,closedAt:Date.now()},'raced-close');release.resolve();await bounded(listing);
   const directory=ns.instances.get('__room_directory__')!;assert.equal(await directory.ctx.storage.get('directory:'+created.identity.roomCode),undefined);assert.equal((await listedRooms(ns.env)).length,0);
+});
+
+async function personal(mode:'ai'|'practice'='ai'){
+  const env=await instance(),response=await env.relay.fetch(new Request('https://room.internal/create/ABC234',{method:'POST',body:JSON.stringify({name:'房主',mode,aiCount:1,maxPlayers:mode==='practice'?1:2,timeoutSeconds:0})}));
+  assert.equal(response.status,201);return{...env,created:await response.json() as RelayJoinReply};
+}
+async function controlledClock(work:(clock:{now:number})=>Promise<void>){
+  const original=Date.now,clock={now:original()};Date.now=()=>clock.now;
+  try{await work(clock);}finally{Date.now=original;}
+}
+test('personal relay closes an unattended room thirty minutes after creation without any browser task',async()=>controlledClock(async clock=>{
+  const env=await personal(),code=env.created.identity.roomCode,at=clock.now;
+  assert.equal(env.ctx.storage.alarmAt,at+PERSONAL_ROOM_AWAY_MS);
+  clock.now=at+PERSONAL_ROOM_AWAY_MS-1;await env.relay.alarm();assert(await env.ctx.storage.get('room'));
+  clock.now++;await env.relay.alarm();assert.equal(await env.ctx.storage.get('room'),undefined);assert.equal(env.ctx.storage.alarmAt,null);
+  const closed=await env.ctx.storage.get<any>('closed');assert.deepEqual(closed,{code,closedAt:clock.now,reason:'host-away'});assert.equal(env.ctx.storage.values.size,1);
+  await env.relay.alarm();assert.deepEqual(await env.ctx.storage.get('closed'),closed);
+  const restored=await instance(env.ctx.storage),response=await restored.relay.fetch(new Request('https://room.internal/summary/ABC234'));
+  assert.equal(response.status,410);const socket=connect(restored.ctx);await restored.relay.webSocketMessage(socket,JSON.stringify({type:'auth',identity:env.created.identity}));
+  assert.equal(socket.closeCode,4410);assert.equal(socket.sent[0].reason,'host-away');
+}));
+test('personal relay counts all valid owner tabs, preserves idle online rooms beyond three hours, and restarts absence on reconnect',async()=>controlledClock(async clock=>{
+  const env=await personal(),one=await authenticate(env,env.created.identity,true),two=await authenticate(env),viewerIdentity=await spectate(env),viewer=await authenticate(env,viewerIdentity.identity);
+  assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  clock.now+=4*60*60*1000;one.lastAutoResponseAt=new Date(clock.now);two.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();
+  assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);assert.equal(one.readyState,1);
+  await env.relay.webSocketClose(one,1000,'关闭标签页',true);assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  await env.relay.webSocketClose(two,1000,'最后标签页关闭',true);const left=clock.now;assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,left);
+  clock.now+=PERSONAL_ROOM_AWAY_MS-1;viewer.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,left);
+  const restored=await authenticate(env,env.created.identity,true);assert.equal(restored.readyState,1);assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  clock.now+=60_000;restored.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+  await env.relay.webSocketClose(restored,1000,'再次离开',true);const next=clock.now;
+  clock.now+=PERSONAL_ROOM_AWAY_MS;await env.relay.alarm();assert.equal(await env.ctx.storage.get('room'),undefined);
+  assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,next+PERSONAL_ROOM_AWAY_MS);assert.equal(viewer.closeCode,4410);assert.equal(viewer.sent.at(-1).reason,'host-away');
+}));
+test('personal relay owner heartbeat timeout and object reconstruction retain the original absence deadline',async()=>controlledClock(async clock=>{
+  const env=await personal(),host=await authenticate(env,env.created.identity,true),start=clock.now;
+  clock.now+=35_000;await env.relay.alarm();assert.equal(host.closeCode,4408);
+  assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,start+35_000);
+  clock.now+=PERSONAL_ROOM_AWAY_MS-1;const restored=await instance(env.ctx.storage);await restored.relay.alarm();assert(await env.ctx.storage.get('room'));
+  clock.now++;await restored.relay.alarm();assert.equal(await env.ctx.storage.get('room'),undefined);
+  assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,start+35_000+PERSONAL_ROOM_AWAY_MS);
+}));
+test('personal relay dismissal enforces owner control without an authority, atomically clears work and retries a failed close safely',async()=>controlledClock(async()=>{
+  const env=await personal(),owner=await authenticate(env),spectator=await spectate(env),viewer=await authenticate(env,spectator.identity);
+  const close=act('close');await env.relay.webSocketMessage(viewer,JSON.stringify({type:'action',requestId:'denied',envelope:close}));
+  assert.match(viewer.sent.at(-1).message,/只有当前管理房主/);assert.equal(owner.readyState,1);
+  await env.ctx.storage.put('view:'+env.created.identity.playerId,env.created.room);env.ctx.storage.failPut='closed';
+  await env.relay.webSocketMessage(owner,JSON.stringify({type:'action',requestId:'retry-close',envelope:close}));
+  assert.equal(owner.readyState,1);assert(await env.ctx.storage.get('room'));assert.equal(await env.ctx.storage.get('closed'),undefined);
+  assert(!owner.sent.some(message=>message.type==='ack'&&message.result.ok));
+  await env.relay.webSocketMessage(owner,JSON.stringify({type:'action',requestId:'retry-close',envelope:close}));
+  assert.equal(owner.closeCode,4410);assert.equal(viewer.closeCode,4410);assert.equal(owner.sent.at(-1).reason,'dismissed');
+  assert(owner.sent.findIndex(message=>message.type==='ack')<owner.sent.findIndex(message=>message.type==='room-closed'));
+  assert.equal(env.ctx.storage.values.size,1);assert.equal(env.ctx.storage.alarmAt,null);assert.equal(await env.ctx.storage.get('room'),undefined);
+  const closed=await env.ctx.storage.get('closed');await env.relay.alarm();assert.deepEqual(await env.ctx.storage.get('closed'),closed);
+}));
+test('practice directory exclusion survives creation, roster pushes, delivered state and object reconstruction',async()=>{
+  const ns=await namespace(),response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:'练习',mode:'practice'})}),ns.env),created=await response.json() as RelayJoinReply;
+  const current=ns.instances.get(created.identity.roomCode)!,env={...current,created},host=await authenticate(env,created.identity,true);
+  assert.deepEqual(await listedRooms(ns.env),[]);await deliver(env,host,created.identity.playerId,{...created.room,phase:'draft',version:2});assert.deepEqual(await listedRooms(ns.env),[]);
+  const restored=new worker.RoomRelay(current.ctx,ns.env);await current.ctx.ready();current.relay=restored;
+  assert.deepEqual(await listedRooms(ns.env),[]);assert.equal(await ns.instances.get('__room_directory__')!.ctx.storage.get('directory:'+created.identity.roomCode),undefined);
+});
+
+test('legacy closed personal relay records migrate without retaining private views or an infinity alarm',async()=>{
+  const env=await personal('practice'),record=await env.ctx.storage.get<any>('room');record.closedAt=Date.now();
+  await env.ctx.storage.put('room',record);await env.ctx.storage.put('view:'+env.created.identity.playerId,env.created.room);
+  const restored=await instance(env.ctx.storage);assert.equal(await env.ctx.storage.get('room'),undefined);assert.equal(env.ctx.storage.values.size,1);assert.equal(env.ctx.storage.alarmAt,null);
+  assert.equal((await env.ctx.storage.get<any>('closed')).reason,'dismissed');
+  const response=await restored.relay.fetch(new Request('https://room.internal/summary/ABC234'));assert.equal(response.status,410);
 });

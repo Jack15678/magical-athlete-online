@@ -11,7 +11,7 @@ export interface ToyCharacterProps {
   castShadow?: boolean;
 }
 
-const MODEL_URL = '/models/toy-racers.glb';
+const MODEL_URL = '/models/toy-racers.glb?v=blender-refined-20261021';
 const modelRecovery = new AssetRecovery({
   clearCache: () => useGLTF.clear(MODEL_URL),
   isOnline: () => navigator.onLine,

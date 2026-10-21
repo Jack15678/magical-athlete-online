@@ -14,6 +14,8 @@ import { StudioLighting, AdaptiveQuality, PawnContact } from './StudioLighting.j
 import { RaceEffects } from './RaceEffects.js';
 import { useRaceIntro } from './useRaceIntro.js';
 import { boardPoint, diceTopRotation, TILE } from './math.js';
+import { pawnRoute, strideLift, strideProgress } from './pawn-motion.js';
+import { pawnFallPose } from './pawn-fall.js';
 
 import { ACTION_HOLD_MS, actionFocus, choiceFocus, ownFocus, pawnOccupancy, pawnWorldPoint, type CameraFocus, type CameraMode } from './camera.js';
 import './scene.css';
@@ -124,7 +126,12 @@ function PerformanceProbe({ root }: { root: React.RefObject<HTMLElement | null> 
     const previous = scene.onAfterRender;
     scene.onAfterRender = function (...args) {
       previous.apply(this, args);
-      if (root.current) { root.current.dataset.drawCalls = String(gl.info.render.calls); root.current.dataset.triangles = String(gl.info.render.triangles); }
+      if (root.current) {
+        root.current.dataset.drawCalls = String(gl.info.render.calls); root.current.dataset.triangles = String(gl.info.render.triangles);
+        let loaded = 0, fallbacks = 0;
+        scene.traverse(object => { if (object.name.startsWith('toy_')) loaded++; if (object.name === 'procedural-racer-fallback') fallbacks++; });
+        root.current.dataset.loadedModels = String(loaded); root.current.dataset.modelFallbacks = String(fallbacks);
+      }
     };
     return () => { scene.onAfterRender = previous; };
   }, [gl, scene, root]);
@@ -219,6 +226,11 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
   const offset = occupancy(racer, racers, motion?.from ?? racer.position, compact);
   const destinations = motion ? racers.map(r => ({ ...r, position: beat?.motions.find(m => m.racerId === r.id)?.to ?? r.position })) : racers;
   const endOffset = occupancy(racer, destinations, motion?.to ?? racer.position, compact);
+  const route = useMemo(() => motion ? pawnRoute(motion.path.map((position, index) => {
+    const point = boardPoint(position, compact);
+    return [point[0] + (index === 0 ? offset.x : index === motion.path.length - 1 ? endOffset.x : 0), 0, point[2] + (index === 0 ? offset.z : index === motion.path.length - 1 ? endOffset.z : 0)];
+  })) : undefined, [motion, compact, offset.x, offset.z, endOffset.x, endOffset.z]);
+  const walkPoint = useMemo(() => new THREE.Vector3(), []);
   const affected = beat?.targets.includes(racer.id) || beat?.source === racer.id;
   useFrame(() => {
     if (!root.current || !body.current) return;
@@ -235,18 +247,18 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
         const arrived = t > .5; x = (arrived ? target[0] + endOffset.x : x); z = (arrived ? target[2] + endOffset.z : z);
         scale = (arrived ? endOffset.scale : offset.scale) * Math.max(.04, Math.abs(2 * t - 1)); y += reducedMotion ? 0 : Math.sin(t * Math.PI) * .65; swing = reducedMotion ? 0 : t * Math.PI * 2;
       } else {
-        const count = Math.max(1, motion.path.length - 1), walk = ease(clamp((t - .06) / .88, 0, 1)) * count, segment = Math.min(count - 1, Math.floor(walk)), local = walk - segment;
-        const a = boardPoint(motion.path[segment] ?? motion.from, compact), b = boardPoint(motion.path[segment + 1] ?? motion.to, compact);
-        x = THREE.MathUtils.lerp(a[0] + (segment === 0 ? offset.x : 0), b[0] + (segment === count - 1 ? endOffset.x : 0), local); z = THREE.MathUtils.lerp(a[2] + (segment === 0 ? offset.z : 0), b[2] + (segment === count - 1 ? endOffset.z : 0), local);
+        const count = Math.max(1, motion.path.length - 1), fraction = strideProgress(t), walk = fraction * count;
+        route!.getPointAt(fraction, walkPoint); x = walkPoint.x; z = walkPoint.z;
         const backwards = motion.to < motion.from;
-        y += reducedMotion ? 0 : Math.sin(local * Math.PI) * (backwards ? .17 : .28); swing = reducedMotion ? 0 : Math.sin(walk * Math.PI * 2) * (backwards ? -.18 : .12); scale = THREE.MathUtils.lerp(offset.scale, endOffset.scale, ease(t));
+        y += reducedMotion ? 0 : strideLift(fraction, count); swing = reducedMotion ? 0 : Math.sin(walk * Math.PI * 2) * (backwards ? -.055 : .045); scale = THREE.MathUtils.lerp(offset.scale, endOffset.scale, fraction);
       }
     }
-    if (beat?.targets.includes(racer.id) && beat.kind === 'trip') { tilt = reducedMotion ? -Math.PI / 2 : -ease(t) * Math.PI * 2.5; y += reducedMotion ? 0 : Math.sin(t * Math.PI) * .45; }
-    if (affected && beat?.kind === 'recover') tilt = -Math.PI / 2 * (1 - ease(t));
+    const fallPhase = beat?.targets.includes(racer.id) && beat.kind === 'trip' ? 'trip' : affected && beat?.kind === 'recover' ? 'recover' : racer.tripped ? 'down' : undefined;
+    const fall = fallPhase ? pawnFallPose(t, fallPhase, reducedMotion) : undefined;
+    if (fall) { tilt = fall.tilt; swing = 0; }
     if (affected && beat?.kind === 'skill' && !reducedMotion) { y += Math.sin(t * Math.PI) * .3; swing += Math.sin(t * Math.PI * 2) * .18; }
     if (beat?.targets.includes(racer.id) && beat.kind === 'eliminate') scale *= 1 - ease(t);
-    root.current.position.set(x, y, z); root.current.scale.setScalar(Math.max(.01, scale)); body.current.rotation.set(tilt, swing, 0);
+    root.current.position.set(x, y, z); root.current.scale.setScalar(Math.max(.01, scale)); body.current.rotation.set(tilt, swing, 0); body.current.position.y = fall?.lift ?? 0;
     const label = labels.current.get(racer.id);
     if (label) { root.current.updateWorldMatrix(true, false); projection.set(0, .19, .34).applyMatrix4(root.current.matrixWorld).project(camera); label.style.transform = `translate(${(projection.x + 1) * size.width / 2}px,${(1 - projection.y) * size.height / 2}px) translate(-50%,-50%)`; label.style.visibility = projection.z < -1 || projection.z > 1 ? 'hidden' : 'visible'; }
   });

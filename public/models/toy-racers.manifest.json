@@ -1,5 +1,6 @@
 {
-  "version": 1,
+  "version": 2,
+  "generator": "Blender 5.2.3 LTS Release Candidate",
   "units": "metres",
   "up": "+Y",
   "forward": "+Z",
@@ -8,438 +9,476 @@
     {
       "id": "alchemist",
       "node": "toy_alchemist",
-      "triangles": 2184,
+      "triangles": 5480,
       "draws": 6,
       "bounds": [
         0.59,
-        0.8944,
-        0.3824
+        0.8976,
+        0.385
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "flask-rim, rear-flask-seam; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "baba-yaga",
       "node": "toy_baba-yaga",
-      "triangles": 1276,
+      "triangles": 3726,
       "draws": 6,
       "bounds": [
-        0.5585,
+        0.5548,
         1.015,
-        0.4761
+        0.4728
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-window-a, back-window-b, roof-ridge; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "banana",
       "node": "toy_banana",
-      "triangles": 2100,
+      "triangles": 4508,
       "draws": 4,
       "bounds": [
         0.59,
-        0.9369,
-        0.2334
+        0.938,
+        0.2465
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "peel-back-ridge; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "blimp",
       "node": "toy_blimp",
-      "triangles": 1306,
+      "triangles": 3470,
       "draws": 5,
       "bounds": [
-        0.59,
-        0.6308,
-        0.3845
+        0.5889,
+        0.6368,
+        0.3882
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-gore; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "centaur",
       "node": "toy_centaur",
-      "triangles": 2576,
+      "triangles": 7208,
       "draws": 5,
       "bounds": [
         0.59,
-        0.9346,
-        0.5747
+        0.938,
+        0.5778
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "mane, saddle-seam; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "cheerleader",
       "node": "toy_cheerleader",
-      "triangles": 4224,
+      "triangles": 9048,
       "draws": 6,
       "bounds": [
         0.59,
-        0.7842,
-        0.3805
+        0.7872,
+        0.3811
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "ponytail, skirt-hem; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "coach",
       "node": "toy_coach",
-      "triangles": 2084,
+      "triangles": 5276,
       "draws": 5,
       "bounds": [
         0.59,
-        0.878,
-        0.4589
+        0.8976,
+        0.4605
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "cap-seam, jacket-back; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "copycat",
       "node": "toy_copycat",
-      "triangles": 2784,
+      "triangles": 8352,
       "draws": 4,
       "bounds": [
         0.59,
-        0.945,
-        0.3074
+        0.9229,
+        0.3658
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "tail-blue, tail-pink; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "dicemonger",
       "node": "toy_dicemonger",
-      "triangles": 2588,
+      "triangles": 5252,
       "draws": 4,
       "bounds": [
         0.59,
-        0.7745,
-        0.4105
+        0.7773,
+        0.4329
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-pip-a, back-pip-b; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "duelist",
       "node": "toy_duelist",
-      "triangles": 2028,
+      "triangles": 5500,
       "draws": 4,
       "bounds": [
-        0.59,
-        0.8999,
-        0.404
+        0.5898,
+        0.9035,
+        0.4408
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "coat-tail, helmet-back; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "egg",
       "node": "toy_egg",
-      "triangles": 1792,
+      "triangles": 4340,
       "draws": 3,
       "bounds": [
         0.5156,
         1.015,
-        0.474
+        0.4906
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-shell-crack; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "flip-flop",
       "node": "toy_flip-flop",
-      "triangles": 1596,
+      "triangles": 4108,
       "draws": 4,
       "bounds": [
         0.59,
-        0.8241,
-        0.3041
+        0.8271,
+        0.3052
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "sole-seam; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "genius",
       "node": "toy_genius",
-      "triangles": 2576,
+      "triangles": 4564,
       "draws": 5,
       "bounds": [
         0.59,
-        0.9026,
-        0.3589
+        0.9115,
+        0.363
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "brain-rear-fold; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "gunk",
       "node": "toy_gunk",
-      "triangles": 3192,
+      "triangles": 6846,
       "draws": 5,
       "bounds": [
         0.59,
-        0.7862,
-        0.4548
+        0.7886,
+        0.4768
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "Voxel-fused asymmetrical slime body, relaxed continuous side/back surface, molded eyes, rear and side bubbles"
     },
     {
       "id": "hare",
       "node": "toy_hare",
-      "triangles": 2184,
+      "triangles": 9308,
       "draws": 4,
       "bounds": [
-        0.4086,
+        0.4812,
         1.015,
-        0.4381
+        0.4711
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "Rounded muzzle, molded eye glints, inner ears, belly, connected arms/paws, toe seams, round rear tail"
     },
     {
       "id": "heckler",
       "node": "toy_heckler",
-      "triangles": 1524,
+      "triangles": 3216,
       "draws": 4,
       "bounds": [
         0.5826,
         0.8692,
         0.59
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "cup-back-rim; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "huge-baby",
       "node": "toy_huge-baby",
-      "triangles": 2296,
+      "triangles": 5568,
       "draws": 6,
       "bounds": [
         0.59,
-        0.9687,
-        0.4485
+        0.9722,
+        0.4517
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "diaper-back; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "hypnotist",
       "node": "toy_hypnotist",
-      "triangles": 2544,
+      "triangles": 4368,
       "draws": 5,
       "bounds": [
-        0.5601,
+        0.5583,
         1.015,
-        0.4853
+        0.4892
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "robe-back-fold; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "inchworm",
       "node": "toy_inchworm",
-      "triangles": 2744,
+      "triangles": 7828,
       "draws": 4,
       "bounds": [
         0.59,
         0.8278,
         0.2702
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-segment-stripe; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "lackey",
       "node": "toy_lackey",
-      "triangles": 1972,
+      "triangles": 5510,
       "draws": 4,
       "bounds": [
         0.59,
         0.7338,
-        0.3558
+        0.3563
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "apron-back-tie; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "leaptoad",
       "node": "toy_leaptoad",
-      "triangles": 2016,
-      "draws": 4,
+      "triangles": 4020,
+      "draws": 5,
       "bounds": [
         0.59,
-        0.6971,
-        0.4598
+        0.702,
+        0.4647
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-spot-a, back-spot-b; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "legs",
       "node": "toy_legs",
-      "triangles": 1680,
+      "triangles": 4168,
       "draws": 4,
       "bounds": [
         0.59,
-        0.8429,
-        0.3933
+        0.8459,
+        0.3925
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "knee-a, knee-b; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "lovable-loser",
       "node": "toy_lovable-loser",
-      "triangles": 2140,
+      "triangles": 4812,
       "draws": 6,
       "bounds": [
         0.59,
-        0.8569,
-        0.4151
+        0.86,
+        0.4207
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-patch-stitch; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "magician",
       "node": "toy_magician",
-      "triangles": 2016,
+      "triangles": 5816,
       "draws": 5,
       "bounds": [
-        0.59,
-        0.9984,
-        0.5201
+        0.5899,
+        1.0015,
+        0.5217
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "cape-collar, hat-back-band; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "mastermind",
       "node": "toy_mastermind",
-      "triangles": 2428,
+      "triangles": 6416,
       "draws": 4,
       "bounds": [
         0.59,
-        0.958,
-        0.3606
+        0.9615,
+        0.3615
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "chair-back-scroll; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "mouth",
       "node": "toy_mouth",
-      "triangles": 1656,
-      "draws": 3,
+      "triangles": 6060,
+      "draws": 4,
       "bounds": [
         0.59,
         0.7993,
-        0.4476
+        0.4556
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "rear-lip-contour; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "party-animal",
       "node": "toy_party-animal",
-      "triangles": 2324,
+      "triangles": 6558,
       "draws": 6,
       "bounds": [
-        0.5465,
-        1.015,
-        0.3991
+        0.5585,
+        1.0118,
+        0.4199
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-confetti; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "rocket-scientist",
       "node": "toy_rocket-scientist",
-      "triangles": 1040,
-      "draws": 5,
+      "triangles": 3554,
+      "draws": 6,
       "bounds": [
-        0.59,
-        0.9291,
-        0.3309
+        0.5891,
+        0.8948,
+        0.3352
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "rear-panel-seam; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "romantic",
       "node": "toy_romantic",
-      "triangles": 2104,
+      "triangles": 4020,
       "draws": 5,
       "bounds": [
         0.59,
-        0.8632,
-        0.2686
+        0.8645,
+        0.2857
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "heart-back-emboss; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "scoocher",
       "node": "toy_scoocher",
-      "triangles": 1804,
+      "triangles": 5120,
       "draws": 4,
       "bounds": [
         0.59,
-        0.8007,
-        0.3512
+        0.8036,
+        0.3525
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "seat-back-trim; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "sisyphus",
       "node": "toy_sisyphus",
-      "triangles": 1876,
+      "triangles": 4560,
       "draws": 4,
       "bounds": [
         0.59,
-        0.8776,
-        0.4488
+        0.8818,
+        0.4496
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "boulder-rear-vein; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "skipper",
       "node": "toy_skipper",
-      "triangles": 2248,
+      "triangles": 5488,
       "draws": 4,
       "bounds": [
         0.59,
-        0.9599,
-        0.4432
+        0.9634,
+        0.4448
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "collar-back; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "stickler",
       "node": "toy_stickler",
-      "triangles": 1328,
-      "draws": 5,
+      "triangles": 4132,
+      "draws": 6,
       "bounds": [
-        0.5399,
+        0.5376,
         1.015,
-        0.3018
+        0.3171
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "rear-ruler-edge; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "suckerfish",
       "node": "toy_suckerfish",
-      "triangles": 1704,
+      "triangles": 3702,
       "draws": 5,
       "bounds": [
         0.59,
-        0.7047,
-        0.374
+        0.6984,
+        0.3827
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "back-fin-ray; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "third-wheel",
       "node": "toy_third-wheel",
-      "triangles": 1620,
+      "triangles": 3792,
       "draws": 5,
       "bounds": [
         0.59,
         0.8173,
-        0.3041
+        0.3052
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "rear-hub; rounded molded edges, smoother organic surfaces and eye glints"
     },
     {
       "id": "twin",
       "node": "toy_twin",
-      "triangles": 2716,
+      "triangles": 6612,
       "draws": 5,
       "bounds": [
         0.59,
         0.9065,
-        0.3177
+        0.3336
       ],
-      "pivotY": 0
+      "pivotY": 0,
+      "refinement": "rear-bond; rounded molded edges, smoother organic surfaces and eye glints"
     }
   ],
-  "bytes": 1606416,
-  "totalTriangles": 76270,
-  "optimizedBytes": 465736,
+  "totalTriangles": 192306,
+  "materialCount": 10,
+  "textureCount": 0,
+  "bytes": 1636676,
+  "optimizedBytes": 1636676,
   "compression": "EXT_meshopt_compression"
 }

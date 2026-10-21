@@ -19,6 +19,7 @@ function repeatedFollow(view:RoomView,r:Racer):boolean {
 }
 export function decideAI(view:RoomView):GameAction|undefined {
   const self=view.players.find(p=>p.id===view.selfId);if(!self)return;
+  if(view.mode==='practice'&&view.phase==='draft'&&view.draft){const cards=[...view.draft.market].sort((a,b)=>value(b)-value(a)||a.localeCompare(b));return{type:'practice-team',characterIds:cards.slice(0,4)};}
   if(view.phase==='draft'&&view.draft?.order[view.draft.cursor]===self.id){const best=[...view.draft.market].sort((a,b)=>value(b)-value(a)||a.localeCompare(b))[0];if(best)return{type:'draft',characterId:best};}
   if(view.phase==='selection'&&!self.selected){const n=view.players.length===2?2:1;const hand=[...(self.hand??[])].sort((a,b)=>value(b)-value(a)||a.localeCompare(b));if(hand.length>=n)return{type:'select',characterIds:hand.slice(0,n)};}
   if(view.phase==='results'&&view.hostId===self.id)return{type:'next'};

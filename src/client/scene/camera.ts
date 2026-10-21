@@ -14,6 +14,14 @@ export const START_EXTENSION = TILE * 3;
 export const START_CENTER_OFFSET = -START_EXTENSION / 2;
 export const START_GRID_SPACING = 1.3;
 
+/** Bound visible travel even after a long suspended frame or distant teleport. */
+export function cameraStep(distance: number, zoom: number, delta: number, reducedMotion = false) {
+  if (distance <= 0) return 1;
+  if (reducedMotion) return 1;
+  const dt = Math.min(Math.max(0, delta), .05);
+  return Math.min(1 - Math.exp(-dt * 4.8), 720 * dt / (Math.max(3, zoom) * distance));
+}
+
 /** Only public, already-confirmed presentation data enters the camera. */
 export function actionFocus(beat: PresentationBeat, racers: Racer[], queue: PresentationBeat[] = []): CameraFocus {
   const chain = queue.filter(value => value.chainId && value.chainId === beat.chainId);
@@ -30,7 +38,11 @@ export function actionFocus(beat: PresentationBeat, racers: Racer[], queue: Pres
 
 export function ownFocus(room: RoomView, racers: Racer[]): CameraFocus {
   const mine = room.role === 'spectator' ? racers : racers.filter(racer => racer.playerId === room.selfId);
-  const racer = mine.find(value => value.id === room.currentRacerId) ?? mine.find(value => !value.finished && !value.eliminated) ?? mine[0];
+  const live = mine.filter(value => !value.finished && !value.eliminated);
+  // Keep the last own actor selected during the opponent's turn. In duo mode,
+  // falling back to the first pawn after every action made the camera seesaw.
+  const lastOwn = room.logs.findLast(event => event.type === 'turn' && live.some(value => value.id === event.source))?.source;
+  const racer = live.find(value => value.id === room.currentRacerId) ?? live.find(value => value.id === lastOwn) ?? live[0] ?? mine[0];
   return { state: 'self', ids: racer ? [racer.id] : [], positions: racer ? [racer.position] : [0] };
 }
 

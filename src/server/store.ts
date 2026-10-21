@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Room, ActionReply } from '../shared/types.js';
+import type { RoomClosure } from '../shared/room-lifecycle.js';
 
 /** Acknowledgement is sent only after this synchronous FULL transaction commits. */
 export class Store {
@@ -11,6 +12,7 @@ export class Store {
     this.db = new DatabaseSync(path);
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;
       CREATE TABLE IF NOT EXISTS rooms(code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS closed_rooms(code TEXT PRIMARY KEY, state TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS identities(room_code TEXT NOT NULL REFERENCES rooms(code) ON DELETE CASCADE, player_id TEXT NOT NULL, token_hash TEXT NOT NULL, PRIMARY KEY(room_code,player_id));
       CREATE TABLE IF NOT EXISTS receipts(room_code TEXT NOT NULL REFERENCES rooms(code) ON DELETE CASCADE, player_id TEXT NOT NULL, action_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(room_code,player_id,action_id));`);
   }
@@ -28,6 +30,10 @@ export class Store {
     });
   }
   delete(code: string): void { this.db.prepare('DELETE FROM rooms WHERE code=?').run(code); }
+  closed(code:string):RoomClosure|undefined {const row=this.db.prepare('SELECT state FROM closed_rooms WHERE code=?').get(code) as {state:string}|undefined;return row?JSON.parse(row.state) as RoomClosure:undefined;}
+  closeRoom(closure:RoomClosure):void {
+    this.transaction(()=>{this.db.prepare('INSERT INTO closed_rooms VALUES(?,?) ON CONFLICT(code) DO NOTHING').run(closure.code,JSON.stringify(closure));this.delete(closure.code);});
+  }
   receipt(code: string, playerId: string, actionId: string): {request:string;result:ActionReply}|undefined {
     const row = this.db.prepare('SELECT request,result FROM receipts WHERE room_code=? AND player_id=? AND action_id=?').get(code, playerId, actionId) as {request:string;result:string}|undefined;
     return row && {request:row.request,result:JSON.parse(row.result) as ActionReply};

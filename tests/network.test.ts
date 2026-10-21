@@ -270,3 +270,23 @@ test('Node leave distinguishes stale credentials, expired or closed rooms, and i
     assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,host)).status,404);
   } finally {await app.close();}
 });
+
+test('Node personal room counts concurrent owner sockets, restores absence on reconnect, and dismisses through the authenticated action',async()=>{
+  const app=await running(),sockets:Socket[]=[];
+  const settled=async(predicate:()=>boolean)=>{for(let attempt=0;!predicate();attempt++){assert(attempt<100,'server presence did not settle');await new Promise(resolve=>setTimeout(resolve,5));}};
+  try{
+    const created=await post(app.url,'/api/rooms',{name:'练习者',mode:'practice',timeoutSeconds:0}),identity=created.body.identity as Identity;
+    const one=await connect(app.url,identity),two=await connect(app.url,identity);sockets.push(one.socket,two.socket);
+    assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.some((room:{code:string})=>room.code===identity.roomCode),false);
+    one.socket.disconnect();await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(app.rooms.get(identity.roomCode).game.players[0]!.connected,true);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
+    two.socket.disconnect();await settled(()=>app.rooms.get(identity.roomCode).hostLeftAt!==undefined);
+    const leftAt=app.rooms.get(identity.roomCode).hostLeftAt!;assert.equal(app.rooms.view(app.rooms.get(identity.roomCode),identity.playerId).expiresAt,leftAt+30*60*1000);
+    const returned=await connect(app.url,identity);sockets.push(returned.socket);assert.equal(returned.view.hostLeftAt,undefined);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
+    const notice=event<{reason:string}>(returned.socket,'room-closed'),disconnected=event(returned.socket,'disconnect');
+    const result=await emit(returned.socket,{actionId:randomUUID(),expectedVersion:app.rooms.get(identity.roomCode).version,action:{type:'close'}});
+    assert.equal(result.ok,true);assert.equal((await notice).reason,'dismissed');await disconnected;
+    assert.equal(app.rooms.rooms.has(identity.roomCode),false);assert.deepEqual(app.rooms.tick(),[]);assert.match(await rejectedConnection(app.url,identity),/房间已关闭/);
+    assert.equal((await post(app.url,`/api/rooms/${identity.roomCode}/leave`,identity)).status,410);
+  }finally{for(const socket of sockets)socket.disconnect();await app.close();}
+});

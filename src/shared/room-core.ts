@@ -1,7 +1,8 @@
 import { createGame, startGame, applyGameAction, automaticAction } from '../engine/index.js';
-import { MAX_SPECTATORS, PLAYER_COLORS, ROOM_TTL_MS, RULES_STATUS } from './constants.js';
+import { MAX_SPECTATORS, PLAYER_COLORS, RULES_STATUS } from './constants.js';
 import type { ActionEnvelope, GameAction, Player, Room, RoomView } from './types.js';
 import type { RelayMember, RelayMetadata } from './relay.js';
+import { personalRoom, roomExpiry } from './room-lifecycle.js';
 
 /** Pure room policy shared by browser authority and future server adapters.
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
@@ -83,15 +84,18 @@ export function setRoomDeadline(room: Room, now: number): void {
 }
 export interface ReductionOptions { now: number; rematchSeed: number; automatic?: boolean }
 export function reduceRoomAction(original: Room, playerId: string, action: GameAction, options: ReductionOptions): Room {
-  if (options.now >= original.createdAt + ROOM_TTL_MS) throw Error('房间已达到3小时上限，请重新创建。');
+  if (options.now >= roomExpiry(original)) throw Error(personalRoom(original)?'房主离开超过30分钟，房间已关闭。':'房间已达到3小时上限，请重新创建。');
   if (original.closedAt !== undefined) throw Error('房间已解散，请创建或加入其他房间。');
   const room = structuredClone(original); const p = room.game.players.find(p => p.id === playerId);
   if (!p) throw Error('你不在这个房间的参赛席位中。');
-  if (options.automatic) room.game.logs.push({ id: (room.game.logs.at(-1)?.id ?? 0)+1, type:'timeout', text:`${p.name}操作超时，按公开房规执行合法默认选择。` });
+  if (options.automatic) {
+    if(action.type==='choose'&&room.game.pending?.kind==='duel-roll'&&!p.isAI)throw Error('真人决斗投掷必须等待本人点击。');
+    room.game.logs.push({ id: (room.game.logs.at(-1)?.id ?? 0)+1, type:'timeout', text:`${p.name}操作超时，按公开房规执行合法默认选择。` });
+  }
   switch (action.type) {
     case 'close':
       if (room.hostId !== playerId) throw Error('只有房主能结束房间。');
-      room.closedAt = options.now; break;
+      room.closedAt = options.now;room.closeReason='dismissed'; break;
     case 'ready':
       if (room.game.phase !== 'lobby') throw Error('只能在大厅准备。');
       p.ready = action.ready; break;
@@ -134,6 +138,9 @@ export function validateActionEnvelope(value: unknown): ActionEnvelope {
     case 'ready': keys(a,['type','ready']); if (typeof a.ready !== 'boolean') throw Error('准备状态无效。'); action={type:'ready',ready:a.ready}; break;
     case 'start': case 'roll': case 'next': case 'rematch': case 'close': keys(a,['type']); action={type:a.type}; break;
     case 'draft': keys(a,['type','characterId']); action={type:'draft',characterId:string(a.characterId,50)}; break;
+    case 'practice-team':
+      keys(a,['type','characterIds']);if(!Array.isArray(a.characterIds)||a.characterIds.length!==4)throw Error('请选择4张练习角色牌。');
+      action={type:'practice-team',characterIds:a.characterIds.map(id=>string(id,50))};break;
     case 'select':
       keys(a,['type','characterIds']); if (!Array.isArray(a.characterIds) || a.characterIds.length < 1 || a.characterIds.length > 2) throw Error('请选择本场所需角色。');
       action={type:'select',characterIds:a.characterIds.map(id => string(id,50))}; break;
@@ -148,10 +155,11 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   const spectator = room.spectators?.some(p => p.id === playerId) ?? false;
   if (!room.game.players.some(p => p.id === playerId) && !spectator) throw Error('你不在这个房间的参赛席位中。');
   const g=room.game, pending=g.pending;
-  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.createdAt+ROOM_TTL_MS,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
+  const expiry=roomExpiry(room);
+  return { role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:personalRoom(room)&&room.hostLeftAt===undefined?undefined:expiry,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
-    draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), currentRacerId:g.currentRacerId,
+    draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
     pending:pending?.playerId===playerId ? {id:pending.id,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,options:structuredClone(pending.options),optional:pending.optional,kind:pending.kind} : undefined,
     waitingFor:pending?.playerId, logs:structuredClone(g.logs.slice(-120)), results:structuredClone(g.results), lastRoll:g.lastRoll ? {...g.lastRoll} : undefined, rulesStatus:RULES_STATUS };
 }

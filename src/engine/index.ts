@@ -40,8 +40,11 @@ function rollOff(s: GameState, ids: string[]) {
 function order(s: GameState, rs = active(s)): Racer[] {
   const current = racer(s, s.currentRacerId ?? ''); const seat = current ? owner(s, current).seat : Number(s.flags.firstSeat ?? 0);
   const n = s.players.length;
-  return [...rs].sort((a,b) => (((owner(s,a).seat-seat+n)%n) - ((owner(s,b).seat-seat+n)%n)) || s.racers.indexOf(a)-s.racers.indexOf(b));
+  const fixed = baseOrder(s);
+  return [...rs].sort((a,b) => (((owner(s,a).seat-seat+n)%n) - ((owner(s,b).seat-seat+n)%n)) || fixed.indexOf(a.id)-fixed.indexOf(b.id));
 }
+/** Racer IDs, never character IDs or player IDs. Old saves used array order. */
+function baseOrder(s: GameState): string[] { return s.baseTurnOrder ?? s.racers.map(r => r.id); }
 export function effectivePower(s: GameState, r: Racer): string {
   const base = String(r.flags.power ?? r.flags.copiedPower ?? r.characterId);
   if (base !== 'copycat') return base;
@@ -85,13 +88,17 @@ export function startGame(s: GameState): void {
   if (s.phase!=='lobby' || s.players.length<(s.mode==='practice'?1:2) || s.players.length>8 || (s.mode==='practice'&&s.players.length!==1)) throw Error('需要2～8名玩家才能开始；自己练习需要1名玩家');
   s.players.forEach(p=>{p.score=0;p.hand=[];p.used=[];p.selection=[];}); s.round=1;s.results=[];s.logs=[];s.racers=[];s.queue=[];s.pending=undefined;
   s.deck=shuffle(s,CHARACTERS.map(c=>c.id));s.discard=[];
+  if(s.mode==='practice'){
+    s.draft={market:CHARACTERS.map(c=>c.id),order:[s.players[0]!.id],cursor:0,batch:0};s.phase='draft';
+    log(s,'phase','自己练习：从完整角色牌池自由选择4张不同角色牌');
+    log(s,'house-rule','自己练习：每场单独出场；没有其他选手时，野兔正常移动以便练习。');return;
+  }
   const first=rollOff(s,s.players.map(p=>p.id));s.flags.draftFirst=first;
   s.draft={market:s.deck.splice(0,s.players.length===2?8:s.players.length*2),order:snake(s,first,s.players.length===2),cursor:0,batch:0};s.phase='draft';
   log(s,'phase',s.players.length>6?'7～8人扩展选秀开始':'选秀开始');
-  if(s.mode==='practice')log(s,'house-rule','自己练习：每场单独出场；没有其他选手时，野兔正常移动以便练习。');
 }
 function beginSelection(s: GameState) {
-  s.phase='selection';s.draft=undefined;s.pending=undefined;s.queue=[];s.players.forEach(p=>p.selection=[]);
+  s.phase='selection';s.draft=undefined;s.pending=undefined;s.queue=[];s.baseTurnOrder=undefined;s.players.forEach(p=>p.selection=[]);
   log(s,'phase',`第${s.round}场：${s.round%2?'温和一英里':'狂野荒野'}，请暗选${s.players.length===2?2:1}名角色`);
 }
 function prepareRace(s: GameState) {
@@ -102,7 +109,9 @@ function prepareRace(s: GameState) {
   s.track=s.round%2?'mild':'wild';s.phase='race';s.turnCount=0;s.flags.placements=[];s.flags.eliminations=[];s.flags.nextOverride=[];s.flags.loopSeen=[];
   const first=s.players.find(p=>p.id===s.flags.firstPlayer)??s.players[0]!;
   const initial=s.racers.find(r=>r.playerId===first.id)!;s.currentRacerId=initial.id;s.turn=s.racers.indexOf(initial);
+  const start=s.racers.indexOf(initial);s.baseTurnOrder=[...s.racers.slice(start),...s.racers.slice(0,start)].map(r=>r.id);
   log(s,'reveal',s.racers.map(r=>`${owner(s,r).name}：${name(r)}`).join('，'));
+  if(s.players.length===2)log(s,'turn-order',`本场固定行动顺序：${s.baseTurnOrder.map(id=>{const r=racer(s,id)!;return `${owner(s,r).name}的${name(r)}`;}).join(' → ')}`);
   push(s,...order(s).map(r=>({kind:'beforeRace',racerId:r.id})),{kind:'refreshCopies'},{kind:'beginTurn',racerId:initial.id});
 }
 function currentPlacements(s:GameState):RaceResult['placements'] { return (s.flags.placements??=[]) as RaceResult['placements']; }
@@ -304,7 +313,10 @@ function mainMove(s:GameState,r:Racer,base:number) {
   for(const source of order(s)){
     const p=effectivePower(s,source);
     if(p==='coach'&&source.position===r.position){distance++;effects.push({kind:'powerDone',racerId:source.id,power:p});}
-    if(p==='gunk'&&source.id!==r.id){distance--;effects.push({kind:'powerDone',racerId:source.id,power:p});}
+    // Product house rule for this modifier only: in two-player races, Slime
+    // spares every racer owned by its controller. Other powers keep their own
+    // printed "another athlete" targeting semantics.
+    if(p==='gunk'&&source.id!==r.id&&!(s.players.length===2&&source.playerId===r.playerId)){distance--;effects.push({kind:'powerDone',racerId:source.id,power:p});}
   }
   if(s.lastRoll?.racerId===r.id)s.lastRoll.distance=distance;
   push(s,{kind:'move',racerId:r.id,distance,cause:'main'},...effects);
@@ -318,7 +330,7 @@ function advance(s:GameState,r:Racer) {
   if(s.phase!=='race')return;
   const overrides=(s.flags.nextOverride??[]) as string[];let next=overrides.shift();s.flags.nextOverride=overrides;
   if(!next&&r.flags.extraTurn&&live(r))next=r.id;r.flags.extraTurn=false;
-  if(!next){for(let i=1;i<=s.racers.length;i++){const candidate=s.racers[(s.racers.indexOf(r)+i)%s.racers.length]!;if(live(candidate)){next=candidate.id;break;}}}
+  if(!next){const fixed=baseOrder(s);for(let i=1;i<=fixed.length;i++){const candidate=racer(s,fixed[(fixed.indexOf(r.id)+i)%fixed.length]!);if(candidate&&live(candidate)){next=candidate.id;break;}}}
   if(!next){endRace(s);return;}
   s.currentRacerId=next;s.turn=s.racers.findIndex(x=>x.id===next);
   // Do not begin another player's turn inside a completed action: this leaves
@@ -363,6 +375,8 @@ function processChoice(s:GameState,c:PendingChoice,id:string) {
   if(c.kind==='duel-roll'){
     const duelist=racer(s,String(ctx.duelistId)),target=racer(s,String(ctx.targetId));
     if(id!=='roll'||!duelist||!target||!live(duelist)||!live(target)||duelist.position!==target.position)throw Error('决斗双方已不在同格或不再参赛');
+    const participant=ctx.firstFace===undefined?duelist:target;
+    if(r.id!==participant.id||c.playerId!==participant.playerId)throw Error('决斗投掷控制权与当前参赛选手不一致');
     if(ctx.firstFace===undefined){
       const firstFace=random(s,`${name(duelist)}决斗`);
       // The first result is private continuation state, not a public log or
@@ -456,7 +470,19 @@ export function resolveTasks(s:GameState):void {
 export function applyGameAction(s:GameState,playerId:string,action:GameAction):void {
   const p=s.players.find(x=>x.id===playerId);if(!p)throw Error('你不在本局参赛席位中');
   if(action.type==='start'){startGame(s);return;}
+  if(action.type==='practice-team'){
+    if(s.mode!=='practice'||s.phase!=='draft'||s.round!==1||s.players.length!==1)throw Error('现在不能选择练习阵容');
+    if(action.characterIds.length!==4||new Set(action.characterIds).size!==4||action.characterIds.some(id=>!character(id)))throw Error('请从完整牌池选择4张不同角色牌');
+    p.hand=[...action.characterIds];
+    // Earlier practice saves can be midway through a two-batch draft. Replace
+    // that incomplete hand atomically and return every unchosen printed card
+    // to the candidate pool, preserving the stored shuffle and random history.
+    const remaining=CHARACTERS.map(c=>c.id).filter(id=>!p.hand.includes(id));
+    s.deck=[...new Set([...s.deck.filter(id=>remaining.includes(id)),...remaining])];
+    log(s,'practice-team',`${p.name}的练习阵容：${p.hand.map(id=>character(id)!.nameZh).join('、')}`);beginSelection(s);return;
+  }
   if(action.type==='draft'){
+    if(s.mode==='practice')throw Error('请从完整牌池一次确认4张练习角色牌');
     if(s.phase!=='draft'||!s.draft)throw Error('现在不是选秀阶段');const d=s.draft;if(d.order[d.cursor]!==playerId)throw Error('还没有轮到你选秀');
     const index=d.market.indexOf(action.characterId);if(index<0)throw Error('这张角色牌不在候选区');d.market.splice(index,1);p.hand.push(action.characterId);d.cursor++;log(s,'draft',`${p.name}选择${character(action.characterId)?.nameZh}`,{cause:action.characterId});
     if(d.cursor===d.order.length){if(d.batch===0){const fi=s.players.findIndex(x=>x.id===s.flags.draftFirst);const first=s.players[(fi+1)%s.players.length]!.id;d.batch=1;d.cursor=0;d.order=snake(s,first,s.players.length===2);d.market=s.deck.splice(0,s.players.length===2?8:s.players.length*2);}else beginSelection(s);}return;
@@ -486,11 +512,12 @@ export function applyGameAction(s:GameState,playerId:string,action:GameAction):v
 }
 /** Pure scheduling policy: no mutation, RNG calls, or information reveal. */
 export function automaticAction(s:GameState):{playerId:string;action:GameAction}|undefined {
+  if(s.mode==='practice'&&s.phase==='draft'&&s.draft)return{playerId:s.players[0]!.id,action:{type:'practice-team',characterIds:s.draft.market.slice(0,4)}};
   if(s.phase==='draft'&&s.draft){const id=s.draft.order[s.draft.cursor],card=s.draft.market[0];if(id&&card)return{playerId:id,action:{type:'draft',characterId:card}};}
   if(s.phase==='selection'){const n=s.players.length===2?2:1;const p=s.players.find(x=>x.selection.length!==n);if(p)return{playerId:p.id,action:{type:'select',characterIds:p.hand.slice(0,n)}};}
   if(s.phase==='results')return{playerId:s.players[0]!.id,action:{type:'next'}};
   if(s.phase!=='race')return;
-  if(s.pending){const c=s.pending;const opt=c.options.find(o=>o.id==='skip')??c.options.find(o=>o.id==='keep')??c.options[0];if(opt)return{playerId:c.playerId,action:{type:'choose',choiceId:c.id,optionId:opt.id}};}
+  if(s.pending){const c=s.pending;if(c.kind==='duel-roll'&&!s.players.find(p=>p.id===c.playerId)?.isAI)return;const opt=c.options.find(o=>o.id==='skip')??c.options.find(o=>o.id==='keep')??c.options[0];if(opt)return{playerId:c.playerId,action:{type:'choose',choiceId:c.id,optionId:opt.id}};}
   const immediate=systemAction(s);if(immediate)return immediate;
   const r=racer(s,s.currentRacerId!);if(r&&s.flags.awaitRoll)return{playerId:r.playerId,action:{type:'roll'}};
   return;

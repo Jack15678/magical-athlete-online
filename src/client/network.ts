@@ -7,6 +7,9 @@ import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection
 export const BROWSER_HOST_MODE = import.meta.env?.VITE_HOST_MODE === 'browser';
 export interface RoomConnection {
   readonly connected: boolean;
+  /** Authenticated personal-room owners may close through the relay even
+   * while the browser responsible for computing gameplay is unavailable. */
+  readonly canClose?: boolean;
   connect(): void;
   disconnect(): void;
   emit(event: 'sync'): unknown;
@@ -69,16 +72,17 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
   let closed = false;
   let expired = false;
+  let closedMessage='房间已解散，请创建或加入其他房间。';
   const eventClient=new PresentationEventClient(async afterId=>{
     const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
     if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
   },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
-  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已达到3小时上限，请重新创建。' : '房间已解散，请创建或加入其他房间。'); };
+  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已达到3小时上限，请重新创建。' : closedMessage); };
   socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
-  socket.on('room-closed', (event: { code: string; reason?: 'expired' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; finishClosed(); } });
+  socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主连续离开超过30分钟，房间已关闭。'; finishClosed(); } });
   socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
-  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || error.message.includes('房间已解散')) finishClosed(); else onStatus('error', error.message); });
+  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || /房间已解散|房间已关闭/.test(error.message)) {if(error.message.includes('30分钟'))closedMessage=error.message;finishClosed();} else onStatus('error', error.message); });
   return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
 }
 function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {
@@ -90,7 +94,7 @@ export async function sendAction(socket: RoomConnection, room: RoomView, action:
   const attempt = () => socket.request(envelope);
   try { return await attempt(); }
   catch {
-    if (!socket.connected) throw new Error('连接已中断。恢复连接后会同步对局。');
+    if (!socket.connected && !(action.type === 'close' && socket.canClose)) throw new Error('连接已中断。恢复连接后会同步对局。');
     try { return await attempt(); }
     catch { socket.emit('sync'); throw new Error('尚未收到操作确认，正在重新同步。请先查看最新局面。'); }
   }

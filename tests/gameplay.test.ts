@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame,startGame,applyGameAction,automaticAction } from '../src/engine/index.js';
 import type { GameState,Player } from '../src/shared/types.js';
-function players(n:number):Player[]{return Array.from({length:n},(_,seat)=>({id:`p${seat}`,name:`同学${seat}`,seat,color:'#000',ready:true,connected:true,score:0,hand:[],used:[],selection:[]}));}
+// These complete-game simulations intentionally automate every participant.
+// Human duel clicks are never supplied by the production timeout policy.
+function players(n:number):Player[]{return Array.from({length:n},(_,seat)=>({id:`p${seat}`,name:`同学${seat}`,seat,isAI:true,color:'#000',ready:true,connected:true,score:0,hand:[],used:[],selection:[]}));}
 function run(n:number,seed:number){const s=createGame(players(n),seed);startGame(s);let steps=0;while(s.phase!=='finished'){if(++steps>10000)throw Error(`Test execution budget exhausted ${n}/${seed}: ${s.phase} ${s.pending?.kind}`);const a=automaticAction(s);assert(a,`No legal continuation: ${s.phase}`);applyGameAction(s,a.playerId,a.action);}return s;}
 for(const n of [2,3,4,5,6,7,8])test(`${n}人从两批选秀到四场终局，初始选牌唯一`,()=>{
   const s=createGame(players(n),2051+n);startGame(s);while(s.phase==='draft'){const a=automaticAction(s)!;applyGameAction(s,a.playerId,a.action);}

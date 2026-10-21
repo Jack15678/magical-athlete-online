@@ -29,6 +29,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private blocked = false;
   private roomClosed = false;
   private roomExpired = false;
+  private roomClosedMessage = ROOM_CLOSED;
   private authenticated = false;
   private synchronized = false;
   private syncRequestId: string | null = null;
@@ -98,6 +99,11 @@ export class BrowserRelayConnection implements RoomConnection {
     });
   }
   get connected() { return !this.disposed && !this.blocked && !this.roomClosed && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
+  get canClose() {
+    return !this.disposed && !this.blocked && !this.roomClosed && this.authenticated && this.ws?.readyState === WebSocket.OPEN &&
+      this.identity.role !== 'spectator' && this.metadata?.code === this.identity.roomCode && this.metadata.adminHostId === this.identity.playerId &&
+      (this.metadata.mode === 'practice' || this.metadata.mode === 'ai');
+  }
   connect() {
     if (this.disposed || this.roomClosed) return;
     this.blocked = false; this.unavailableAuthority = false;
@@ -129,7 +135,7 @@ export class BrowserRelayConnection implements RoomConnection {
     }
   }
   private requestOnce(envelope: ActionEnvelope): Promise<ActionReply> {
-    if (!this.connected) return Promise.reject(Error(this.authorityOnline ? '连接已中断，正在重新同步。' : HOST_OFFLINE));
+    if (!this.connected && !(envelope.action.type === 'close' && this.canClose)) return Promise.reject(Error(this.authorityOnline ? '连接已中断，正在重新同步。' : HOST_OFFLINE));
     const requestId = crypto.randomUUID();
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { this.replies.delete(requestId); if (this.roomClosed && envelope.action.type === 'close') resolve({ ok: true }); else reject(Error('操作确认超时。')); }, 6500);
@@ -180,7 +186,7 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private receive(message: RelayServerMessage) {
     if (message.type === 'room-closed') {
-      if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.finishClosed(); }
+      if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.roomClosedMessage=message.reason==='host-away'?'房主连续离开超过30分钟，房间已关闭。':ROOM_CLOSED; this.finishClosed(); }
     } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
@@ -291,7 +297,7 @@ export class BrowserRelayConnection implements RoomConnection {
     for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }
     this.replies.clear();
     this.disconnect();
-    this.onStatus(this.roomExpired ? 'expired' : 'closed', this.roomExpired ? '房间已达到3小时上限，请重新创建。' : ROOM_CLOSED);
+    this.onStatus(this.roomExpired ? 'expired' : 'closed', this.roomExpired ? '房间已达到3小时上限，请重新创建。' : this.roomClosedMessage??ROOM_CLOSED);
   }
   private fail(message: string) { this.blocked = true; this.authenticated = false; this.authorityRole = false; this.onStatus('error', message); this.ws?.close(1011, 'authority unavailable'); this.releaseLock?.(); this.rejectReplies(message); }
 }
