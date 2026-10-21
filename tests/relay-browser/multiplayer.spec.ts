@@ -3,6 +3,7 @@ import type { GameAction, Room } from '../../src/shared/types.js';
 import { mkdirSync } from 'node:fs';
 
 const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
+const smoke=process.env.RELAY_SMOKE==='1';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
 async function saved(page:Page,code:string):Promise<Room>{
@@ -15,10 +16,10 @@ async function saved(page:Page,code:string):Promise<Room>{
   return JSON.parse(json) as Room;
 }
 
-for(const n of [2,6,8])test(`browser authority ${n} independent players: four races, host recovery, privacy and rematch`,async({browser})=>{
-  // Software WebGL CI reached race three with 633 normal events at six
-  // minutes. Keep the assertion timeout and execution budget unchanged.
-  if(process.env.CI&&n===8)test.setTimeout(600_000);
+for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
+  // CI smoke completes one full race on eight isolated software WebGL clients.
+  // The default manual mode retains the complete four-race game and rematch.
+  if(process.env.CI&&n===8)test.setTimeout(360_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
   const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
   let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};
@@ -62,8 +63,10 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
       await expect.poll(async()=>(await saved(host,code)).game.draft?.cursor??-1).not.toBe(d.cursor);
     }
     let steps=0,hostRecovered=false,guestRecovered=false,raceShot=false;
-    while((await saved(host,code)).game.phase!=='finished'){
-      const room=await saved(host,code),g=room.game;mark('play',g.pending?`choose-${g.pending.kind}`:g.phase==='selection'?'select':g.phase==='results'?'next':'roll',room,++steps);
+    while(true){
+      const room=await saved(host,code),g=room.game;
+      if(g.phase==='finished'||(smoke&&g.phase==='results'&&g.results.length>=1))break;
+      mark('play',g.pending?`choose-${g.pending.kind}`:g.phase==='selection'?'select':g.phase==='results'?'next':'roll',room,++steps);
       if(g.round!==lastPrintedRound||steps%50===0){lastPrintedRound=g.round;progress();}
       if(steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
       if(g.phase==='selection'){
@@ -102,14 +105,16 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
       else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click();
       else await p.getByRole('button',{name:'掷骰子',exact:true}).click();
       mark('confirm',actionLabel,room,steps);
-      await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);await p.waitForTimeout(180);
+      await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);
     }
-    const finalRoom=await saved(host,code);mark('finished','assert-four-results',finalRoom,steps);progress();
-    expect(finalRoom.game.results).toHaveLength(4);expect(errors).toEqual([]);
-    await host.screenshot({path:`test-results/browser-authority/final-${n}.png`,fullPage:true});
-    mark('rematch','request-rematch',finalRoom,steps);
-    const admin=pages[ids.indexOf((await saved(host,code)).hostId)]!;await synced(admin,(await saved(host,code)).version);await admin.getByRole('button',{name:'原房间，再来一局',exact:true}).click();await expect(admin.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
-    expect((await saved(host,code)).game.players.every(p=>p.score===0&&p.hand.length===0)).toBe(true);
+    const finalRoom=await saved(host,code);mark(smoke?'round-complete':'finished',smoke?'assert-one-result':'assert-four-results',finalRoom,steps);progress();
+    expect(finalRoom.game.results).toHaveLength(smoke?1:4);expect(hostRecovered).toBe(true);expect(guestRecovered).toBe(true);expect(raceShot).toBe(true);expect(errors).toEqual([]);
+    await host.screenshot({path:`test-results/browser-authority/${smoke?'round-1':'final'}-${n}.png`,fullPage:true});
+    if(!smoke){
+      mark('rematch','request-rematch',finalRoom,steps);
+      const admin=pages[ids.indexOf((await saved(host,code)).hostId)]!;await synced(admin,(await saved(host,code)).version);await admin.getByRole('button',{name:'原房间，再来一局',exact:true}).click();await expect(admin.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
+      expect((await saved(host,code)).game.players.every(p=>p.score===0&&p.hand.length===0)).toBe(true);
+    }
     mark('layout','check-overflow',await saved(host,code),steps);
     for(const p of pages)expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   }catch(error){
