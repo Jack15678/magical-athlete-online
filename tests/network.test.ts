@@ -168,7 +168,7 @@ test('Node room directory lists safe live metadata and lobby departures free the
     const summary=listed.rooms[0];assert.equal(summary.code,host.roomCode);assert.equal(summary.hostName,'房主');assert.equal(summary.playerCount,3);assert.equal(summary.spectatorCount,0);assert.equal(summary.expiresAt,Number.MAX_SAFE_INTEGER);
     assert(!JSON.stringify(listed).match(/token|playerId|rngState|hand|deck/));
     assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,host)).body,{ok:true,retainIdentity:true});
-    assert.equal(app.rooms.get(host.roomCode).hostId,second.playerId);assert.equal(app.rooms.get(host.roomCode).ownerId,host.playerId);assert.equal(typeof app.rooms.get(host.roomCode).hostLeftAt,'number');assert.equal(sockets[2]!.connected,true);
+    assert.equal(app.rooms.get(host.roomCode).hostId,host.playerId);assert.equal(app.rooms.get(host.roomCode).ownerId,host.playerId);assert.equal(typeof app.rooms.get(host.roomCode).hostLeftAt,'number');assert.equal(sockets[2]!.connected,true);
   } finally {for(const socket of sockets)socket.disconnect();await app.close();}
 });
 
@@ -271,22 +271,66 @@ test('Node leave distinguishes stale credentials, expired or closed rooms, and i
   } finally {await app.close();}
 });
 
-test('Node personal room counts concurrent owner sockets, restores absence on reconnect, and dismisses through the authenticated action',async()=>{
+for(const mode of ['multiplayer','ai','practice'] as const)test(`Node ${mode} counts owner tabs and preserves its host through disconnect, reconnect and dismissal`,async()=>{
   const app=await running(),sockets:Socket[]=[];
   const settled=async(predicate:()=>boolean)=>{for(let attempt=0;!predicate();attempt++){assert(attempt<100,'server presence did not settle');await new Promise(resolve=>setTimeout(resolve,5));}};
   try{
-    const created=await post(app.url,'/api/rooms',{name:'练习者',mode:'practice',timeoutSeconds:0}),identity=created.body.identity as Identity;
+    const created=await post(app.url,'/api/rooms',{name:'房主',mode,aiCount:1,timeoutSeconds:0}),identity=created.body.identity as Identity;
     const one=await connect(app.url,identity),two=await connect(app.url,identity);sockets.push(one.socket,two.socket);
-    assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.some((room:{code:string})=>room.code===identity.roomCode),false);
+    if(mode==='multiplayer'){const guest=(await post(app.url,`/api/rooms/${identity.roomCode}/join`,{name:'仍然在线的朋友'})).body.identity as Identity;sockets.push((await connect(app.url,guest)).socket);}
+    assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.some((room:{code:string})=>room.code===identity.roomCode),mode!=='practice');
     one.socket.disconnect();await new Promise(resolve=>setTimeout(resolve,20));
     assert.equal(app.rooms.get(identity.roomCode).game.players[0]!.connected,true);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
     two.socket.disconnect();await settled(()=>app.rooms.get(identity.roomCode).hostLeftAt!==undefined);
     const leftAt=app.rooms.get(identity.roomCode).hostLeftAt!;assert.equal(app.rooms.view(app.rooms.get(identity.roomCode),identity.playerId).expiresAt,leftAt+30*60*1000);
+    assert.equal(app.rooms.get(identity.roomCode).hostId,identity.playerId);assert.equal(app.rooms.get(identity.roomCode).ownerId,identity.playerId);
+    assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.some((room:{code:string})=>room.code===identity.roomCode),mode!=='practice');
     const returned=await connect(app.url,identity);sockets.push(returned.socket);assert.equal(returned.view.hostLeftAt,undefined);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
+    assert.equal(returned.view.hostId,identity.playerId);assert.equal(returned.view.ownerId,identity.playerId);
     const notice=event<{reason:string}>(returned.socket,'room-closed'),disconnected=event(returned.socket,'disconnect');
     const result=await emit(returned.socket,{actionId:randomUUID(),expectedVersion:app.rooms.get(identity.roomCode).version,action:{type:'close'}});
     assert.equal(result.ok,true);assert.equal((await notice).reason,'dismissed');await disconnected;
     assert.equal(app.rooms.rooms.has(identity.roomCode),false);assert.deepEqual(app.rooms.tick(),[]);assert.match(await rejectedConnection(app.url,identity),/房间已关闭/);
     assert.equal((await post(app.url,`/api/rooms/${identity.roomCode}/leave`,identity)).status,410);
+  }finally{for(const socket of sockets)socket.disconnect();await app.close();}
+});
+
+test('Node resume-status inspects saved rooms without presence or renewal and rejects invalid, missing, expired and closed identities',async()=>{
+  const app=await running();
+  try{
+    const created=await post(app.url,'/api/rooms',{name:'恢复练习',mode:'practice',timeoutSeconds:0}),id=created.body.identity as Identity;
+    const before=JSON.stringify(app.rooms.get(id.roomCode)),leftAt=app.rooms.get(id.roomCode).hostLeftAt!;
+    for(let attempt=0;attempt<2;attempt++){
+      const status=await post(app.url,`/api/rooms/${id.roomCode}/resume-status`,id);
+      assert.equal(status.status,200);assert.deepEqual(status.body,{ok:true,ownerId:id.playerId,mode:'practice',phase:'draft',createdAt:created.body.room.createdAt,hostLeftAt:leftAt,expiresAt:leftAt+ROOM_OWNER_AWAY_MS});
+      assert.equal(JSON.stringify(app.rooms.get(id.roomCode)),before);assert.equal(app.io.sockets.sockets.size,0);
+    }
+    assert.equal((await post(app.url,`/api/rooms/${id.roomCode}/resume-status`,{...id,token:'x'.repeat(43)})).status,401);
+    assert.equal(JSON.stringify(app.rooms.get(id.roomCode)),before);
+    const absent={...id,roomCode:'ZZZZZZ'};assert.equal((await post(app.url,'/api/rooms/ZZZZZZ/resume-status',absent)).status,404);
+    const expired=app.rooms.create('离开超时',2,0,'practice').identity,room=app.rooms.get(expired.roomCode);room.hostLeftAt=Date.now()-ROOM_OWNER_AWAY_MS;app.store.save(room);
+    assert.equal((await post(app.url,`/api/rooms/${expired.roomCode}/resume-status`,expired)).status,410);
+    assert.equal(app.rooms.rooms.has(expired.roomCode),false);assert.equal(app.store.identity(expired.roomCode,expired.playerId),undefined);
+    const closed=app.rooms.create('已经解散',2,0,'practice').identity,current=app.rooms.get(closed.roomCode);
+    assert.equal(app.rooms.act(current.code,closed.playerId,{actionId:randomUUID(),expectedVersion:current.version,action:{type:'close'}}).ok,true);
+    assert.equal((await post(app.url,`/api/rooms/${closed.roomCode}/resume-status`,closed)).status,410);
+    assert.equal(app.rooms.rooms.has(closed.roomCode),false);
+  }finally{await app.close();}
+});
+
+test('Node resume-status returns the explicitly transferred owner without reconnecting either saved identity',async()=>{
+  const app=await running(),sockets:Socket[]=[];
+  try{
+    const host=app.rooms.create('原房主',2,0).identity,guest=app.rooms.join(host.roomCode,'新房主').identity;
+    const first=await connect(app.url,host),second=await connect(app.url,guest);sockets.push(first.socket,second.socket);
+    assert.equal((await emit(first.socket,{actionId:randomUUID(),expectedVersion:app.rooms.get(host.roomCode).version,action:{type:'transfer',playerId:guest.playerId}})).ok,true);
+    first.socket.disconnect();second.socket.disconnect();
+    for(let attempt=0;app.rooms.get(host.roomCode).game.players.some(player=>player.connected);attempt++){assert(attempt<100,'disconnect did not settle');await new Promise(resolve=>setTimeout(resolve,5));}
+    const room=app.rooms.get(host.roomCode),before=JSON.stringify(room);assert.equal(typeof room.hostLeftAt,'number');
+    for(const id of [host,guest]){
+      const status=await post(app.url,`/api/rooms/${id.roomCode}/resume-status`,id);
+      assert.equal(status.status,200);assert.equal(status.body.ownerId,guest.playerId);assert.equal(status.body.hostLeftAt,room.hostLeftAt);assert.equal(status.body.expiresAt,room.hostLeftAt!+ROOM_OWNER_AWAY_MS);
+      assert.equal(JSON.stringify(app.rooms.get(host.roomCode)),before);assert.equal(app.io.sockets.sockets.size,0);
+    }
   }finally{for(const socket of sockets)socket.disconnect();await app.close();}
 });

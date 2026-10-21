@@ -42,8 +42,8 @@ export function createBrowserRoom(meta: RelayMetadata, seed: number, now: number
   if(meta.mode==='practice'||meta.mode==='ai'){room.game.players.forEach(p=>p.ready=true);startGame(room.game);setRoomDeadline(room,now);}
   return room;
 }
-/** Reconcile only relay-owned roster facts. Game state, hands and administrative
- * transfers remain authoritative in the already committed room. */
+/** Reconcile relay-owned roster and confirmed ownership. A local transfer's
+ * receipt is replayed separately until the relay confirms its new owner. */
 export function reconcileRoster(original: Room, meta: RelayMetadata, now: number): { room: Room; changed: boolean } {
   validateMetadata(meta);
   if (original.code !== meta.code || original.createdAt !== meta.createdAt || original.maxPlayers !== meta.maxPlayers || original.timeoutSeconds !== meta.timeoutSeconds || (original.mode??'multiplayer')!==(meta.mode??'multiplayer')) throw Error('房间配置与本地存档不一致，无法覆盖。');
@@ -54,6 +54,7 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   let changed = false;
   const ownerId=meta.ownerId??meta.authorityId;
   if(room.ownerId!==ownerId){room.ownerId=ownerId;changed=true;}
+  if(room.hostId!==meta.adminHostId){room.hostId=meta.adminHostId;changed=true;}
   if(room.hostLeftAt!==meta.hostLeftAt){room.hostLeftAt=meta.hostLeftAt;changed=true;}
   // Only an explicit lobby leave removes a relay identity. Disconnections keep
   // members in metadata, preserving their seat and preparation preference.
@@ -76,10 +77,6 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
   // A transiently absent connection never removes its identity or resets a hand.
   for (const p of room.game.players) if (!meta.members.some(m => m.id === p.id) && !p.isAI && p.connected) { p.connected = false; changed = true; }
   if (changed && room.game.phase === 'lobby') room.game.players.sort((a,b) => a.seat-b.seat);
-  if (!room.game.players.some(p => p.id === room.hostId && p.connected)) {
-    const next = room.game.players.find(p => p.connected&&!p.isAI);
-    if (next && next.id !== room.hostId) { room.hostId = next.id; changed = true; }
-  }
   if (changed) { room.version++; room.updatedAt = now; }
   return { room, changed };
 }

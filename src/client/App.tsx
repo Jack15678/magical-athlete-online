@@ -3,7 +3,7 @@ import type { GameAction, Identity, PlayerView, Racer, RoomRole, RoomSummary, Ro
 import { CHARACTERS } from '../shared/characters.js';
 import { Avatar } from './avatars.js';
 import { RulesContent } from './RulesContent.js';
-import { BROWSER_HOST_MODE, connectRoom, enterRoom, forgetIdentity, leaveRoom, listRooms, readIdentity, saveIdentity, sendAction, type ConnectionState, type RoomConnection } from './network.js';
+import { BROWSER_HOST_MODE, checkOwnedRoom, connectRoom, enterRoom, forgetClosedRoom, forgetIdentity, leaveRoom, listRooms, ownedRoomCandidates, OWNED_ROOMS_CHANGED, readClosedRoom, readIdentity, readRouteIdentity, rememberOwnedRoom, saveIdentity, sendAction, type ConnectionState, type OwnedRoom, type RoomConnection } from './network.js';
 import { usePresentation, type UsePresentationResult } from './usePresentation.js';
 import { useRaceIntroReset } from './scene/useRaceIntro.js';
 const Board3D = lazy(() => import('./scene/Board3D.js').then(module => ({ default: module.Board3D })));
@@ -33,12 +33,12 @@ function Footer() { return <footer className="footer"><span>非官方同好项�
 
 export function App() {
   const [code, setCode] = useState(currentCode);
-  const [identity, setIdentity] = useState<Identity | null>(() => readIdentity(currentCode()));
+  const [identity, setIdentity] = useState<Identity | null>(() => readRouteIdentity(currentCode()));
   const [room, setRoom] = useState<RoomView | null>(null);
   useRaceIntroReset(room);
   const [endRoom, setEndRoom] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [connection, setConnection] = useState<ConnectionState>('connecting');
+  const [connection, setConnection] = useState<ConnectionState>(()=>readClosedRoom(currentCode())??'connecting');
   const [connectionError, setConnectionError] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -66,11 +66,13 @@ export function App() {
     } catch { /* Browser audio may be unavailable; play never depends on sound. */ }
   }, [muted]);
   useEffect(() => { document.documentElement.dataset.motion = reduceMotion ? 'reduce' : 'full'; try { localStorage.setItem('magical-athlete:reduced-motion', String(reduceMotion)); localStorage.setItem('magical-athlete:muted', String(muted)); } catch { /* Preferences are optional. */ } }, [reduceMotion, muted]);
-  useEffect(() => { const pop = () => { const next = currentCode(); setCode(next); setIdentity(readIdentity(next)); setRoom(null); setError(''); setEndRoom(false); setConnection('connecting'); }; addEventListener('popstate', pop); return () => removeEventListener('popstate', pop); }, []);
+  useEffect(() => { const pop = () => { const next = currentCode(); setCode(next); setIdentity(readRouteIdentity(next)); setRoom(null); setError(''); setEndRoom(false); setConnection(readClosedRoom(next)??'connecting'); }; addEventListener('popstate', pop); return () => removeEventListener('popstate', pop); }, []);
   useEffect(() => {
     if (!identity) return;
+    saveIdentity(identity);
     setConnection('connecting'); setConnectionError('');
-    const client = connectRoom(identity, (next) => { setRoom(previous => previous?.code === next.code && previous.version > next.version ? previous : next); }, (state, message) => { setConnection(state); setConnectionError(message ?? ''); });
+    let firstSnapshot=true;
+    const client = connectRoom(identity, (next) => { rememberOwnedRoom(next,identity,firstSnapshot);firstSnapshot=false;setRoom(previous => previous?.code === next.code && previous.version > next.version ? previous : next); }, (state, message) => { if(state==='closed'||state==='expired')forgetClosedRoom(identity.roomCode,state);setConnection(state); setConnectionError(message ?? ''); });
     socket.current = client;
     const sync = () => { if (document.visibilityState === 'visible' && client.connected) client.emit('sync'); };
     document.addEventListener('visibilitychange', sync); addEventListener('focus', sync); addEventListener('online', sync); addEventListener('pageshow', sync);
@@ -176,6 +178,7 @@ function Home({ code, onEnter, onResume, onHome, onDetail }: { code: string; onE
   function submit(event: React.FormEvent) { event.preventDefault(); void enterSelected(); }
   const heroIds = ['banana', 'rocket-scientist', 'egg', 'huge-baby', 'centaur'];
   return <main className="home">
+    <OwnedRoomReturn onResume={onResume} />
     <section className="hero"><div className="hero-title"><span>各就各位，</span><h1>胡闹<br />运动会<span className="title-star">✦</span></h1><p>选个怪咖，掷个骰子。<br />和朋友一起，认真地胡闹一场。</p></div><div className="hero-art" aria-hidden="true"><div className="hero-orbit" /><div className="hero-finish"><Icon kind="flag" size={58} /></div>{heroIds.map((id, index) => <div className={`hero-racer hero-racer-${index}`} key={id}><Avatar id={id} /></div>)}<div className="hero-stamp">1～8 人<br /><strong>随时开跑!</strong></div></div></section>
     <section className="entry-panel">
       <div className="entry-tabs" role="tablist" aria-label="进入游戏方式">{([['create', '创建房间'], ['join', '加入朋友'], ['practice', '自己练习'], ['ai', '人机对战']] as const).map(([value, label]) => <button key={value} id={`${value}-tab`} role="tab" aria-controls="entry-form" aria-selected={mode === value} onClick={() => { setMode(value); setError(''); }}>{label}</button>)}</div>
@@ -194,6 +197,40 @@ function Home({ code, onEnter, onResume, onHome, onDetail }: { code: string; onE
     </section>
     <section className="meet-racers"><div className="section-intro"><h2>谁说运动员<br />一定要会运动？</h2><p>36 位各怀绝技的怪咖。<br />点开头像，先认识几位。</p></div><div className="sample-racers">{characters.slice(0, 6).map(character => <button key={character.id} onClick={() => onDetail(character.id)}><Avatar id={character.id} /><strong>{character.nameZh}</strong></button>)}</div></section>
   </main>;
+}
+
+function OwnedRoomReturn({ onResume }: { onResume: (identity: Identity) => void }) {
+  const [rooms, setRooms] = useState<OwnedRoom[]>([]), [checking, setChecking] = useState(false), [returning, setReturning] = useState(''), [error, setError] = useState('');
+  const [revision, setRevision] = useState(0), checkingRef = useRef(false);
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      if (checkingRef.current) return;
+      const candidates = ownedRoomCandidates();
+      if (!candidates.length) { if(active){setRooms([]);setError('');}return; }
+      checkingRef.current = true;if(active)setChecking(true);
+      const results = await Promise.allSettled(candidates.map(identity => checkOwnedRoom(identity)));
+      checkingRef.current = false;
+      if (!active) return;
+      setRooms(results.flatMap(result => result.status === 'fulfilled' && result.value ? [result.value] : []).sort((a,b) => b.lastVisitedAt-a.lastVisitedAt||b.createdAt-a.createdAt));
+      setError(results.some(result => result.status === 'rejected') ? '暂时无法确认部分原房间，连接恢复后会重新检查。' : '');setChecking(false);
+    };
+    void refresh();const timer = setInterval(() => { if(document.visibilityState==='visible')void refresh(); },10_000);
+    const changed = () => void refresh();addEventListener('focus',changed);addEventListener('storage',changed);addEventListener(OWNED_ROOMS_CHANGED,changed);
+    return () => { active=false;clearInterval(timer);removeEventListener('focus',changed);removeEventListener('storage',changed);removeEventListener(OWNED_ROOMS_CHANGED,changed); };
+  },[revision]);
+  async function resume(room: OwnedRoom) {
+    if(returning)return;setReturning(room.code);setError('');
+    try {
+      const identity=readIdentity(room.code,'player');if(!identity){setRevision(value=>value+1);return;}
+      const current=await checkOwnedRoom(identity);
+      if(!current){setRooms(previous=>previous.filter(saved=>saved.code!==room.code));return;}
+      rememberOwnedRoom({ ...current,hostId:current.playerId,ownerId:current.playerId },identity,true);onResume(identity);
+    }catch(cause){setError(cause instanceof Error?cause.message:'暂时无法返回原房间，请稍后重试。');}
+    finally{setReturning('');}
+  }
+  if(!rooms.length&&!error&&!checking)return null;
+  return <section className="owned-room-return" aria-label="返回创建的房间"><div className="owned-room-heading"><div><h2>返回刚才创建的房间</h2><p>用原来的身份和对局继续，无需重新创建。</p></div>{checking&&<span role="status">正在确认房间…</span>}</div>{rooms.length>0&&<div className="owned-room-list">{rooms.slice(0,3).map((room,index)=><article key={room.code} data-testid={`owned-room-${room.code}`}><div><strong>房间 {room.code}</strong><span>{room.mode==='practice'?'自己练习':room.mode==='ai'?'人机对战':'好友联机'} · {phaseLabels[room.phase]}</span><small><RoomLifetime expiresAt={room.expiresAt} /></small></div><Button disabled={!!returning} onClick={()=>void resume(room)}>{returning===room.code?'正在返回…':index===0?'返回刚才创建的房间':`返回房间 ${room.code}`}</Button></article>)}</div>}{error&&<div className="owned-room-error" role="status"><span>{error}</span><button type="button" className="text-button" disabled={checking} onClick={()=>setRevision(value=>value+1)}>重新检查</button></div>}</section>;
 }
 
 function RoomLifetime({ expiresAt }: { expiresAt?: number; mode?: RoomView['mode'] }) {

@@ -1,6 +1,6 @@
 import { PresentationEventClient } from './presentation-events.js';
 import { io, type Socket } from 'socket.io-client';
-import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, PublicEventReply, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, Phase, PublicEventReply, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
 import type { RelayJoinReply } from '../shared/relay.js';
 import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
 
@@ -18,6 +18,35 @@ export interface RoomConnection {
 }
 
 const identityKey = (code: string) => `magical-athlete:identity:${code.toUpperCase()}`;
+const OWNED_ROOMS_KEY = 'magical-athlete:owned-rooms:v1';
+const ROUTE_IDENTITY_KEY = 'magical-athlete:route-identity:v1';
+const CLOSED_ROOMS_KEY = 'magical-athlete:closed-rooms:v1';
+export const OWNED_ROOMS_CHANGED = 'magical-athlete:owned-rooms-changed';
+/** No credential is duplicated here: returning always uses the saved player identity. */
+export interface OwnedRoom { code: string; playerId: string; mode: GameMode; phase: Phase; createdAt: number; lastVisitedAt: number; hostLeftAt?: number; expiresAt?: number }
+function ownedRecords(): OwnedRoom[] {
+  try {
+    const records: unknown = JSON.parse(localStorage.getItem(OWNED_ROOMS_KEY) ?? '[]');
+    return Array.isArray(records) ? records.filter((r): r is OwnedRoom => !!r && typeof r === 'object' && /^[A-Z2-9]{6}$/.test(r.code) && typeof r.playerId === 'string' && Number.isFinite(r.createdAt) && Number.isFinite(r.lastVisitedAt)) : [];
+  } catch { return []; }
+}
+function writeOwnedRooms(records: OwnedRoom[]) {
+  try {
+    const value = JSON.stringify(records.toSorted((a,b) => b.lastVisitedAt-a.lastVisitedAt).slice(0,8));
+    if (localStorage.getItem(OWNED_ROOMS_KEY) === value) return;
+    localStorage.setItem(OWNED_ROOMS_KEY, value);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event(OWNED_ROOMS_CHANGED));
+  } catch { /* Optional recovery metadata must not prevent a committed game action. */ }
+}
+export function forgetOwnedRoom(code: string) { writeOwnedRooms(ownedRecords().filter(room => room.code !== code.toUpperCase())); }
+function closedRecords(): { code:string; reason:'closed'|'expired' }[] {
+  try { const records=JSON.parse(localStorage.getItem(CLOSED_ROOMS_KEY)??'[]');return Array.isArray(records)?records.filter(record=>record&&/^[A-Z2-9]{6}$/.test(record.code)&&(record.reason==='closed'||record.reason==='expired')):[]; }catch{return [];}
+}
+export function readClosedRoom(code:string):'closed'|'expired'|null{return closedRecords().find(record=>record.code===code.toUpperCase())?.reason??null;}
+export function forgetClosedRoom(code: string, reason:'closed'|'expired'='closed') {
+  forgetOwnedRoom(code);
+  try { localStorage.setItem(CLOSED_ROOMS_KEY,JSON.stringify([{code:code.toUpperCase(),reason},...closedRecords().filter(record=>record.code!==code.toUpperCase())].slice(0,32)));for (const suffix of ['', ':player', ':spectator']) localStorage.removeItem(identityKey(code)+suffix); } catch { /* Storage may be unavailable. */ }
+}
 export function readIdentity(code: string, role?: RoomRole): Identity | null {
   try {
     const saved = localStorage.getItem(identityKey(code));
@@ -31,11 +60,55 @@ export function saveIdentity(identity: Identity) {
   if (previous) localStorage.setItem(`${identityKey(previous.roomCode)}:${previous.role ?? 'player'}`, JSON.stringify(previous));
   localStorage.setItem(`${identityKey(identity.roomCode)}:${identity.role ?? 'player'}`, JSON.stringify(identity));
   localStorage.setItem(identityKey(identity.roomCode), JSON.stringify(identity));
+  try { sessionStorage.setItem(ROUTE_IDENTITY_KEY, JSON.stringify({ code: identity.roomCode, playerId: identity.playerId, role: identity.role ?? 'player' })); } catch { /* Per-tab preference is optional. */ }
+}
+/** A spectator opened in another tab must not replace this tab's player on refresh. */
+export function readRouteIdentity(code: string): Identity | null {
+  try {
+    const route = JSON.parse(sessionStorage.getItem(ROUTE_IDENTITY_KEY) ?? 'null');
+    const identity = route?.code === code.toUpperCase() ? readIdentity(code, route.role) : null;
+    if (identity && identity.playerId === route?.playerId) return identity;
+  } catch { /* Fall back to retained local credentials. */ }
+  const owned = ownedRecords().find(room => room.code === code.toUpperCase()), player = readIdentity(code, 'player');
+  return owned && player?.playerId === owned.playerId ? player : readIdentity(code);
 }
 export function forgetIdentity(code: string, identity = readIdentity(code)) {
   if (identity) localStorage.removeItem(`${identityKey(code)}:${identity.role ?? 'player'}`);
   const current = readIdentity(code);
   if (!identity || current?.playerId === identity.playerId) localStorage.removeItem(identityKey(code));
+  if (!identity || ownedRecords().some(room => room.code === code.toUpperCase() && room.playerId === identity.playerId)) forgetOwnedRoom(code);
+}
+export function rememberOwnedRoom(room: Pick<RoomView,'code'|'hostId'|'ownerId'|'mode'|'phase'|'createdAt'|'hostLeftAt'|'expiresAt'|'closedAt'>, identity: Identity, touch = false): void {
+  if (room.closedAt !== undefined) { forgetClosedRoom(room.code); return; }
+  try { if(readClosedRoom(room.code))localStorage.setItem(CLOSED_ROOMS_KEY,JSON.stringify(closedRecords().filter(record=>record.code!==room.code))); }catch{/* The live server response remains authoritative. */}
+  if (identity.role === 'spectator') return;
+  const records = ownedRecords(), old = records.find(record => record.code === room.code);
+  if ((room.ownerId ?? room.hostId) !== identity.playerId) { if (old?.playerId === identity.playerId) forgetOwnedRoom(room.code); return; }
+  const now = Date.now();
+  const record: OwnedRoom = { code: room.code, playerId: identity.playerId, mode: room.mode ?? 'multiplayer', phase: room.phase, createdAt: room.createdAt ?? old?.createdAt ?? now, lastVisitedAt: touch ? now : old?.lastVisitedAt ?? room.createdAt ?? now,
+    ...(room.hostLeftAt === undefined ? {} : { hostLeftAt: room.hostLeftAt }), ...(room.expiresAt === undefined || room.expiresAt === Number.MAX_SAFE_INTEGER ? {} : { expiresAt: room.expiresAt }) };
+  writeOwnedRooms([record,...records.filter(previous => previous.code !== room.code)]);
+}
+/** Include old player credentials so rooms created before this UI can be found.
+ * The server must confirm ownership before any candidate gets a return button. */
+export function ownedRoomCandidates(): Identity[] {
+  const candidates = new Map<string, Identity>();
+  const add = (code: string) => { const identity = readIdentity(code, 'player'); if (identity && identity.role !== 'spectator'&&!readClosedRoom(code)) candidates.set(code,identity); };
+  for (const room of ownedRecords().toSorted((a,b) => b.lastVisitedAt-a.lastVisitedAt)) add(room.code);
+  try { for (let index=localStorage.length-1; index>=0 && candidates.size<8; index--) { const match = /^magical-athlete:identity:([A-Z2-9]{6})(?::player)?$/.exec(localStorage.key(index) ?? ''); if (match) add(match[1]!); } } catch { /* Use known records if enumeration is restricted. */ }
+  return [...candidates.values()].slice(0,8);
+}
+/** This read never opens a room connection or renews its absence timer. */
+export async function checkOwnedRoom(identity: Identity): Promise<OwnedRoom | null> {
+  const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
+  const response = await fetch(`${prefix}/${encodeURIComponent(identity.roomCode)}/resume-status`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(identity), signal: AbortSignal.timeout(4500), cache: 'no-store' });
+  if ([404,410].includes(response.status)) { forgetClosedRoom(identity.roomCode); return null; }
+  if (response.status === 401) { forgetIdentity(identity.roomCode,identity); return null; }
+  const reply = await response.json().catch(() => ({}));
+  if (!response.ok || !reply.ok || typeof reply.ownerId !== 'string' || !Number.isFinite(reply.createdAt)) throw Error(reply.error ?? '暂时无法确认原房间，请稍后重试。');
+  if (reply.ownerId !== identity.playerId || identity.role === 'spectator') { forgetOwnedRoom(identity.roomCode); return null; }
+  rememberOwnedRoom({ code:identity.roomCode,hostId:reply.ownerId,ownerId:reply.ownerId,mode:reply.mode,phase:reply.phase,createdAt:reply.createdAt,hostLeftAt:reply.hostLeftAt,expiresAt:reply.expiresAt },identity);
+  return ownedRecords().find(room => room.code === identity.roomCode) ?? null;
 }
 export interface JoinReply { identity: Identity; room: RoomView }
 export async function listRooms(): Promise<RoomSummary[]> {
@@ -64,6 +137,7 @@ export async function enterRoom(code: string | null, data: { name: string; maxPl
   if (!response.ok) throw new Error(reply.error || '暂时无法进入房间，请稍后重试。');
   saveIdentity(reply.identity);
   if (BROWSER_HOST_MODE && !code) await prepareBrowserRoom((reply as RelayJoinReply).meta);
+  rememberOwnedRoom(reply.room,reply.identity,true);
   return reply;
 }
 export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error' | 'closed' | 'expired';
@@ -77,7 +151,7 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
     const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
     if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
   },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
-  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已到期关闭，请重新创建。' : closedMessage); };
+  const finishClosed = () => { closed = true; forgetClosedRoom(identity.roomCode); eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已到期关闭，请重新创建。' : closedMessage); };
   socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
   socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主连续离开超过30分钟，房间已关闭。'; finishClosed(); } });

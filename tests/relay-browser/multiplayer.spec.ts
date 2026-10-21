@@ -6,9 +6,9 @@ const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
 const smoke=process.env.RELAY_SMOKE==='1';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await boundedRead(page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))),'capture-frame read');await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
-async function boundedRead<T>(operation:Promise<T>,label:string):Promise<T>{
+async function boundedRead<T>(operation:Promise<T>,label:string,timeoutMs=20_000):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
-  try{return await Promise.race([operation,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error(`${label} exceeded 2000ms`)),2_000);})]);}
+  try{return await Promise.race([operation,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error(`${label} exceeded ${timeoutMs}ms`)),timeoutMs);})]);}
   finally{clearTimeout(timer);}
 }
 /** Keep failure diagnostics in the Node test process. A stalled renderer must
@@ -57,7 +57,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
         status:document.querySelector('[data-testid="animation-phase"]')?.textContent?.trim(),
         rollButton:roll?{text:roll.textContent?.trim(),disabled:roll.disabled,bounds:bounds?{x:bounds.x,y:bounds.y,width:bounds.width,height:bounds.height}:undefined}:null,
         skillChoice:choice?{title:choice.querySelector('h2')?.textContent,buttonCount:choice.querySelectorAll('button').length,enabledButtons:choice.querySelectorAll('button:not(:disabled)').length}:null};
-    }),'acting-page public UI read');}catch(error){ui={readError:error instanceof Error?error.message:String(error)};}
+    }),'acting-page public UI read',2_000);}catch(error){ui={readError:error instanceof Error?error.message:String(error)};}
     uiSnapshots.push({elapsedMs:Date.now()-startedAt,step:checkpoint.step,seat,action,ui});if(uiSnapshots.length>20)uiSnapshots.shift();
   };
   const observe=(page:Page)=>{

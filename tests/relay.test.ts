@@ -214,7 +214,8 @@ for(const phase of ['lobby','race'] as const)test(`relay close in ${phase} commi
 });
 test('relay close permission follows the current management host rather than the browser authority',async()=>{
   const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
-  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:guest.identity.playerId,room:{...guest.room,hostId:guest.identity.playerId,version:2},phase:'lobby',adminHostId:guest.identity.playerId}));
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'explicit-admin-transfer',envelope:{actionId:crypto.randomUUID(),expectedVersion:1,action:{type:'transfer',playerId:guest.identity.playerId}}}));
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:'explicit-admin-transfer',result:{ok:true,version:2},room:{...env.created.room,hostId:guest.identity.playerId,version:2},phase:'lobby',adminHostId:guest.identity.playerId}));
   host.clear();await closeIntent(env,host,'creator-is-not-admin');
   assert.match(host.sent.at(-1).message,/只有当前管理房主/);assert.ok(!host.sent.some(m=>m.type==='request'));assert.equal((await env.ctx.storage.get<any>('room')).pendingClose,undefined);
   host.clear();await closeIntent(env,peer,'admin-close');assert.equal(host.sent.find(m=>m.type==='request').playerId,guest.identity.playerId);
@@ -528,10 +529,12 @@ test('legacy closed personal relay records migrate without retaining private vie
   const response=await restored.relay.fetch(new Request('https://room.internal/summary/ABC234'));assert.equal(response.status,410);
 });
 
-test('multiplayer relay owner is stable through management takeover and guest activity cannot cancel absence',async()=>controlledClock(async clock=>{
+test('multiplayer relay rejects automatic management takeover and guest activity cannot cancel owner absence',async()=>controlledClock(async clock=>{
   const env=await create(),owner=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
   await env.relay.webSocketMessage(owner,JSON.stringify({type:'deliver',to:guest.identity.playerId,room:{...guest.room,hostId:guest.identity.playerId},phase:'lobby',adminHostId:guest.identity.playerId}));
   assert.equal((await env.ctx.storage.get<any>('room')).ownerId,env.created.identity.playerId);
+  assert.equal((await env.ctx.storage.get<any>('room')).adminHostId,env.created.identity.playerId);
+  assert.equal(peer.sent.findLast(message=>message.type==='snapshot').room.hostId,env.created.identity.playerId);
   await env.relay.webSocketClose(owner,1000,'owner away',true);const departed=clock.now;
   clock.now+=PERSONAL_ROOM_AWAY_MS-1;peer.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,departed);
   clock.now++;await env.relay.alarm();assert.equal(peer.closeCode,4410);assert.equal((await env.ctx.storage.get<any>('closed')).reason,'host-away');
@@ -563,11 +566,12 @@ test('an old successful transfer receipt cannot replace a newer absent owner or 
   env={...env,...await instance(env.ctx.storage,env.ctx.sockets)};
   clock.now+=10_000;await transfer(host,creator.playerId,creator.playerId,oldAction,1,'replayed-self-transfer',true);
   const record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,third.identity.playerId);assert.equal(record.ownerTransferVersion,3);assert.equal(record.hostLeftAt,departed);assert.equal(record.pendingOwnerTransfer,undefined);
-  assert(host.sent.some(message=>message.type==='ack'&&message.requestId==='replayed-self-transfer'&&message.result.duplicate));
+  assert(host.sent.some(message=>message.type==='error'&&message.requestId==='replayed-self-transfer'&&/只有当前管理房主/.test(message.message)));
+  assert.equal(record.adminHostId,third.identity.playerId);
   clock.now=departed+PERSONAL_ROOM_AWAY_MS;peer.lastAutoResponseAt=new Date(clock.now);await env.relay.alarm();assert.equal((await env.ctx.storage.get<any>('closed')).closedAt,departed+PERSONAL_ROOM_AWAY_MS);
 }));
 
-test('a departing pending transfer target retains its identity and a recovered receipt owns it even after automatic management takeover',async()=>controlledClock(async clock=>{
+test('a departing pending transfer target retains its identity and a recovered explicit receipt sets both host identities',async()=>controlledClock(async clock=>{
   const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
   const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:1,action:{type:'transfer',playerId:guest.identity.playerId}};
   await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'pending-transfer',envelope}));
@@ -575,6 +579,35 @@ test('a departing pending transfer target retains its identity and a recovered r
   const restored={...env,...await instance(env.ctx.storage,env.ctx.sockets)};
   const deliverReceipt=(result:unknown)=>restored.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:'pending-transfer',result,room:{...env.created.room,version:4,hostId:env.created.identity.playerId},phase:'lobby',adminHostId:env.created.identity.playerId}));
   await deliverReceipt({ok:true});assert.match(host.sent.at(-1).message,/移交确认版本/);assert(await env.ctx.storage.get<any>('room').then(record=>record.pendingOwnerTransfer));
-  await deliverReceipt({ok:true,duplicate:true,version:2});const record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,guest.identity.playerId);assert.equal(record.adminHostId,env.created.identity.playerId);assert.equal(record.pendingOwnerTransfer,undefined);assert.equal(record.hostLeftAt,clock.now);
+  await deliverReceipt({ok:true,duplicate:true,version:2});const record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,guest.identity.playerId);assert.equal(record.adminHostId,guest.identity.playerId);assert.equal(record.pendingOwnerTransfer,undefined);assert.equal(record.hostLeftAt,clock.now);
   const returning=await authenticate(restored,guest.identity);assert.equal(returning.readyState,1);assert.equal((await env.ctx.storage.get<any>('room')).hostLeftAt,undefined);
+}));
+
+test('resume-status authenticates without opening sockets or renewing the thirty-minute deadline in every mode',async()=>controlledClock(async clock=>{
+  for(const mode of ['multiplayer','ai','practice'] as const){
+    const ns=await namespace(),createdResponse=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:'原房主',mode,aiCount:1})}),ns.env),created=await createdResponse.json() as RelayJoinReply;
+    const status=(identity:Identity)=>worker.default.fetch(new Request(`https://game.test/api/browser/rooms/${created.identity.roomCode}/resume-status`,{method:'POST',body:JSON.stringify(identity)}),ns.env);
+    const at=clock.now;clock.now+=60_000;
+    const response=await status(created.identity);assert.equal(response.status,200);const data=await response.json();
+    assert.deepEqual(data,{ok:true,ownerId:created.identity.playerId,mode,phase:'lobby',createdAt:at,hostLeftAt:at,expiresAt:at+PERSONAL_ROOM_AWAY_MS});
+    const current=ns.instances.get(created.identity.roomCode)!;assert.equal(current.ctx.sockets.length,0);assert.equal((await current.ctx.storage.get<any>('room')).hostLeftAt,at);
+    assert.equal((await status({...created.identity,token:'A'.repeat(43)})).status,401);
+    assert.equal((await listedRooms(ns.env)).some(room=>room.code===created.identity.roomCode),mode!=='practice');
+    clock.now=at+PERSONAL_ROOM_AWAY_MS-1;assert.equal((await status(created.identity)).status,200);
+    clock.now++;assert.equal((await status(created.identity)).status,410);assert(!(await listedRooms(ns.env)).some(room=>room.code===created.identity.roomCode));
+  }
+  const ns=await namespace(),missing=await worker.default.fetch(new Request('https://game.test/api/browser/rooms/ABC234/resume-status',{method:'POST',body:JSON.stringify({roomCode:'ABC234',playerId:crypto.randomUUID(),token:'B'.repeat(43)})}),ns.env);assert.equal(missing.status,404);
+}));
+
+test('multiplayer owner tabs, refresh and legacy archive restoration never promote an online guest',async()=>controlledClock(async clock=>{
+  const env=await create(),ownerId=env.created.identity.playerId,host=await authenticate(env,env.created.identity,true),duplicate=await authenticate(env),guest=await join(env),peer=await authenticate(env,guest.identity);
+  await env.relay.webSocketClose(duplicate,1000,'one owner tab exits',true);let record=await env.ctx.storage.get<any>('room');assert.equal(record.hostLeftAt,undefined);assert.equal(record.adminHostId,ownerId);
+  await env.relay.webSocketClose(host,1000,'last owner tab exits',true);const at=clock.now;record=await env.ctx.storage.get<any>('room');assert.equal(record.ownerId,ownerId);assert.equal(record.adminHostId,ownerId);assert.equal(record.hostLeftAt,at);
+  assert(peer.sent.some(message=>message.type==='roster'&&message.meta.adminHostId===ownerId&&message.meta.hostLeftAt===at));
+  // Heal pre-upgrade archives that automatically handed management to a guest.
+  record.adminHostId=guest.identity.playerId;await env.ctx.storage.put('room',record);
+  const restored={...env,...await instance(env.ctx.storage,env.ctx.sockets)};assert.equal((await env.ctx.storage.get<any>('room')).adminHostId,ownerId);
+  clock.now+=60_000;const returned=await authenticate(restored,env.created.identity,true),meta=returned.sent.find(message=>message.type==='auth-ok').meta;
+  assert.equal(meta.ownerId,ownerId);assert.equal(meta.adminHostId,ownerId);assert.equal(meta.hostLeftAt,undefined);
+  const response=await restored.relay.fetch(new Request('https://room.internal/resume-status/ABC234',{method:'POST',body:JSON.stringify(env.created.identity)}));assert.equal((await response.json()).ownerId,ownerId);
 }));

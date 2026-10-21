@@ -129,6 +129,12 @@ export default {
         if(!identity||identity.roomCode!==code)throw new HttpError(400,'退出凭据格式不正确。');
         return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch('https://room.internal/leave/'+code,{method:'POST',body:JSON.stringify(identity)});
       }
+      const resuming=url.pathname.match(/^\/api\/browser\/rooms\/([A-Z2-9]{6})\/resume-status$/i);
+      if(resuming&&request.method==='POST'){
+        const identity=parseIdentity(await body(request)),code=resuming[1]!.toUpperCase();
+        if(!identity||identity.roomCode!==code)throw new HttpError(400,'返回房间凭据格式不正确。');
+        return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch('https://room.internal/resume-status/'+code,{method:'POST',body:JSON.stringify(identity)});
+      }
       const upgrading=url.pathname.match(/^\/api\/browser\/ws\/([A-Z2-9]{6})$/i);
       if(upgrading&&request.method==='GET'){
         if(request.headers.get('Upgrade')?.toLowerCase()!=='websocket')return json({error:'此地址需要WebSocket连接。'},426);
@@ -150,7 +156,10 @@ export class RoomRelay extends DurableObject<Env> {
     super(ctx,env);
     ctx.blockConcurrencyWhile(async()=>{
       this.record=await ctx.storage.get<RoomRecord>('room')??null;this.closed=await ctx.storage.get<RoomClosure>('closed')??null;
-      if(this.record)this.record.ownerId??=this.record.authorityId;
+      if(this.record){
+        const ownerId=this.record.ownerId??this.record.authorityId;
+        if(this.record.ownerId!==ownerId||this.record.adminHostId!==ownerId){this.record={...this.record,ownerId,adminHostId:ownerId};await ctx.storage.put('room',this.record);}
+      }
       if(this.record&&this.record.closedAt!==undefined){await this.closePersonal('dismissed',this.record.closedAt);return;}
       // Hibernation preserves sockets and their platform ping timestamps. A
       // genuine restart without sockets starts (or preserves) owner absence.
@@ -259,7 +268,7 @@ export class RoomRelay extends DurableObject<Env> {
   }
   private decorate(room:RoomView):RoomView {
     const spectator=!!this.spectator(room.selfId);
-    return {...room,...(spectator?{players:room.players.map(({hand,selection,...publicPlayer})=>publicPlayer),pending:undefined}:{}),role:spectator?'spectator':'player',spectators:this.metadata().spectators,createdAt:this.record!.createdAt,ownerId:this.record!.ownerId,expiresAt:this.metadata().expiresAt,hostLeftAt:this.record!.hostLeftAt,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};
+    return {...room,...(spectator?{players:room.players.map(({hand,selection,...publicPlayer})=>publicPlayer),pending:undefined}:{}),role:spectator?'spectator':'player',spectators:this.metadata().spectators,createdAt:this.record!.createdAt,hostId:this.record!.adminHostId,ownerId:this.record!.ownerId,expiresAt:this.metadata().expiresAt,hostLeftAt:this.record!.hostLeftAt,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};
   }
   private async initialView(playerId:string):Promise<RoomView> {
     if(this.spectator(playerId)){
@@ -336,6 +345,11 @@ export class RoomRelay extends DurableObject<Env> {
         }
         const room=await this.valid(operation!=='summary');if(room.code!==code)throw new HttpError(404,'房间不存在。');
         if(operation==='summary'&&request.method==='GET')return json(this.summary());
+        if(operation==='resume-status'&&request.method==='POST'){
+          const identity=parseIdentity(await body(request)),person=identity?this.participant(identity.playerId):undefined;
+          if(!identity||identity.roomCode!==room.code||!person||!constantEqual(person.tokenHash,await sha256(identity.token))||(identity.role!==undefined&&identity.role!==(this.spectator(person.id)?'spectator':'player')))throw new HttpError(401,'返回房间凭据无效。');
+          return json({ok:true,ownerId:room.ownerId,mode:room.mode??'multiplayer',phase:room.phase,createdAt:room.createdAt,hostLeftAt:room.hostLeftAt,expiresAt:this.metadata().expiresAt});
+        }
         if(operation==='join'&&request.method==='POST'){
           const input=await body(request);
           if(!only(input,['name','role'])||(input.role!==undefined&&input.role!=='player'&&input.role!=='spectator'))throw new HttpError(400,'加入身份格式不正确。');
@@ -362,7 +376,6 @@ export class RoomRelay extends DurableObject<Env> {
           const spectator=!!this.spectator(person.id),retainIdentity=!spectator&&(person.id===room.ownerId||person.id===room.authorityId||room.phase!=='lobby'||!!room.joiningLockId||person.id===room.pendingOwnerTransfer?.targetId||person.id===room.pendingOwnerTransfer?.actorId);
           if(!retainIdentity){
             const updated={...room,members:room.members.filter(member=>member.id!==person.id),spectators:(room.spectators??[]).filter(viewer=>viewer.id!==person.id)};
-            if(updated.adminHostId===person.id)updated.adminHostId=room.authorityId;
             if(updated.pendingClose?.actorId===person.id)delete updated.pendingClose;
             await this.ctx.storage.transaction(async txn=>{await txn.put('room',updated);await txn.delete('view:'+person.id);});
             this.record=updated;this.snapshots.delete(person.id);
@@ -486,8 +499,8 @@ export class RoomRelay extends DurableObject<Env> {
           const releaseClose=!!room.pendingClose&&parsed.to===room.pendingClose.actorId&&[room.pendingClose.requestId,...(room.pendingClose.duplicateRequestIds??[])].includes(parsed.requestId as string)&&parsed.result?.ok===false;
           const transfer=room.pendingOwnerTransfer,releaseOwnerTransfer=!!transfer&&parsed.to===transfer.actorId&&transfer.requestIds.includes(parsed.requestId as string)&&parsed.result!==undefined;
           if(releaseOwnerTransfer&&parsed.result?.ok&&parsed.result.version!==transfer!.envelope.expectedVersion+1)throw Error('移交确认版本不正确。');
-          const metadataChanged=room.phase!==parsed.phase||room.adminHostId!==parsed.adminHostId||releaseAdmission||releaseClose||releaseOwnerTransfer;
-          const updated={...room,phase:parsed.phase,adminHostId:parsed.adminHostId};
+          const metadataChanged=room.phase!==parsed.phase||releaseAdmission||releaseClose||releaseOwnerTransfer;
+          const updated={...room,phase:parsed.phase};
           // An unrelated stale lobby snapshot must not reopen admission while start is in flight.
           if(releaseAdmission)delete updated.joiningLockId;
           if(releaseClose)delete updated.pendingClose;
@@ -495,11 +508,11 @@ export class RoomRelay extends DurableObject<Env> {
             // A replayed receipt may carry today's admin projection but the
             // original action's version. Apply each ownership change only once.
             if(parsed.result?.ok&&parsed.result.version!==undefined&&parsed.result.version>(room.ownerTransferVersion??0)){
-              updated.ownerId=transfer!.targetId;updated.ownerTransferVersion=parsed.result.version;
+              updated.ownerId=transfer!.targetId;updated.adminHostId=transfer!.targetId;updated.ownerTransferVersion=parsed.result.version;
               if(this.online(updated.ownerId))delete updated.hostLeftAt;else updated.hostLeftAt=Date.now();
             }
             delete updated.pendingOwnerTransfer;
-            if(snapshot)snapshot={...snapshot,ownerId:updated.ownerId,hostLeftAt:updated.hostLeftAt,expiresAt:updated.hostLeftAt===undefined?undefined:roomExpiry(updated)};
+            if(snapshot)snapshot={...snapshot,hostId:updated.adminHostId,ownerId:updated.ownerId,hostLeftAt:updated.hostLeftAt,expiresAt:updated.hostLeftAt===undefined?undefined:roomExpiry(updated)};
           }
           const previous=snapshot?this.snapshots.get(parsed.to):undefined;
           const snapshotChanged=!!snapshot&&(!previous||JSON.stringify(previous)!==JSON.stringify(snapshot));
@@ -517,7 +530,7 @@ export class RoomRelay extends DurableObject<Env> {
               for(const replyId of replies)this.send(target,{type:'ack',requestId:replyId,result:parsed.result as ActionReply});
             }
           }
-          if(metadataChanged){this.notify({type:'roster',meta:this.metadata()});await this.publishDirectory();}
+          if(metadataChanged||room.adminHostId!==parsed.adminHostId){this.notify({type:'roster',meta:this.metadata()});await this.publishDirectory();}
           return;
         }
         // Personal-room dismissal is a server operation. It remains available

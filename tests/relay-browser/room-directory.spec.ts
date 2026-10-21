@@ -167,23 +167,58 @@ test('multiplayer owner exit preserves a second tab and resumes the same owner i
     await ownerTab.getByRole('button', { name: '我准备好了', exact: true }).click();
     await expect(ownerTab.getByRole('button', { name: '取消准备', exact: true })).toBeVisible();
     await expect.poll(async () => (await saved(ownerTab, peers.code)).game.players.find(player => player.id === originalOwner.playerId)?.connected).toBe(true);
-    expect(metadata.at(-1)?.hostLeftAt).toBeUndefined(); expect(metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);
+    expect(metadata.at(-1)?.hostLeftAt).toBeUndefined(); expect(metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);expect(metadata.at(-1)?.adminHostId).toBe(originalOwner.playerId);
     const beforeFinalLeave = metadata.length;
     await ownerTab.close();
     await expect(guest.getByText('计算房主网页离线，等待其返回。', { exact: false })).toBeVisible();
     await expect.poll(() => metadata.length).toBeGreaterThan(beforeFinalLeave);
     await expect.poll(() => typeof metadata.at(-1)?.hostLeftAt).toBe('number');
-    const away = metadata.at(-1)!; expect(away.ownerId).toBe(originalOwner.playerId); expect(away.ownerId).not.toBe(originalGuest.playerId);
+    const away = metadata.at(-1)!; expect(away.ownerId).toBe(originalOwner.playerId); expect(away.ownerId).not.toBe(originalGuest.playerId);expect(away.adminHostId).toBe(originalOwner.playerId);
     // Any automatic management change on disconnect must preserve this owner.
     for (const snapshot of snapshots) if (snapshot.ownerId !== undefined) expect(snapshot.ownerId).toBe(originalOwner.playerId);
     await host.goto(`${url}/room/${peers.code}`); await expect(host.locator('.connection.is-online')).toBeVisible();
     await expect(guest.locator('.connection.is-online')).toBeVisible(); expect(await identity(host, peers.code)).toEqual(originalOwner); expect(await identity(guest, peers.code)).toEqual(originalGuest);
     await expect.poll(() => metadata.at(-1)?.hostLeftAt).toBeUndefined(); expect(metadata.at(-1)?.ownerId).toBe(originalOwner.playerId);
-    const restored = await saved(host, peers.code); expect(restored.ownerId).toBe(originalOwner.playerId); expect(restored.game.players).toHaveLength(2); expect(restored.game.players.find(player => player.id === originalOwner.playerId)?.connected).toBe(true);
+    const restored = await saved(host, peers.code); expect(restored.ownerId).toBe(originalOwner.playerId);expect(restored.hostId).toBe(originalOwner.playerId); expect(restored.game.players).toHaveLength(2); expect(restored.game.players.find(player => player.id === originalOwner.playerId)?.connected).toBe(true);
     await host.screenshot({ path: testInfo.outputPath('multiplayer-owner-return.png'), fullPage: true });
     const presence = JSON.stringify({ ownerId: originalOwner.playerId, guestId: originalGuest.playerId, awayOwnerId: away.ownerId, awayAt: away.hostLeftAt, restoredOwnerId: restored.ownerId, metadata: metadata.map(({ ownerId, adminHostId, hostLeftAt }) => ({ ownerId, adminHostId, hostLeftAt })) });
     mkdirSync('docs/qa/duo-upgrade', { recursive: true });writeFileSync('docs/qa/duo-upgrade/multiplayer-owner-presence.json', presence);
     await testInfo.attach('multiplayer-owner-presence', { body: presence, contentType: 'application/json' });
     expect(peers.errors).toEqual([]);
   } finally { await Promise.all(peers.contexts.map(context => context.close())); }
+});
+
+test('Home returns to the retained owner room in every mode without creating another room, including refresh and other tabs', async ({ browser }) => {
+  test.setTimeout(120_000);
+  for (const mode of ['multiplayer','practice','ai'] as const) {
+    const context = await browser.newContext({viewport:mode==='multiplayer'?{width:1280,height:900}:{width:390,height:844},deviceScaleFactor:1});
+    const page = await context.newPage(), errors:string[]=[];let creations=0;
+    page.on('pageerror',error=>errors.push(error.stack??error.message));
+    page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname==='/api/browser/rooms')creations++;});
+    try {
+      await page.goto(url);await page.getByLabel('你的昵称').fill('返回原房主');
+      if(mode==='multiplayer')await page.getByLabel('房间人数上限').selectOption('2');
+      else await page.getByRole('tab',{name:mode==='practice'?'自己练习':'人机对战',exact:true}).click();
+      if(mode==='ai')await page.getByLabel('AI 人数',{exact:true}).selectOption('1');
+      await page.getByRole('button',{name:mode==='multiplayer'?'创建房间，召集朋友':mode==='practice'?'开始自己练习':'开始人机对战',exact:true}).click();
+      await expect(page.locator('.connection.is-online')).toBeVisible();const code=page.url().split('/').at(-1)!,original=await identity(page,code);
+      expect(await page.evaluate(()=>localStorage.getItem('magical-athlete:owned-rooms:v1'))).not.toContain(original.token);
+      const duplicate=await context.newPage();await duplicate.goto(`${url}/room/${code}`);await expect(duplicate.locator('.connection.is-online')).toBeVisible();
+      const exit=async()=>{await page.getByRole('button',{name:'退出房间',exact:true}).first().click();await expect(page.getByRole('dialog')).toContainText('30 分钟');await page.getByRole('button',{name:'确认退出房间',exact:true}).click();await expect(page).toHaveURL(`${url}/`);};
+      await exit();
+      const card=page.getByTestId(`owned-room-${code}`),returnButton=card.getByRole('button',{name:'返回刚才创建的房间',exact:true});
+      await expect(returnButton).toBeEnabled();await expect(card).toContainText(code);await noOverflow(page);
+      await page.reload();await expect(returnButton).toBeEnabled();await page.screenshot({path:`docs/qa/duo-upgrade/home-owner-return-${mode}.png`,fullPage:false});
+      await returnButton.click();await expect(page).toHaveURL(`${url}/room/${code}`);await expect(page.locator('.connection.is-online')).toBeVisible();expect(await identity(page,code)).toEqual(original);
+      await page.reload();await expect(page).toHaveURL(`${url}/room/${code}`);await expect(page.locator('.connection.is-online')).toBeVisible();expect(await identity(page,code)).toEqual(original);
+      await duplicate.close();await exit();await expect(returnButton).toBeEnabled();
+      await returnButton.click();await expect(page.locator('.connection.is-online')).toBeVisible();expect(await identity(page,code)).toEqual(original);expect(creations).toBe(1);
+      await page.screenshot({path:`docs/qa/duo-upgrade/home-owner-restored-${mode}.png`,fullPage:false});
+      // Close from another owner tab while this tab remains on Home. Shared
+      // storage and the authoritative status must remove the obsolete return.
+      await exit();await expect(returnButton).toBeEnabled();const closer=await context.newPage();await closer.goto(`${url}/room/${code}`);await expect(closer.locator('.connection.is-online')).toBeVisible();
+      await closer.getByRole('button',{name:'结束房间',exact:true}).click();await closer.getByRole('button',{name:'确认结束',exact:true}).click();await expect(closer.locator('[data-room-closed="true"]')).toBeVisible();
+      await expect(card).toHaveCount(0);await page.reload();await expect(card).toHaveCount(0);expect(await page.evaluate(code=>localStorage.getItem(`magical-athlete:identity:${code}:player`),code)).toBeNull();await closer.reload();await expect(closer.locator('[data-room-closed="true"]')).toBeVisible();expect(errors).toEqual([]);
+    }finally{await context.close();}
+  }
 });

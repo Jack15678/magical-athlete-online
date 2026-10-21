@@ -39,6 +39,17 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
   app.get('/api/rooms',(_req,res,next)=>{try{res.json({rooms:rooms.list()});}catch(e){next(e);}});
   app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount));}catch(e){next(e);}});
   app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname,role:z.enum(['player','spectator']).optional()}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name,b.role);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
+  app.post('/api/rooms/:code/resume-status',(req,res,next)=>{try{
+    const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');
+    rooms.expire(i.roomCode);const existing=rooms.rooms.get(i.roomCode);
+    if(!existing){res.status(rooms.closed(i.roomCode)?410:404).json({error:rooms.closed(i.roomCode)?'房间已关闭。请创建或加入其他房间。':'房间不存在或已过期，请检查房间码。'});return;}
+    if(existing.closedAt!==undefined){res.status(410).json({error:'房间已关闭。请创建或加入其他房间。'});return;}
+    let room=existing;try{room=rooms.authenticate(i);}catch{res.status(401).json({error:'恢复凭据无效。'});return;}
+    // Inspecting a saved room is not a connection: only a real socket may
+    // restore presence and cancel the owner's departure deadline.
+    const view=rooms.view(room,i.playerId);
+    res.json({ok:true,ownerId:room.ownerId??room.hostId,mode:room.mode??'multiplayer',phase:room.game.phase,createdAt:room.createdAt,hostLeftAt:room.hostLeftAt,expiresAt:view.expiresAt});
+  }catch(e){next(e);}});
   app.post('/api/rooms/:code/leave',(req,res,next)=>{try{
     const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');
     rooms.expire(i.roomCode);const room=rooms.rooms.get(i.roomCode);

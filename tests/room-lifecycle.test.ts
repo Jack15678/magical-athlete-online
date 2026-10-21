@@ -77,12 +77,14 @@ test('restart migrates a legacy closed personal room to its lightweight tombston
   }finally{env.store.close();}
 });
 
-test('multiplayer guests taking management or acting never renew the fixed owner absence',()=>{
+test('multiplayer guests never take management or renew the fixed owner absence',()=>{
   const env=fixture('multiplayer');try{
     const {rooms,identity,clock}=env;rooms.presence(identity.roomCode,identity.playerId,true);
     const guest=rooms.join(identity.roomCode,'在线朋友').identity;rooms.presence(identity.roomCode,guest.playerId,true);
     rooms.presence(identity.roomCode,identity.playerId,false);const departed=clock.now,room=rooms.get(identity.roomCode);
-    assert.equal(room.ownerId,identity.playerId);assert.equal(room.hostId,guest.playerId);
+    assert.equal(room.ownerId,identity.playerId);assert.equal(room.hostId,identity.playerId);
+    assert.equal(rooms.act(room.code,guest.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'transfer',playerId:guest.playerId}}).ok,false);
+    assert(rooms.list().some(entry=>entry.code===room.code));
     clock.now+=PERSONAL_ROOM_AWAY_MS-1;assert.equal(rooms.act(room.code,guest.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'ready',ready:true}}).ok,true);
     assert.equal(rooms.get(room.code).hostLeftAt,departed);clock.now++;rooms.tick();assert.equal(rooms.closed(room.code)?.reason,'host-away');
   }finally{env.store.close();}

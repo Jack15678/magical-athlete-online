@@ -18,6 +18,7 @@ export class Rooms {
     const restoredAt=this.now();
     for(const room of store.load()) {
       room.ownerId??=room.game.players.find(player=>player.seat===0)?.id??room.hostId;
+      room.hostId=room.ownerId;
       if(room.closedAt!==undefined){store.closeRoom({code:room.code,closedAt:room.closedAt,reason:room.closeReason??'dismissed',hostId:room.hostId,version:room.version});continue;}
       // A restart ends all Node connections. Preserve an existing absence;
       // rooms whose owner was online begin their absence at this restart.
@@ -94,9 +95,6 @@ export class Rooms {
     if(!member||(member.connected===connected&&!(original.ownerId===id&&connected&&original.hostLeftAt!==undefined)))return;
     const room=structuredClone(original);(room.game.players.find(p=>p.id===id)??room.spectators!.find(p=>p.id===id)!).connected=connected;
     if(room.ownerId===id){if(connected){delete room.hostLeftAt;(room as PresenceRoom).hostSeenAt=this.now();}else room.hostLeftAt??=this.now();}
-    if(original.game.players.some(p=>p.id===id)&&!room.game.players.some(p=>p.id===room.hostId && p.connected)) {
-      const next=room.game.players.find(p=>p.connected&&!p.isAI); if(next) room.hostId=next.id;
-    }
     room.version++;room.updatedAt=this.now(); this.store.save(room); this.rooms.set(code,room);
   }
   leave(identity:Identity):{ok:true;retainIdentity:boolean} {
@@ -107,11 +105,6 @@ export class Rooms {
     else if(retainIdentity)room.game.players.find(p=>p.id===id)!.connected=false;
     else room.game.players=room.game.players.filter(p=>p.id!==id);
     if(room.ownerId===id)room.hostLeftAt??=this.now();
-    if(!spectator&&!room.game.players.some(p=>p.id===room.hostId&&p.connected)) {
-      const next=room.game.players.find(p=>p.connected&&!p.isAI)??room.game.players.find(p=>!p.isAI);
-      if(next)room.hostId=next.id;
-      else if(!retainIdentity){room.closedAt=Date.now();room.deadline=null;}
-    }
     room.version++;room.updatedAt=Date.now();
     if(retainIdentity)this.store.transaction(()=>this.store.save(room));else this.store.removeIdentity(room,id);
     this.rooms.set(room.code,room);return{ok:true,retainIdentity};
