@@ -1,9 +1,10 @@
 {
-  "renderedFrames": 941,
+  "renderedFrames": 718,
   "calls": 151,
   "triangles": 35230,
   "geometries": 107,
-  "textures": 49,
+  "textures": 48,
+  "environment": false,
   "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "pixelRatio": 1,
   "shadows": false,
@@ -11,9 +12,9 @@
   "exposure": 1.1,
   "colorSpace": "srgb",
   "samples": 80,
-  "medianFrameMs": 4.199999809265137,
-  "p95FrameMs": 4.699999809265137,
-  "maxFrameMs": 5.1000001430511475,
+  "medianFrameMs": 4.400000095367432,
+  "p95FrameMs": 13.599999904632568,
+  "maxFrameMs": 20.5,
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
   "caveat": "Measured in local headless Edge at the stated viewport; mobile is a viewport/layout check, not a physical phone performance measurement. Forced invalidate samples actual WebGL scene frames without claiming idle demand rendering is continuous."
 }

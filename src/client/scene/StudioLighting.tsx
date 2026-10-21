@@ -22,13 +22,16 @@ export function PawnContact() {
 export function StudioLighting({ compact, lowQuality }: { compact: boolean; lowQuality: boolean }) {
   const { gl, scene, invalidate } = useThree();
   useEffect(() => {
+    // PMREM is a synchronous six-face capture plus GGX filtering. Economy
+    // clients (including software WebGL) must not pay that cost on reconnect.
+    if (lowQuality) return;
     const generator = new THREE.PMREMGenerator(gl), studio = new RoomEnvironment();
     const environment = generator.fromScene(studio, .06);
     const previous = scene.environment, previousIntensity = scene.environmentIntensity;
     scene.environment = environment.texture; scene.environmentIntensity = .32;
     studio.dispose(); generator.dispose(); invalidate();
     return () => { scene.environment = previous; scene.environmentIntensity = previousIntensity; environment.dispose(); };
-  }, [gl, scene, invalidate]);
+  }, [gl, scene, invalidate, lowQuality]);
   return <>
     <ambientLight intensity={.35} />
     <hemisphereLight args={['#fff7e7', '#80a89a', .8]} />

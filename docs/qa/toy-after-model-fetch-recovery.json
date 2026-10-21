@@ -1,0 +1,39 @@
+{
+  "requests": 2,
+  "fallback": {
+    "renderedFrames": 185,
+    "calls": 205,
+    "triangles": 43920,
+    "geometries": 58,
+    "textures": 31,
+    "environment": true,
+    "loadedModels": 0,
+    "loadedModelNames": [],
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "pixelRatio": 1,
+    "shadows": true,
+    "toneMapping": 4,
+    "exposure": 1.1,
+    "colorSpace": "srgb"
+  },
+  "recovered": {
+    "renderedFrames": 186,
+    "calls": 215,
+    "triangles": 51168,
+    "geometries": 59,
+    "textures": 31,
+    "environment": true,
+    "loadedModels": 2,
+    "loadedModelNames": [
+      "toy_coach",
+      "toy_banana"
+    ],
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "pixelRatio": 1,
+    "shadows": true,
+    "toneMapping": 4,
+    "exposure": 1.1,
+    "colorSpace": "srgb"
+  },
+  "pageErrors": []
+}

@@ -149,12 +149,14 @@ test('toy diorama deterministic before/after: desktop and mobile, self/overview,
         expect(overlapX * overlapY, `seat badges ${a.seat}/${b.seat} overlap`).toBeLessThan(a.width * a.height * .08);
       }
       if (stage === 'after') {
+        expect(await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats().environment)).toBe(true);
         await samplePerformance(room.host, `${device}-crowd-high`);
         await room.host.getByTestId('presentation-settings').click();
         await room.host.getByLabel('低画质', { exact: true }).check();
         await room.host.getByRole('dialog', { name: '比赛菜单', exact: true }).getByRole('button', { name: '关闭', exact: true }).click();
         await settle(room.host);
         expect(await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats().shadows)).toBe(false);
+        expect(await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats().environment)).toBe(false);
         await samplePerformance(room.host, `${device}-crowd-low`);
       }
       expect(room.errors).toEqual([]);
@@ -310,4 +312,48 @@ test('reduced-motion intro holds the whole group once and immediately yields to 
     writeFileSync(`${output}/toy-${stage}-reduced-intro-sequence.json`, JSON.stringify(samples, null, 2));
     await expect(room.host.getByRole('button', { name: '掷骰子', exact: true })).toBeEnabled(); expect(room.errors).toEqual([]);
   } finally { await Promise.all(room.contexts.map(context => context.close())); }
+});
+
+test('a failed GLB fetch preserves the running scene and retries into the real character models', async ({ browser }) => {
+  test.skip(stage !== 'after', 'Final art asset recovery check.');
+  const room = await pair(browser);
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>(resolve => { releaseRetry = resolve; });
+  let requests = 0;
+  try {
+    await room.host.route('**/models/toy-racers.glb', async route => {
+      requests++;
+      if (requests === 1) { await route.abort('failed'); return; }
+      // Hold the subsequent successful request only until the real fallback
+      // is captured. Both rendering states come from the shipped asset path.
+      await retryGate;
+      await route.continue();
+    });
+    await seed(room, ['coach', 'banana'], [0, 2]);
+    await expect.poll(() => requests).toBeGreaterThanOrEqual(1);
+    const board = room.host.getByTestId('board-3d');
+    await expect(board.locator('.board-webgl canvas')).toBeVisible();
+    await expect(room.host.getByText('3D 场景暂时无法显示', { exact: true })).toHaveCount(0);
+    expect(await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats().loadedModels)).toBe(0);
+    await room.host.getByRole('button', { name: '总览', exact: true }).click();
+    await expect(board).toHaveAttribute('data-camera-state', 'overview');
+    await room.host.getByRole('button', { name: '恢复默认视角', exact: true }).click();
+    await settle(room.host);
+    // Fit both sculptures in the same controlled camera before/after loading.
+    await room.host.evaluate(() => {
+      const api = window.__ART_QA_SCENE__!, pose = api.getCamera();
+      pose.position[0]! += 2; pose.target[0]! += 2; pose.zoom = Math.min(pose.zoom, 85); api.setCamera(pose);
+    });
+    await capture(room.host, 'model-fetch-fallback');
+    const fallback = await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats());
+    const gameBefore = structuredClone(application.rooms.get(room.code).game);
+    releaseRetry!();
+    await expect.poll(() => room.host.evaluate(() => window.__ART_QA_SCENE__!.stats().loadedModels), { timeout: 15000 }).toBe(2);
+    const recovered = await room.host.evaluate(() => window.__ART_QA_SCENE__!.stats());
+    expect([...(recovered.loadedModelNames as string[])].sort()).toEqual(['toy_banana', 'toy_coach']);
+    await capture(room.host, 'model-fetch-recovered');
+    expect(application.rooms.get(room.code).game).toEqual(gameBefore);
+    expect(requests).toBeGreaterThanOrEqual(2); expect(room.errors).toEqual([]);
+    writeFileSync(`${output}/toy-${stage}-model-fetch-recovery.json`, JSON.stringify({ requests, fallback, recovered, pageErrors: room.errors }, null, 2));
+  } finally { releaseRetry?.(); await Promise.all(room.contexts.map(context => context.close())); }
 });

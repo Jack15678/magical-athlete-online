@@ -13,12 +13,13 @@ await build({
       if (!anchor) return;
       return code.replace(anchor, `${anchor}
   const qaGl = useThree(s => s.gl);
+  const qaScene = useThree(s => s.scene);
   useEffect(() => {
     const api = {
       getCamera: () => ({ position: camera.position.toArray(), target: controls.current?.target.toArray(), zoom: (camera as THREE.OrthographicCamera).zoom, up: camera.up.toArray() }),
       setCamera: (pose: { position: number[]; target: number[]; zoom: number; up: number[] }) => { userDrag.current = true; camera.position.fromArray(pose.position); camera.up.fromArray(pose.up); controls.current?.target.fromArray(pose.target); (camera as THREE.OrthographicCamera).zoom = pose.zoom; camera.updateProjectionMatrix(); controls.current?.update(); invalidate(); },
       render: () => { invalidate(); },
-      stats: () => { const ctx = qaGl.getContext(); const debug = ctx.getExtension('WEBGL_debug_renderer_info'); return { renderedFrames: qaGl.info.render.frame, calls: qaGl.info.render.calls, triangles: qaGl.info.render.triangles, geometries: qaGl.info.memory.geometries, textures: qaGl.info.memory.textures, renderer: debug ? ctx.getParameter(debug.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER), pixelRatio: qaGl.getPixelRatio(), shadows: qaGl.shadowMap.enabled, toneMapping: qaGl.toneMapping, exposure: qaGl.toneMappingExposure, colorSpace: qaGl.outputColorSpace }; }
+      stats: () => { const ctx = qaGl.getContext(); const debug = ctx.getExtension('WEBGL_debug_renderer_info'); const loadedModelNames: string[] = []; qaScene.traverse(object => { if (object.name.startsWith('toy_')) loadedModelNames.push(object.name); }); return { renderedFrames: qaGl.info.render.frame, calls: qaGl.info.render.calls, triangles: qaGl.info.render.triangles, geometries: qaGl.info.memory.geometries, textures: qaGl.info.memory.textures, environment: !!qaScene.environment, loadedModels: loadedModelNames.length, loadedModelNames, renderer: debug ? ctx.getParameter(debug.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER), pixelRatio: qaGl.getPixelRatio(), shadows: qaGl.shadowMap.enabled, toneMapping: qaGl.toneMapping, exposure: qaGl.toneMappingExposure, colorSpace: qaGl.outputColorSpace }; }
     };
     (window as unknown as { __ART_QA_SCENE__?: typeof api }).__ART_QA_SCENE__ = api;
     return () => { delete (window as unknown as { __ART_QA_SCENE__?: typeof api }).__ART_QA_SCENE__; };
