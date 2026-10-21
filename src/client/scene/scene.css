@@ -2,3 +2,4 @@
 .pawn-seat.is-shared{width:18px;height:18px;font-size:11px;border-width:2px}.pawn-seat.is-crowded{width:14px;height:14px;font-size:9px;border-width:2px}@media(max-width:650px){.pawn-seat.is-crowded{width:12px;height:12px;font-size:8px;border-width:1.5px}}
 @media(max-width:650px){.board-scene{height:min(76dvh,680px);min-height:560px}.pawn-seat{width:18px;height:18px;font-size:11px;border-width:2px}.pawn-seat.is-shared{width:16px;height:16px;font-size:10px}.pawn-seat.is-crowded{width:12px;height:12px;font-size:8px;border-width:1.5px}}
 @media(max-width:650px){.phase-race .race-action{position:static;bottom:auto}}
+.scene-labels{position:absolute;inset:0;z-index:20;pointer-events:none;overflow:hidden}.scene-labels>.pawn-seat,.scene-labels>.score-float{position:absolute;top:0;left:0;will-change:transform}.scene-labels>.pawn-seat{visibility:hidden}

@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs';
 
 const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
+async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
 async function saved(page:Page,code:string):Promise<Room>{
   // Transfer the game's documented JSON format rather than Playwright's deeply
   // nested evaluation-value encoding (which can reject large event histories).
@@ -17,7 +18,7 @@ async function saved(page:Page,code:string):Promise<Room>{
 for(const n of [2,6,8])test(`browser authority ${n} independent players: four races, host recovery, privacy and rematch`,async({browser})=>{
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
   const observe=(page:Page)=>{
-    page.on('pageerror',e=>errors.push(e.message));
+    page.on('pageerror',e=>errors.push(e.stack??e.message));
     page.on('websocket',ws=>{
       expect(ws.url()).not.toMatch(/token=|playerId=/);
       ws.on('framereceived',frame=>{
@@ -41,13 +42,13 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
     for(let i=1;i<n;i++){
       const p=pages[i]!;await p.goto(`${url}/room/${code}`);await p.getByLabel('你的昵称').fill(`网页同学${i}`);await p.getByRole('button',{name:'加入这场胡闹'}).click();await expect(p.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
     }
-    for(const p of pages){await p.getByRole('button',{name:'我准备好了',exact:true}).click();await expect(p.getByRole('button',{name:'取消准备',exact:true})).toBeVisible();}
+    for(const p of pages){await synced(p,(await saved(host,code)).version);await p.getByRole('button',{name:'我准备好了',exact:true}).click();await expect(p.getByRole('button',{name:'取消准备',exact:true})).toBeVisible();}
     await host.getByRole('button',{name:'邀请朋友',exact:true}).click();expect(await host.evaluate(()=>navigator.clipboard.readText())).toBe(`${url}/room/${code}`);
     const ids=await Promise.all(pages.map(p=>p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)));expect(new Set(ids).size).toBe(n);
     for(const guest of pages.slice(1))expect(await guest.evaluate(async()=>(await indexedDB.databases()).some(db=>db.name==='magical-athlete-browser-authority-v1'))).toBe(false);
-    await host.getByRole('button',{name:'开始选秀',exact:true}).click();await expect.poll(async()=>(await saved(host,code)).game.phase).toBe('draft');
+    await synced(host,(await saved(host,code)).version);await host.getByRole('button',{name:'开始选秀',exact:true}).click();await expect.poll(async()=>(await saved(host,code)).game.phase).toBe('draft');
     while((await saved(host,code)).game.phase==='draft'){
-      const d=(await saved(host,code)).game.draft!;const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;
+      const d=(await saved(host,code)).game.draft!;const p=pages[ids.indexOf(d.order[d.cursor]!) ]!;await synced(p,(await saved(host,code)).version);
       await p.locator('.character-card .character-art').first().click();const confirm=p.getByRole('button',{name:/确认选择/});if(await confirm.count())await confirm.click();
       await expect.poll(async()=>(await saved(host,code)).game.draft?.cursor??-1).not.toBe(d.cursor);
     }
@@ -55,7 +56,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
     while((await saved(host,code)).game.phase!=='finished'){
       const room=await saved(host,code),g=room.game;if(++steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
       if(g.phase==='selection'){
-        const player=g.players.find(p=>!p.selection.length)!;const p=pages[ids.indexOf(player.id)]!;const count=n===2?2:1;
+        const player=g.players.find(p=>!p.selection.length)!;const p=pages[ids.indexOf(player.id)]!;const count=n===2?2:1;await synced(p,room.version);
         for(let i=0;i<count;i++)await p.locator('.hand-selection .character-card').filter({has:p.getByRole('button',{name:/选择/})}).nth(i).getByRole('button',{name:/选择/}).click();
         await p.getByRole('button',{name:'锁定上场角色',exact:true}).click();await expect.poll(async()=>{const next=(await saved(host,code)).game;return next.phase==='selection'?next.players.find(x=>x.id===player.id)?.selection.length:count;}).toBe(count);continue;
       }
@@ -77,7 +78,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
       if(g.pending){playerId=g.pending.playerId;const option=g.pending.options.find(o=>['skip','pass','decline'].includes(o.id))??g.pending.options[0]!;action={type:'choose',choiceId:g.pending.id,optionId:option.id};}
       else if(g.phase==='results'){playerId=room.hostId;action={type:'next'};}
       else{playerId=g.racers.find(r=>r.id===g.currentRacerId)!.playerId;action={type:'roll'};}
-      const p=pages[ids.indexOf(playerId)]!;
+      const p=pages[ids.indexOf(playerId)]!;await synced(p,room.version);
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click();
       else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click();
       else await p.getByRole('button',{name:'掷骰子',exact:true}).click();
@@ -85,7 +86,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
     }
     expect((await saved(host,code)).game.results).toHaveLength(4);expect(errors).toEqual([]);
     await host.screenshot({path:`test-results/browser-authority/final-${n}.png`,fullPage:true});
-    const admin=pages[ids.indexOf((await saved(host,code)).hostId)]!;await admin.getByRole('button',{name:'原房间，再来一局',exact:true}).click();await expect(admin.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
+    const admin=pages[ids.indexOf((await saved(host,code)).hostId)]!;await synced(admin,(await saved(host,code)).version);await admin.getByRole('button',{name:'原房间，再来一局',exact:true}).click();await expect(admin.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();
     expect((await saved(host,code)).game.players.every(p=>p.score===0&&p.hand.length===0)).toBe(true);
     for(const p of pages)expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   }finally{await Promise.all(contexts.map(c=>c.close()));}

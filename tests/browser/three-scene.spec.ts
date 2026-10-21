@@ -32,7 +32,7 @@ async function pair(browser: Browser, mobile = false) {
       localStorage.setItem('magical-athlete:reduced-motion', 'false');
     });
     const page = await context.newPage(); pages.push(page);
-    page.on('pageerror', error => errors.push(error.message));
+    page.on('pageerror', error => errors.push(error.stack ?? error.message));
   }
   const [host, guest] = pages as [Page, Page];
   await host.goto(url);
