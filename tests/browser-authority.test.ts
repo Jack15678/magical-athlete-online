@@ -36,6 +36,51 @@ async function readyAndStart(authority:BrowserAuthority,meta:RelayMetadata) {
   assert.equal((await command(authority,'p0',{type:'start'})).reply.ok,true);
 }
 
+test('close: only the current management host can dissolve a started room, and its receipt survives reload',async()=>{
+  const env=environment();const meta=metadata();const a=await BrowserAuthority.create(meta,env.options);
+  assert.match((await command(a,'p1',{type:'close'})).reply.error??'',/只有房主/);
+  await readyAndStart(a,meta);
+  assert.equal((await command(a,'p0',{type:'transfer',playerId:'p1'})).reply.ok,true);
+  assert.match((await command(a,'p0',{type:'close'})).reply.error??'',/只有房主/);
+  const before=await raw(env);
+  assert.match((await command(a,'p1',{type:'close'},crypto.randomUUID(),before.room.version-1)).reply.error??'',/画面已更新/);
+  assert.deepEqual(await raw(env),before);
+  const close=await command(a,'p1',{type:'close'});assert.equal(close.reply.ok,true);
+  const closed=await raw(env);assert.equal(closed.room.closedAt,env.clock.now);assert.equal(closed.room.deadline,null);
+  assert.equal(closed.room.version,before.room.version+1);assert.deepEqual(closed.room.game,before.room.game);
+  assert.equal(a.view('p0').closedAt,env.clock.now);assert.equal(a.view('p0').authorityOnline,false);
+  assert.match((await command(a,'p1',{type:'start'})).reply.error??'',/房间已解散/);
+  a.dispose();env.clock.now+=900_000;
+  const loaded=await BrowserAuthority.load(meta,env.options);
+  const replay=await loaded.action('p1',close.envelope);assert.equal(replay.ok,true);assert.equal(replay.duplicate,true);
+  assert.match((await loaded.action('p1',{...close.envelope,action:{type:'rematch'}})).error??'',/不同操作/);
+  await loaded.resume({...meta,members:meta.members.map(m=>({...m,connected:false}))});
+  await loaded.roster({...meta,adminHostId:'p0'});assert.equal(await loaded.tick(),false);
+  assert.deepEqual(await raw(env),closed);loaded.dispose();
+});
+
+test('close: the lobby can be dissolved before any other player joins',async()=>{
+  const env=environment();const meta=metadata(1);const a=await BrowserAuthority.create(meta,env.options);
+  assert.equal((await command(a,'p0',{type:'close'})).reply.ok,true);
+  assert.equal(a.view('p0').closedAt,env.clock.now);assert.equal(a.view('p0').phase,'lobby');
+  assert.match((await command(a,'p0',{type:'ready',ready:true})).reply.error??'',/房间已解散/);a.dispose();
+});
+
+test('close: a failed receipt write rolls back dissolution and allows the same close request to retry',async()=>{
+  const env=environment();const meta=metadata();const a=await BrowserAuthority.create(meta,env.options);
+  const before=await raw(env);const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:before.room.version,action:{type:'close'}};
+  const originalPut=IDBObjectStore.prototype.put;let failOnce=true;
+  IDBObjectStore.prototype.put=function(...args:Parameters<IDBObjectStore['put']>){
+    if(this.name==='receipts'&&failOnce){failOnce=false;throw new DOMException('模拟回执写入失败','QuotaExceededError');}
+    return originalPut.apply(this,args);
+  };
+  try {await assert.rejects(a.action('p0',envelope),/未能保存本次操作/);}
+  finally {IDBObjectStore.prototype.put=originalPut;}
+  assert.deepEqual(await raw(env),before);assert.equal(a.view('p0').closedAt,undefined);
+  const retry=await a.action('p0',envelope);assert.equal(retry.ok,true);assert.equal(retry.duplicate,undefined);
+  assert.equal((await raw(env)).room.closedAt,env.clock.now);a.dispose();
+});
+
 test('Browser authority initializes relay identities once, preserves duplicate nicknames and refuses missing started archives',async()=>{
   const env=environment();const meta=metadata();const a=await BrowserAuthority.create(meta,env.options);
   assert.deepEqual(a.view('p0').players.map(p=>[p.id,p.color]),[['p0',PLAYER_COLORS[0]],['p1',PLAYER_COLORS[1]]]);

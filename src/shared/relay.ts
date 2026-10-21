@@ -13,5 +13,6 @@ export type RelayServerMessage =
  | {type:'request';playerId:string;requestId:string;operation:'action'|'sync';envelope?:ActionEnvelope}
  | {type:'host-status';online:boolean}
  | {type:'snapshot';room:RoomView;requestId?:string}
+ | {type:'room-closed';code:string;closedAt:number}
  | {type:'ack';requestId:string;result:ActionReply}
  | {type:'error';message:string;requestId?:string};

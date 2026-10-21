@@ -5,6 +5,7 @@ import type { ConnectionState, RoomConnection } from './network.js';
 
 const lockName = (code: string) => `magical-athlete:authority:${code}`;
 const HOST_OFFLINE = '计算房主网页离线，等待其返回。';
+const ROOM_CLOSED = '房间已解散，请创建或加入其他房间。';
 const PING_INTERVAL_MS = 10_000;
 const PONG_TIMEOUT_MS = 25_000;
 
@@ -17,7 +18,7 @@ export async function prepareBrowserRoom(meta: RelayMetadata): Promise<void> {
   });
 }
 
-interface AwaitingReply { resolve: (reply: ActionReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }
+interface AwaitingReply { resolve: (reply: ActionReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>; closing: boolean }
 
 /** Relay transport plus the creator's exclusively locked, durable browser authority. */
 export class BrowserRelayConnection implements RoomConnection {
@@ -25,6 +26,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private generation = 0;
   private disposed = false;
   private blocked = false;
+  private roomClosed = false;
   private authenticated = false;
   private synchronized = false;
   private syncRequestId: string | null = null;
@@ -46,7 +48,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private replies = new Map<string, AwaitingReply>();
   private upkeep: ReturnType<typeof setInterval>;
   private readonly offline = () => {
-    if (this.disposed || this.blocked) return;
+    if (this.disposed || this.blocked || this.roomClosed) return;
     this.generation++;
     this.authenticated = false; this.synchronized = false; this.authorityRole = false;
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
@@ -54,13 +56,13 @@ export class BrowserRelayConnection implements RoomConnection {
     this.rejectReplies('网络已断开，恢复后将重新同步。');
     this.onStatus('offline', '网络已断开，恢复后将重新同步。');
   };
-  private readonly online = () => { if (!this.disposed && !this.blocked) this.open(!!this.authority); };
+  private readonly online = () => { if (!this.disposed && !this.blocked && !this.roomClosed) this.open(!!this.authority); };
 
   constructor(private identity: Identity, private onSnapshot: (room: RoomView) => void, private onStatus: (status: ConnectionState, message?: string) => void) {
     window.addEventListener('offline', this.offline);
     window.addEventListener('online', this.online);
     this.upkeep = setInterval(() => {
-      if (this.disposed || this.blocked) return;
+      if (this.disposed || this.blocked || this.roomClosed) return;
       if (this.authenticated && this.ws?.readyState === WebSocket.OPEN) {
         const now = Date.now();
         if (now - this.lastPongAt >= PONG_TIMEOUT_MS) {
@@ -80,9 +82,9 @@ export class BrowserRelayConnection implements RoomConnection {
     }, 1000);
     this.open(false);
   }
-  get connected() { return !this.disposed && !this.blocked && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
+  get connected() { return !this.disposed && !this.blocked && !this.roomClosed && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
   connect() {
-    if (this.disposed) return;
+    if (this.disposed || this.roomClosed) return;
     this.blocked = false; this.unavailableAuthority = false;
     if (this.ws?.readyState === WebSocket.OPEN) { this.emit('sync'); void this.tryAuthority(); }
     else this.open(!!this.authority);
@@ -96,7 +98,7 @@ export class BrowserRelayConnection implements RoomConnection {
     clearInterval(this.upkeep); this.ws?.close(1000, 'page closed'); this.ws = null;
     this.rejectReplies('页面已断开连接。'); this.releaseLock?.();
   }
-  emit(event: 'sync') { if (event === 'sync' && this.authenticated) { this.syncRequestId = crypto.randomUUID(); this.send({ type: 'sync', requestId: this.syncRequestId }); } }
+  emit(event: 'sync') { if (event === 'sync' && this.authenticated && !this.roomClosed) { this.syncRequestId = crypto.randomUUID(); this.send({ type: 'sync', requestId: this.syncRequestId }); } }
   async request(envelope: ActionEnvelope): Promise<ActionReply> {
     let current = envelope;
     for (let attempt = 0; ; attempt++) {
@@ -107,7 +109,7 @@ export class BrowserRelayConnection implements RoomConnection {
       // a new id is required because the rejected id already has a receipt.
       const room = this.latestRoom;
       if (current.action.type !== 'ready' || reply.ok || reply.error !== '画面已更新，请同步后重试。' || attempt >= 2 ||
-          reply.version === undefined || reply.version <= current.expectedVersion || !room || room.phase !== 'lobby' || room.version < reply.version) return reply;
+          reply.version === undefined || reply.version <= current.expectedVersion || !room || room.closedAt || room.phase !== 'lobby' || room.version < reply.version) return reply;
       current = { actionId: crypto.randomUUID(), expectedVersion: room.version, action: current.action };
     }
   }
@@ -115,8 +117,8 @@ export class BrowserRelayConnection implements RoomConnection {
     if (!this.connected) return Promise.reject(Error(this.authorityOnline ? '连接已中断，正在重新同步。' : HOST_OFFLINE));
     const requestId = crypto.randomUUID();
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { this.replies.delete(requestId); reject(Error('操作确认超时。')); }, 6500);
-      this.replies.set(requestId, { resolve, reject, timer });
+      const timer = setTimeout(() => { this.replies.delete(requestId); if (this.roomClosed && envelope.action.type === 'close') resolve({ ok: true }); else reject(Error('操作确认超时。')); }, 6500);
+      this.replies.set(requestId, { resolve, reject, timer, closing: envelope.action.type === 'close' });
       if (!this.send({ type: 'action', requestId, envelope })) { clearTimeout(timer); this.replies.delete(requestId); reject(Error('连接已中断。')); }
     });
   }
@@ -125,7 +127,7 @@ export class BrowserRelayConnection implements RoomConnection {
     this.ws.send(JSON.stringify(message)); return true;
   }
   private open(authority: boolean) {
-    if (this.disposed || this.blocked) return;
+    if (this.disposed || this.blocked || this.roomClosed) return;
     if (!navigator.onLine) { this.onStatus('offline', '网络已断开，恢复后将重新同步。'); return; }
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     const generation = ++this.generation;
@@ -145,6 +147,7 @@ export class BrowserRelayConnection implements RoomConnection {
     ws.addEventListener('error', () => { if (generation === this.generation && !this.disposed) this.onStatus('offline', '与联机中继的连接暂时中断，正在重连。'); });
     ws.addEventListener('close', event => {
       if (generation !== this.generation || this.disposed) return;
+      if (event.code === 4410 || this.roomClosed) { this.finishClosed(); return; }
       this.authenticated = false; this.synchronized = false; this.authorityRole = false; this.rejectReplies('连接已中断。');
       if ([4401, 4404, 4409, 4429].includes(event.code)) {
         this.blocked = true; this.releaseLock?.();
@@ -159,7 +162,9 @@ export class BrowserRelayConnection implements RoomConnection {
     });
   }
   private receive(message: RelayServerMessage) {
-    if (message.type === 'auth-ok') {
+    if (message.type === 'room-closed') {
+      if (message.code === this.identity.roomCode) this.finishClosed();
+    } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
       this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
@@ -185,6 +190,7 @@ export class BrowserRelayConnection implements RoomConnection {
       if (snapshotRequestId && snapshotRequestId === this.syncRequestId) this.synchronized = true;
       this.latestRoom = { ...message.room, hosting: 'browser', authorityId: this.metadata?.authorityId, authorityOnline: this.authorityOnline };
       this.onSnapshot(this.latestRoom);
+      if (message.room.closedAt) { this.roomClosed = true; this.onStatus('closed', ROOM_CLOSED); return; }
       this.reportStatus();
     } else if (message.type === 'ack') {
       const pending = this.replies.get(message.requestId); if (!pending) return;
@@ -212,11 +218,12 @@ export class BrowserRelayConnection implements RoomConnection {
     this.ws.send('ping'); this.lastPingAt = now;
   }
   private reportStatus() {
+    if (this.roomClosed) { this.onStatus('closed', ROOM_CLOSED); return; }
     this.onStatus(!this.authorityOnline ? 'offline' : this.synchronized ? 'online' : 'connecting', !this.authorityOnline ? HOST_OFFLINE : this.synchronized ? undefined : '正在同步已保存的最新对局…');
     if (this.latestRoom && this.latestRoom.authorityOnline !== this.authorityOnline) { this.latestRoom = { ...this.latestRoom, authorityOnline: this.authorityOnline }; this.onSnapshot(this.latestRoom); }
   }
   private enqueueHost(operation: () => Promise<void>) {
-    this.hostQueue = this.hostQueue.then(async () => { if (!this.disposed && !this.blocked && this.authority) await operation(); }).catch(error => this.fail(error instanceof Error ? error.message : '计算存档失败，请回到原计算房主页面。'));
+    this.hostQueue = this.hostQueue.then(async () => { if (!this.disposed && !this.blocked && !this.roomClosed && this.authority) await operation(); }).catch(error => this.fail(error instanceof Error ? error.message : '计算存档失败，请回到原计算房主页面。'));
   }
   private deliver(playerId: string, requestId?: string, result?: ActionReply) {
     if (!this.authorityRole || !this.authority) return;
@@ -253,5 +260,12 @@ export class BrowserRelayConnection implements RoomConnection {
     finally { this.tryingLock = false; }
   }
   private rejectReplies(message: string) { for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
+  private finishClosed() {
+    this.roomClosed = true;
+    for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }
+    this.replies.clear();
+    this.disconnect();
+    this.onStatus('closed', ROOM_CLOSED);
+  }
   private fail(message: string) { this.blocked = true; this.authenticated = false; this.authorityRole = false; this.onStatus('error', message); this.ws?.close(1011, 'authority unavailable'); this.releaseLock?.(); this.rejectReplies(message); }
 }

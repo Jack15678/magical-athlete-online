@@ -140,6 +140,7 @@ export class BrowserAuthority {
         if(prior){save(record,prior.request===request?{...prior.result,duplicate:true}:{ok:false,error:'同一操作编号不能用于不同操作。',version:record.room.version});return;}
         let result:ActionReply;let next=record;
         if(!record.room.game.players.some(p=>p.id===playerId))result={ok:false,error:'你不在这个房间的参赛席位中。',version:record.room.version};
+        else if(record.room.closedAt!==undefined)result={ok:false,error:'房间已解散，请创建或加入其他房间。',version:record.room.version};
         else if(record.room.version!==envelope.expectedVersion)result={ok:false,error:'画面已更新，请同步后重试。',version:record.room.version};
         else { try {
           const room=reduceRoomAction(record.room,playerId,envelope.action,{now:this.now(),rematchSeed:envelope.action.type==='rematch'?this.seed():0,automatic});
@@ -162,8 +163,10 @@ export class BrowserAuthority {
     return this.serial(async() => {
       if(!this.meta.members.some(m=>m.id===this.meta.authorityId&&m.connected))return false;
       const cached=this.record.room;
+      if(cached.closedAt!==undefined)return false;
       if(!cached.game.flags.continuation&&(cached.deadline===null||cached.deadline>now))return false;
       return this.commit<boolean>((record,receipts,save) => {
+        if(record.room.closedAt!==undefined){save(record,false);return;}
         const continuation=!!record.room.game.flags.continuation;
         if(!continuation && (record.room.deadline===null||record.room.deadline>now)){save(record,false);return;}
         const next=automaticAction(record.room.game);

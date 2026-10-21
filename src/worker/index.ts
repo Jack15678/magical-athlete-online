@@ -9,6 +9,8 @@ interface RoomRecord {
   code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number;
   phase:Phase; createdAt:number; expiresAt:number; members:StoredMember[];
   joiningLockId?:string;
+  pendingClose?:{actorId:string;requestId:string;duplicateRequestIds?:string[];envelope:ActionEnvelope};
+  closedAt?:number;
 }
 interface Connection {
   connectionId:string; acceptedAt:number; playerId?:string; authority?:boolean; authorityLeaseAt?:number;
@@ -21,6 +23,7 @@ const PHASES = new Set<Phase>(['lobby','draft','selection','race','results','fin
 const AUTH_TIMEOUT_MS = 10_000;
 const AUTHORITY_LEASE_MS = 35_000;
 const ROOM_TTL_MS = 30 * 86_400_000;
+const ROOM_CLOSED_MESSAGE = '房间已解散，请创建或加入其他房间。';
 const CLIENT_BYTES = 8_192;
 const HOST_BYTES = 262_144;
 const codeAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -68,7 +71,7 @@ function actionEnvelope(value:unknown):value is ActionEnvelope {
   const a=value.action;
   switch(a.type){
     case 'ready':return only(a,['type','ready'])&&typeof a.ready==='boolean';
-    case 'start':case 'roll':case 'next':case 'rematch':return only(a,['type']);
+    case 'start':case 'roll':case 'next':case 'rematch':case 'close':return only(a,['type']);
     case 'draft':return only(a,['type','characterId'])&&textId(a.characterId,50);
     case 'select':return only(a,['type','characterIds'])&&Array.isArray(a.characterIds)&&a.characterIds.length>=1&&a.characterIds.length<=2&&a.characterIds.every(id=>textId(id,50));
     case 'choose':return only(a,['type','choiceId','optionId'])&&textId(a.choiceId)&&textId(a.optionId);
@@ -144,6 +147,7 @@ export class RoomRelay extends DurableObject<Env> {
     this.notify({type:'roster',meta:this.metadata()});this.notify({type:'host-status',online:false});
   }
   private authority():WebSocket|undefined {
+    if(this.record?.closedAt!==undefined)return undefined;
     const socket=this.sockets().find(socket=>this.attachment(socket)?.authority===true);
     if(socket&&this.authorityDeadline(socket,this.attachment(socket)!)<=Date.now()){
       this.retireAuthority(socket,4408,'主持网页心跳已超时，等待重连');return undefined;
@@ -161,12 +165,30 @@ export class RoomRelay extends DurableObject<Env> {
     const room=this.record!;
     return {code:room.code,version:1,hostId:room.adminHostId,selfId:playerId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,deadline:null,phase:'lobby',round:0,track:'mild',players:this.metadata().members.map(p=>({...p,color:PLAYER_COLORS[p.seat]!,ready:false,score:0,used:[],handCount:0,selected:false,...(p.id===playerId?{hand:[],selection:[]}:{})})),racers:[],logs:[],results:[],rulesStatus:RULES_STATUS,hosting:'browser',authorityId:room.authorityId,authorityOnline:!!this.authority()};
   }
-  private decorate(room:RoomView):RoomView {return {...room,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:!!this.authority()};}
+  private decorate(room:RoomView):RoomView {return {...room,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};}
+  private closedNotice():RelayServerMessage {return {type:'room-closed',code:this.record!.code,closedAt:this.record!.closedAt!};}
+  private stopClosedConnections():void {
+    const notice=this.closedNotice();
+    for(const socket of this.sockets()){
+      this.send(socket,notice);
+      const state=this.attachment(socket);if(state){delete state.playerId;state.authority=false;socket.serializeAttachment(state);}
+      try{socket.close(4410,ROOM_CLOSED_MESSAGE);}catch{}
+    }
+  }
+  private closedUpgrade():Response {
+    // Browsers cannot read an HTTP 410 WebSocket handshake failure. Complete
+    // only the transport handshake so returning players receive the tombstone.
+    const pair=new WebSocketPair(),[client,server]=Object.values(pair) as [WebSocket,WebSocket],now=Date.now();
+    this.ctx.acceptWebSocket(server);server.serializeAttachment({connectionId:crypto.randomUUID(),acceptedAt:now,windowAt:now,count:0} satisfies Connection);
+    this.send(server,this.closedNotice());server.close(4410,ROOM_CLOSED_MESSAGE);
+    return new Response(null,{status:101,webSocket:client});
+  }
   private async valid():Promise<RoomRecord> {
     if(!this.record||this.record.expiresAt<=Date.now()){
       if(this.record)await this.expire();
       throw new HttpError(404,'房间不存在或已过期，请检查房间码。');
     }
+    if(this.record.closedAt!==undefined)throw new HttpError(410,ROOM_CLOSED_MESSAGE);
     return this.record;
   }
   private async save(next:RoomRecord):Promise<void> {await this.ctx.storage.put('room',next);this.record=next;}
@@ -188,8 +210,10 @@ export class RoomRelay extends DurableObject<Env> {
           this.record=created;
           return json({identity:{roomCode:code,playerId:player.id,token:secret},room:this.view(player.id),meta:this.metadata()} satisfies RelayJoinReply,201);
         }
+        if(operation==='ws'&&request.headers.get('Upgrade')?.toLowerCase()==='websocket'&&this.record?.code===code&&this.record.closedAt!==undefined&&this.record.expiresAt>Date.now())return this.closedUpgrade();
         const room=await this.valid();if(room.code!==code)throw new HttpError(404,'房间不存在。');
         if(operation==='join'&&request.method==='POST'){
+          if(room.pendingClose)throw new HttpError(409,'房间正在解散，请等待确认。');
           if(room.phase!=='lobby'||room.joiningLockId)throw new HttpError(409,'比赛已经开始或正在开始，席位已锁定。原玩家请使用原浏览器重连。');
           if(!this.authority())throw new HttpError(409,'主持网页暂时离线，请等房主回到游戏后再加入。');
           if(room.members.length>=room.maxPlayers)throw new HttpError(409,'房间已满。');
@@ -254,6 +278,10 @@ export class RoomRelay extends DurableObject<Env> {
           const snapshot=this.snapshots.get(member.id)??await this.ctx.storage.get<RoomView>('view:'+member.id);
           if(snapshot){this.snapshots.set(member.id,snapshot);this.send(socket,{type:'snapshot',room:this.decorate(snapshot)});}
           this.notify({type:'roster',meta:this.metadata()});this.notify({type:'host-status',online:!!this.authority()});
+          // The browser may already have committed close while the relay's
+          // tombstone write/ack failed. Replay the exact durable intent so its
+          // existing receipt can finish closure without creating a new action.
+          if(connection.authority&&this.record?.pendingClose){const pending=this.record.pendingClose;this.send(socket,{type:'request',playerId:pending.actorId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});}
           return;
         }
         if(!connection.playerId){socket.close(4401,'请先认证');return;}
@@ -268,11 +296,34 @@ export class RoomRelay extends DurableObject<Env> {
             if(!object(parsed.room)||parsed.room.code!==room.code||parsed.room.selfId!==parsed.to||parsed.room.phase!==parsed.phase||!Number.isSafeInteger(parsed.room.version)||(parsed.room.version as number)<1||!Array.isArray(parsed.room.players)||parsed.room.players.length>8)throw Error('视图不属于目标玩家或房间。');
             snapshot=parsed.room as unknown as RoomView;
           }
+          if(snapshot?.closedAt!==undefined){
+            if(!Number.isSafeInteger(snapshot.closedAt)||snapshot.closedAt<0)throw Error('解散时间格式不正确。');
+            const pending=room.pendingClose;
+            // An initial closed projection during recovery must wait for the
+            // replayed receipt. Authority status alone never authorizes close.
+            const closeRequestIds=pending?[pending.requestId,...(pending.duplicateRequestIds??[])]:[];
+            if(!pending||pending.actorId!==room.adminHostId||parsed.to!==pending.actorId||!closeRequestIds.includes(parsed.requestId as string)||!parsed.result?.ok)return;
+            const closed:RoomRecord={...room,closedAt:snapshot.closedAt,phase:parsed.phase,expiresAt:Date.now()+ROOM_TTL_MS};
+            delete closed.pendingClose;delete closed.joiningLockId;
+            await this.ctx.storage.transaction(async txn=>{
+              await txn.put('room',closed);
+              await txn.delete(room.members.map(member=>'view:'+member.id));
+              await txn.setAlarm(closed.expiresAt);
+            });
+            this.record=closed;this.snapshots.clear();
+            for(const target of this.sockets())if(this.attachment(target)?.playerId===pending.actorId){
+              for(const closeRequestId of closeRequestIds)this.send(target,{type:'ack',requestId:closeRequestId,result:parsed.result as ActionReply});
+              this.send(target,{type:'snapshot',room:this.decorate(snapshot),requestId:pending.requestId});
+            }
+            this.stopClosedConnections();return;
+          }
           const releaseAdmission=!!room.joiningLockId&&(parsed.phase!=='lobby'||(parsed.requestId===room.joiningLockId&&parsed.result!==undefined));
-          const metadataChanged=room.phase!==parsed.phase||room.adminHostId!==parsed.adminHostId||releaseAdmission;
+          const releaseClose=!!room.pendingClose&&parsed.to===room.pendingClose.actorId&&[room.pendingClose.requestId,...(room.pendingClose.duplicateRequestIds??[])].includes(parsed.requestId as string)&&parsed.result?.ok===false;
+          const metadataChanged=room.phase!==parsed.phase||room.adminHostId!==parsed.adminHostId||releaseAdmission||releaseClose;
           const updated={...room,phase:parsed.phase,adminHostId:parsed.adminHostId};
           // An unrelated stale lobby snapshot must not reopen admission while start is in flight.
           if(releaseAdmission)delete updated.joiningLockId;
+          if(releaseClose)delete updated.pendingClose;
           const previous=snapshot?this.snapshots.get(parsed.to):undefined;
           const snapshotChanged=!!snapshot&&(!previous||JSON.stringify(previous)!==JSON.stringify(snapshot));
           if(metadataChanged||snapshotChanged)await this.ctx.storage.transaction(async txn=>{
@@ -283,7 +334,10 @@ export class RoomRelay extends DurableObject<Env> {
           if(snapshot)this.snapshots.set(parsed.to,snapshot);
           for(const target of this.sockets())if(this.attachment(target)?.playerId===parsed.to){
             if(snapshot)this.send(target,{type:'snapshot',room:this.decorate(snapshot),...(parsed.requestId?{requestId:parsed.requestId as string}:{})});
-            if(parsed.requestId&&parsed.result)this.send(target,{type:'ack',requestId:parsed.requestId as string,result:parsed.result as ActionReply});
+            if(parsed.requestId&&parsed.result){
+              const replies=releaseClose?[room.pendingClose!.requestId,...(room.pendingClose!.duplicateRequestIds??[])]:[parsed.requestId as string];
+              for(const replyId of replies)this.send(target,{type:'ack',requestId:replyId,result:parsed.result as ActionReply});
+            }
           }
           if(metadataChanged)this.notify({type:'roster',meta:this.metadata()});
           return;
@@ -292,10 +346,25 @@ export class RoomRelay extends DurableObject<Env> {
         if(!host){this.send(socket,{type:'host-status',online:false});throw Error('主持网页离线，游戏已暂停。请等待房主回来。');}
         if(parsed.type==='sync'){
           if(!only(parsed,['type','requestId'])||(parsed.requestId!==undefined&&!textId(parsed.requestId)))throw Error('同步请求格式不正确。');
+          if(room.pendingClose){
+            const pending=room.pendingClose;
+            this.send(host,{type:'request',playerId:pending.actorId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});return;
+          }
           this.send(host,{type:'request',playerId:connection.playerId,requestId:requestId??crypto.randomUUID(),operation:'sync'});return;
         }
         if(parsed.type==='action'){
           if(!only(parsed,['type','requestId','envelope'])||!requestId||!actionEnvelope(parsed.envelope))throw Error('操作格式不正确。');
+          if(parsed.envelope.action.type==='close'){
+            if(connection.playerId!==room.adminHostId)throw Error('只有当前管理房主能解散房间。');
+            if(room.pendingClose&&(room.pendingClose.actorId!==connection.playerId||room.pendingClose.envelope.actionId!==parsed.envelope.actionId))throw Error('房间正在解散，请等待确认。');
+            if(room.pendingClose){
+              const aliases=room.pendingClose.duplicateRequestIds??[];
+              if(requestId!==room.pendingClose.requestId&&!aliases.includes(requestId)){
+                if(aliases.length>=8)throw Error('解散请求正在确认，请等待结果或重新连接。');
+                await this.save({...room,pendingClose:{...room.pendingClose,duplicateRequestIds:[...aliases,requestId]}});
+              }
+            } else await this.save({...room,pendingClose:{actorId:connection.playerId,requestId,envelope:parsed.envelope}});
+          } else if(room.pendingClose)throw Error('房间正在解散，请等待确认。');
           if(parsed.envelope.action.type==='start'&&room.phase==='lobby'&&connection.playerId===room.adminHostId){
             if(room.joiningLockId&&room.joiningLockId!==requestId)throw Error('比赛正在开始，请等待结果。');
             await this.save({...room,joiningLockId:requestId});
@@ -303,7 +372,10 @@ export class RoomRelay extends DurableObject<Env> {
           this.send(host,{type:'request',playerId:connection.playerId,requestId,operation:'action',envelope:parsed.envelope});return;
         }
         throw Error('不支持的消息类型。');
-      } catch(error){this.send(socket,{type:'error',message:error instanceof HttpError?error.message:error instanceof Error?error.message:'消息处理失败，请重试。',...(requestId?{requestId}:{})});if(error instanceof HttpError&&error.status===404)try{socket.close(4404,'房间已失效');}catch{}}
+      } catch(error){
+        if(error instanceof HttpError&&error.status===410){if(socket.readyState===WebSocket.OPEN){this.send(socket,this.closedNotice());socket.close(4410,ROOM_CLOSED_MESSAGE);}return;}
+        this.send(socket,{type:'error',message:error instanceof HttpError?error.message:error instanceof Error?error.message:'消息处理失败，请重试。',...(requestId?{requestId}:{})});if(error instanceof HttpError&&error.status===404)try{socket.close(4404,'房间已失效');}catch{}
+      }
     });
   }
   async webSocketClose(socket:WebSocket,code:number,reason:string,wasClean:boolean):Promise<void>{
@@ -311,7 +383,7 @@ export class RoomRelay extends DurableObject<Env> {
       const state=this.attachment(socket),wasMember=!!state?.playerId,wasAuthority=!!state?.authority;
       if(state){delete state.playerId;state.authority=false;try{socket.serializeAttachment(state);}catch{}}
       try{socket.close(code,reason);}catch{}
-      if(wasMember&&this.record){this.notify({type:'roster',meta:this.metadata()});if(wasAuthority)this.notify({type:'host-status',online:!!this.authority()});}
+      if(wasMember&&this.record?.closedAt===undefined&&this.record){this.notify({type:'roster',meta:this.metadata()});if(wasAuthority)this.notify({type:'host-status',online:!!this.authority()});}
     });
   }
   async webSocketError(socket:WebSocket):Promise<void>{await this.webSocketClose(socket,1011,'连接中断',false);}
@@ -320,6 +392,7 @@ export class RoomRelay extends DurableObject<Env> {
     await this.run(async()=>{
       if(!this.record)return;
       const now=Date.now();if(this.record.expiresAt<=now){await this.expire();return;}
+      if(this.record.closedAt!==undefined){this.stopClosedConnections();await this.ctx.storage.setAlarm(this.record.expiresAt);return;}
       let next=this.record.expiresAt;
       for(const socket of this.sockets()){
         const state=this.attachment(socket);if(!state)continue;

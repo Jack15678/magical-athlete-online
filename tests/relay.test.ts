@@ -27,6 +27,7 @@ class Storage {
   values=new Map<string,unknown>();alarmAt:number|null=null;failPut?:string;failAlarm=false;
   async get<T>(key:string):Promise<T|undefined>{return structuredClone(this.values.get(key)) as T|undefined;}
   async put(key:string,value:unknown){if(this.failPut===key){this.failPut=undefined;throw Error('simulated storage write failure');}this.values.set(key,structuredClone(value));}
+  async delete(keys:string|string[]){let removed=0;for(const key of Array.isArray(keys)?keys:[keys])if(this.values.delete(key))removed++;return removed;}
   async getAlarm(){return this.alarmAt;}
   async setAlarm(at:number){if(this.failAlarm){this.failAlarm=false;throw Error('simulated alarm write failure');}this.alarmAt=at;}
   async deleteAlarm(){this.alarmAt=null;}
@@ -61,7 +62,7 @@ async function join(env:Awaited<ReturnType<typeof create>>){
   const response=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:JSON.stringify({name:'同名'})}));
   assert.equal(response.status,201);return await response.json() as RelayJoinReply;
 }
-const act=(type:'start'|'roll'='roll'):ActionEnvelope=>({actionId:crypto.randomUUID(),expectedVersion:1,action:{type}});
+const act=(type:'start'|'roll'|'close'='roll'):ActionEnvelope=>({actionId:crypto.randomUUID(),expectedVersion:1,action:{type}});
 async function deliver(env:Awaited<ReturnType<typeof create>>,host:Socket,to:string,view:RoomView,requestId?:string){
   await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to,room:view,phase:view.phase,adminHostId:env.created.identity.playerId,...(requestId?{requestId,result:{ok:true,version:view.version}}:{})}));
 }
@@ -187,4 +188,106 @@ test('relay alarm storage failure cannot leave an authority online with an ungua
   socket.clear();host.lastAutoResponseAt=new Date();env.ctx.storage.failAlarm=true;
   await assert.rejects(env.relay.alarm(),/simulated alarm write failure/);
   assert.equal(host.closeCode,1013);assert.equal(socket.sent.find(m=>m.type==='host-status').online,false);
+});
+
+async function closeIntent(env:Awaited<ReturnType<typeof create>>,actor:Socket,requestId='close-room',envelope=act('close')){
+  await env.relay.webSocketMessage(actor,JSON.stringify({type:'action',requestId,envelope}));return {requestId,envelope};
+}
+for(const phase of ['lobby','race'] as const)test(`relay close in ${phase} commits a tombstone before ack and closes every identity`,async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity),viewer=await authenticate(env);
+  await deliver(env,host,guest.identity.playerId,{...guest.room,phase,version:2});
+  host.clear();peer.clear();viewer.clear();await closeIntent(env,host);
+  const closedAt=Date.now(),closedView={...env.created.room,phase,version:3,closedAt};
+  await deliver(env,host,env.created.identity.playerId,closedView,'close-room');
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.closedAt,closedAt);assert.equal(stored.pendingClose,undefined);
+  assert.equal(await env.ctx.storage.get('view:'+guest.identity.playerId),undefined);
+  assert.ok(stored.expiresAt>=closedAt+30*86_400_000);assert.equal(env.ctx.storage.alarmAt,stored.expiresAt);
+  for(const socket of [host,peer,viewer]){assert.equal(socket.closeCode,4410);assert.equal(socket.sent.find(m=>m.type==='room-closed').closedAt,closedAt);}
+  const ack=host.sent.findIndex(m=>m.type==='ack');assert.ok(ack>=0);assert.equal(host.sent[ack].result.ok,true);
+  assert.ok(ack<host.sent.findIndex(m=>m.type==='room-closed'));
+  assert.equal(host.sent.find(m=>m.type==='snapshot').room.authorityOnline,false);
+  assert.ok(!peer.sent.some(m=>m.type==='ack'));
+});
+test('relay close permission follows the current management host rather than the browser authority',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:guest.identity.playerId,room:{...guest.room,hostId:guest.identity.playerId,version:2},phase:'lobby',adminHostId:guest.identity.playerId}));
+  host.clear();await closeIntent(env,host,'creator-is-not-admin');
+  assert.match(host.sent.at(-1).message,/只有当前管理房主/);assert.ok(!host.sent.some(m=>m.type==='request'));assert.equal((await env.ctx.storage.get<any>('room')).pendingClose,undefined);
+  host.clear();await closeIntent(env,peer,'admin-close');assert.equal(host.sent.find(m=>m.type==='request').playerId,guest.identity.playerId);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:guest.identity.playerId,requestId:'admin-close',result:{ok:true,version:3},room:{...guest.room,hostId:guest.identity.playerId,version:3,closedAt:Date.now()},phase:'lobby',adminHostId:guest.identity.playerId}));
+  assert.equal(peer.sent.find(m=>m.type==='ack').result.ok,true);assert.equal(peer.closeCode,4410);
+});
+test('relay close requires the exact authorized pending receipt and failed intent unlocks the room',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env);host.clear();
+  const projection={...env.created.room,version:2,closedAt:Date.now()};
+  await deliver(env,host,env.created.identity.playerId,projection,'forged-close');
+  assert.equal((await env.ctx.storage.get<any>('room')).closedAt,undefined);assert.ok(!host.sent.some(m=>m.type==='room-closed'||m.type==='ack'));
+  const intent=await closeIntent(env,host,'legitimate-close');await closeIntent(env,host,'negative-retry',intent.envelope);host.clear();
+  await deliver(env,host,env.created.identity.playerId,projection,'wrong-confirmation');
+  assert.equal((await env.ctx.storage.get<any>('room')).closedAt,undefined);assert.equal(host.readyState,1);
+  const blocked=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"等待"}'}));assert.equal(blocked.status,409);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:'legitimate-close',result:{ok:false,error:'画面已更新'},phase:'lobby',adminHostId:env.created.identity.playerId}));
+  assert.equal(host.sent.find(m=>m.type==='ack').result.ok,false);assert.equal((await env.ctx.storage.get<any>('room')).pendingClose,undefined);
+  assert.deepEqual(host.sent.filter(m=>m.type==='ack').map(m=>m.requestId).sort(),['legitimate-close','negative-retry']);
+  assert.equal((await join(env)).meta.members.length,3);assert.equal(guest.identity.roomCode,'ABC234');
+});
+test('relay close storage failures never announce success or partially delete private caches',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  await deliver(env,host,guest.identity.playerId,{...guest.room,version:2});host.clear();peer.clear();
+  env.ctx.storage.failPut='room';await closeIntent(env,host,'intent-write-fails');
+  assert.equal((await env.ctx.storage.get<any>('room')).pendingClose,undefined);assert.ok(!host.sent.some(m=>m.type==='request'));
+  const pending=await closeIntent(env,host,'close-commit-fails');host.clear();env.ctx.storage.failAlarm=true;
+  const projection={...env.created.room,version:3,closedAt:Date.now()};await deliver(env,host,env.created.identity.playerId,projection,pending.requestId);
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.closedAt,undefined);assert.equal(stored.pendingClose.requestId,pending.requestId);
+  assert.equal((await env.ctx.storage.get<any>('view:'+guest.identity.playerId)).version,2);
+  for(const socket of [host,peer]){assert.equal(socket.readyState,1);assert.ok(!socket.sent.some(m=>m.type==='room-closed'||(m.type==='ack'&&m.result.ok)));}
+  host.clear();await env.relay.webSocketMessage(host,JSON.stringify({type:'sync',requestId:'recover-failed-close'}));
+  const replay=host.sent.find(m=>m.type==='request');
+  assert.deepEqual(replay,{type:'request',playerId:env.created.identity.playerId,requestId:pending.requestId,operation:'action',envelope:pending.envelope});
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:replay.playerId,requestId:replay.requestId,result:{ok:true,duplicate:true,version:projection.version},room:projection,phase:projection.phase,adminHostId:env.created.identity.playerId}));
+  assert.equal((await env.ctx.storage.get<any>('room')).closedAt,projection.closedAt);
+  assert.ok(host.sent.some(m=>m.type==='ack'&&m.requestId===pending.requestId&&m.result.ok&&m.result.duplicate));
+  for(const socket of [host,peer]){assert.equal(socket.readyState,3);assert.ok(socket.sent.some(m=>m.type==='room-closed'&&m.closedAt===projection.closedAt));}
+});
+test('relay close survives reconstruction and returning sockets receive the explicit closed terminal state',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);await closeIntent(env,host);const closedAt=Date.now();
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,version:2,closedAt},'close-room');
+  const restored=await instance(env.ctx.storage);
+  const joining=await restored.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"回来"}'}));assert.equal(joining.status,410);assert.match((await joining.json()).error,/房间已解散/);
+  for(const message of [{type:'auth',identity:env.created.identity,authority:true},{type:'sync',requestId:'closed-sync'},{type:'action',requestId:'closed-action',envelope:act()},{type:'deliver',to:env.created.identity.playerId,room:env.created.room,phase:'lobby',adminHostId:env.created.identity.playerId}]){
+    const socket=connect(restored.ctx);await restored.relay.webSocketMessage(socket,JSON.stringify(message));assert.equal(socket.closeCode,4410);assert.equal(socket.sent.find(m=>m.type==='room-closed').closedAt,closedAt);assert.ok(!socket.sent.some(m=>m.type==='auth-ok'||m.type==='snapshot'||m.type==='ack'));
+  }
+  // Node's standard Response rejects 101; substitute only that platform response
+  // shape to exercise the real closed-upgrade handler and its queued close.
+  const NativeResponse=globalThis.Response;
+  class UpgradeResponse extends NativeResponse {constructor(value:BodyInit|null,init:ResponseInit&{webSocket?:unknown}){super(value,{...init,status:init.status===101?200:init.status});if(init.status===101){Object.defineProperty(this,'status',{value:101});Object.defineProperty(this,'webSocket',{value:init.webSocket});}}}
+  try{globalThis.Response=UpgradeResponse as typeof Response;
+    const upgrade=await restored.relay.fetch(new Request('https://room.internal/ws/ABC234',{headers:{Upgrade:'websocket'}}));assert.equal(upgrade.status,101);
+    const socket=restored.ctx.sockets.at(-1)!;assert.equal(socket.closeCode,4410);assert.equal(socket.sent[0].type,'room-closed');
+  }finally{globalThis.Response=NativeResponse;}
+});
+test('relay close replays its durable pending receipt after authority recovery before final shutdown',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  const pending=await closeIntent(env,host,'recover-close');
+  const restored={...env,...await instance(env.ctx.storage,env.ctx.sockets)},next=await authenticate(restored,env.created.identity,true);
+  const replay=next.sent.find(m=>m.type==='request'&&m.requestId===pending.requestId);assert.equal(replay.playerId,env.created.identity.playerId);assert.deepEqual(replay.envelope,pending.envelope);
+  const closedAt=Date.now();next.clear();peer.clear();
+  // Recovered BrowserAuthority may broadcast closed projections before replay.
+  await deliver(restored,next,guest.identity.playerId,{...guest.room,version:2,closedAt});assert.equal(next.readyState,1);assert.ok(!next.sent.some(m=>m.type==='error'));assert.ok(!peer.sent.some(m=>m.type==='room-closed'));
+  await restored.relay.webSocketMessage(next,JSON.stringify({type:'deliver',to:env.created.identity.playerId,requestId:pending.requestId,result:{ok:true,duplicate:true,version:2},room:{...env.created.room,version:2,closedAt},phase:'lobby',adminHostId:env.created.identity.playerId}));
+  assert.equal(next.sent.find(m=>m.type==='ack').result.duplicate,true);assert.equal((await env.ctx.storage.get<any>('room')).closedAt,closedAt);assert.equal(next.closeCode,4410);assert.equal(peer.closeCode,4410);
+});
+test('relay close retransmission preserves the original confirmation and rejects a conflicting action payload',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),first=await closeIntent(env,host,'close-original');
+  await closeIntent(env,host,'close-retry',first.envelope);
+  let stored=await env.ctx.storage.get<any>('room');assert.equal(stored.pendingClose.requestId,'close-original');assert.deepEqual(stored.pendingClose.duplicateRequestIds,['close-retry']);
+  const forwarded=host.sent.filter(m=>m.type==='request').length;
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'conflicting-payload',envelope:{...first.envelope,action:{type:'ready',ready:true}}}));
+  assert.match(host.sent.at(-1).message,/房间正在解散/);assert.equal(host.sent.filter(m=>m.type==='request').length,forwarded);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'extra-close-field',envelope:{...first.envelope,action:{type:'close',ready:true}}}));
+  assert.match(host.sent.at(-1).message,/操作格式/);assert.equal(host.sent.filter(m=>m.type==='request').length,forwarded);
+  host.clear();await deliver(env,host,env.created.identity.playerId,{...env.created.room,version:2,closedAt:Date.now()},'close-original');
+  stored=await env.ctx.storage.get<any>('room');assert.ok(stored.closedAt!==undefined);
+  assert.deepEqual(host.sent.filter(m=>m.type==='ack').map(m=>m.requestId).sort(),['close-original','close-retry']);
+  assert.ok(host.sent.filter(m=>m.type==='ack').every(m=>m.result.ok));assert.equal(host.closeCode,4410);
 });
