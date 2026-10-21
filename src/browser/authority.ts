@@ -1,7 +1,7 @@
 import { publicEventBatch } from '../shared/public-events.js';
 import { immediateRoomAction } from '../shared/automation.js';
 import { personalRoom, roomExpiry } from '../shared/room-lifecycle.js';
-import { automaticAction } from '../engine/index.js';
+import { automaticRoomAction as automaticAction } from '../engine/runtime.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
 import type { ActionEnvelope, ActionReply, Room, RoomView } from '../shared/types.js';
 import type { RelayMetadata } from '../shared/relay.js';

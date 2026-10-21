@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "nemesis",
+      "node": "toy_nemesis",
+      "url": "/models/second-wind/nemesis.glb",
+      "avatar": "/models/second-wind/avatars/nemesis.png",
+      "bytes": 32284,
+      "triangles": 2496,
+      "draws": 3,
+      "bounds": [
+        0.53996,
+        0.98,
+        0.46014
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Pale classical statue, curled marble hair, draped toga with front/back folds, upright sword and open expression.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Nemesis.png",
+      "editableSource": "assets/blender/second-wind/nemesis.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 32284,
+  "totalTriangles": 2496,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "cheatah",
+      "node": "toy_cheatah",
+      "url": "/models/second-wind/cheatah.glb",
+      "avatar": "/models/second-wind/avatars/cheatah.png",
+      "bytes": 47176,
+      "triangles": 4480,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.80444,
+        0.40718
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange spotted cheetah in a green spotted sweater, die in left paw, muzzle and curled tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Cheatah.png",
+      "editableSource": "assets/blender/second-wind/cheatah.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 47176,
+  "totalTriangles": 4480,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

@@ -1,4 +1,10 @@
 export type GameMode = 'multiplayer' | 'practice' | 'ai';
+export type CharacterPool = 'original' | 'second-wind' | 'mixed';
+export interface ChatSend { clientMessageId: string; text: string; }
+export interface ChatMessage { id: number; clientMessageId?: string; senderId?: string; senderName: string; text: string; sentAt: number; kind: 'player' | 'system'; }
+export interface ChatReply { ok: boolean; message?: ChatMessage; duplicate?: boolean; error?: string; }
+export interface RenameReply { ok: boolean; name?: string; remaining?: number; duplicate?: boolean; error?: string; }
+export interface ChatState { messages: ChatMessage[]; latestId: number; windows: Record<string, number[]>; }
 export type RoomRole = 'player' | 'spectator';
 export interface Spectator { id: string; name: string; connected: boolean; }
 export interface RoomSummary { code: string; hostName: string; phase: Phase; playerCount: number; maxPlayers: number; spectatorCount: number; createdAt: number; expiresAt: number; authorityOnline: boolean; mode?: GameMode; }
@@ -33,3 +39,11 @@ export interface Room { spectators?: Spectator[]; }
 export interface Room { ownerId?: string; }
 export interface RoomView { ownerId?: string; }
 export interface RoomView { role?: RoomRole; spectators?: Spectator[]; createdAt?: number; expiresAt?: number; }
+export interface Player { renameUsed?: boolean; renameRequestId?: string; }
+export interface GameState { characterPool?: CharacterPool; rulesVersion?: string; }
+export interface Room { chat?: ChatState; }
+export interface RoomView { characterPool?: CharacterPool; rulesVersion?: string; chat?: ChatMessage[]; chatLatestId?: number; renameRemaining?: number; }
+export interface Racer { identityPlayerId?: string; }
+
+/** Public snapshots for intermediate presentation beats, never hidden choice data. */
+export interface GameEvent { changes?: { racerId:string; playerId?:string; form?:string; mount?:string|null }[]; }

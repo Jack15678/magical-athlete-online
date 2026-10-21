@@ -73,7 +73,7 @@ async function deliver(env:Awaited<ReturnType<typeof create>>,host:Socket,to:str
 test('relay creates distinct opaque identities for duplicate names and enforces capacity',async()=>{
   const env=await create(2);await authenticate(env,env.created.identity,true);const guest=await join(env);
   assert.equal(guest.identity.token.length,43);assert.notEqual(guest.identity.playerId,env.created.identity.playerId);
-  assert.equal(guest.meta.members[0]!.name,guest.meta.members[1]!.name);
+  assert.equal(guest.meta.members[0]!.name,'同名');assert.equal(guest.meta.members[1]!.name,'同名1');
   assert.ok(!JSON.stringify(guest.meta).includes(env.created.identity.token));
   const stored=await env.ctx.storage.get<any>('room');assert.notEqual(stored.members[0].tokenHash,env.created.identity.token);assert.match(stored.members[0].tokenHash,/^[a-f0-9]{64}$/);
   const full=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"三号"}'}));assert.equal(full.status,409);
@@ -611,3 +611,85 @@ test('multiplayer owner tabs, refresh and legacy archive restoration never promo
   assert.equal(meta.ownerId,ownerId);assert.equal(meta.adminHostId,ownerId);assert.equal(meta.hostLeftAt,undefined);
   const response=await restored.relay.fetch(new Request('https://room.internal/resume-status/ABC234',{method:'POST',body:JSON.stringify(env.created.identity)}));assert.equal((await response.json()).ownerId,ownerId);
 }));
+
+test('relay chat is authenticated, idempotent, isolated, persisted, rate-limited and available while authority is offline',async()=>controlledClock(async clock=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  const elsewhere=await create(),other=await authenticate(elsewhere,elsewhere.created.identity,true);other.clear();host.clear();peer.clear();
+  const send=(id:string,text='你好')=>env.relay.webSocketMessage(peer,JSON.stringify({type:'chat-send',requestId:id,clientMessageId:id,text}));
+  await send('one','<b>纯文本</b>');const accepted=peer.sent.find(message=>message.requestId==='one').result;assert.equal(accepted.ok,true);assert.equal(accepted.message.senderName,'同名1');assert.equal(accepted.message.id,1);
+  assert(host.sent.some(message=>message.type==='chat'&&message.messages[0]?.text==='<b>纯文本</b>'));assert.equal(other.sent.length,0);
+  await send('one','<b>纯文本</b>');assert.equal(peer.sent.filter(message=>message.requestId==='one').at(-1).result.duplicate,true);
+  await send('one','篡改');assert.equal(peer.sent.filter(message=>message.requestId==='one').at(-1).result.ok,false);
+  for(let i=0;i<5;i++)await send(`rate${i}`);await send('too-fast');assert.match(peer.sent.at(-1).message,/频繁/);
+  await env.relay.webSocketClose(host,1000,'离线',true);clock.now+=10_001;await send('offline');assert.equal(peer.sent.find(message=>message.requestId==='offline').result.ok,true);
+  for(let i=0;i<101;i++){clock.now+=10_001;await send(`history${i}`,`第${i}条`);}
+  const restored=await instance(env.ctx.storage,env.ctx.sockets),reconnect=connect(restored.ctx);await restored.relay.webSocketMessage(reconnect,JSON.stringify({type:'auth',identity:guest.identity}));
+  const history=reconnect.sent.find(message=>message.type==='chat');assert.equal(history.messages.length,100);assert.equal(history.messages.at(-1).text,'第100条');
+  await restored.relay.webSocketMessage(reconnect,JSON.stringify({type:'chat-send',requestId:'replay-one',clientMessageId:'one',text:'<b>纯文本</b>'}));assert.equal(reconnect.sent.at(-1).result.duplicate,true);
+  await restored.relay.webSocketMessage(reconnect,JSON.stringify({type:'chat-sync',requestId:'after',afterId:history.latestId-1}));assert.equal(reconnect.sent.at(-1).messages.length,1);
+  const invalid=connect(restored.ctx);await restored.relay.webSocketMessage(invalid,JSON.stringify({type:'chat-sync'}));assert.equal(invalid.closeCode,4401);
+}));
+
+test('relay allocates concurrent same-name joins and renames across spectators, preserves old chat and enforces once per game through reconnect',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);
+  const joined=await Promise.all([join(env),join(env),join(env)]);assert.deepEqual(joined.at(-1)!.meta.members.map(person=>person.name),['同名','同名1','同名2','同名3']);
+  const spectatorResponse=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:JSON.stringify({name:'同名',role:'spectator'})}));const spectator=await spectatorResponse.json() as RelayJoinReply;assert.equal(spectator.room.spectators![0]!.name,'同名4');
+  const peers=await Promise.all(joined.slice(0,2).map(person=>authenticate(env,person.identity)));
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,version:2,phase:'race'});
+  await env.relay.webSocketMessage(peers[0]!,JSON.stringify({type:'chat-send',requestId:'before',clientMessageId:'before',text:'旧名'}));
+  await env.relay.webSocketMessage(peers[0]!,JSON.stringify({type:'rename',requestId:'failed',name:' '}));
+  assert.equal((await env.ctx.storage.get<any>('room')).members.find((p:any)=>p.id===joined[0]!.identity.playerId).renameUsed,undefined);
+  await Promise.all(peers.map((socket,index)=>env.relay.webSocketMessage(socket,JSON.stringify({type:'rename',requestId:`rename${index}`,name:'同名4'}))));
+  const record=await env.ctx.storage.get<any>('room');assert.equal(record.members[1].name,'同名41');assert.equal(record.members[2].name,'同名42');assert.equal(new Set([...record.members,...record.spectators].map(p=>p.name)).size,5);
+  assert.equal(record.chat.messages[0].senderName,'同名1');assert.equal(record.chat.messages[1].kind,'system');
+  const restored=await instance(env.ctx.storage,env.ctx.sockets),peer=connect(restored.ctx);await restored.relay.webSocketMessage(peer,JSON.stringify({type:'auth',identity:joined[0]!.identity}));
+  assert.equal(peer.sent.find(m=>m.type==='auth-ok').meta.members[1].renameUsed,true);
+  await restored.relay.webSocketMessage(peer,JSON.stringify({type:'rename',requestId:'again',name:'其他'}));assert.match(peer.sent.at(-1).message,/本局已修改/);
+  await restored.relay.webSocketMessage(peer,JSON.stringify({type:'rename',requestId:'rename0',name:'同名4'}));assert.equal(peer.sent.at(-1).result.duplicate,true);
+  const viewer=await authenticate({...env,...restored},spectator.identity);await restored.relay.webSocketMessage(viewer,JSON.stringify({type:'rename',requestId:'spectator',name:'试试'}));assert.match(viewer.sent.at(-1).message,/真人参赛/);
+});
+
+test('relay confirmed rematch resets rename quota exactly once and keeps chat across races',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);await join(env);
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'race',version:4});
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'rename',requestId:'first-game',name:'新名'}));
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'results',version:5});assert.equal((await env.ctx.storage.get<any>('room')).members[0].renameUsed,true);
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'finished',version:6});
+  const envelope:ActionEnvelope={actionId:crypto.randomUUID(),expectedVersion:6,action:{type:'rematch'}};
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'new-game',envelope}));
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'lobby',version:7},'new-game');
+  let record=await env.ctx.storage.get<any>('room');assert.equal(record.members[0].renameUsed,false);assert.equal(record.chat.messages.length,1);
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'race',version:8});
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'rename',requestId:'second-game',name:'又改名'}));assert.equal((await env.ctx.storage.get<any>('room')).members[0].renameUsed,true);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'action',requestId:'repeat-new-game',envelope}));
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver',to:env.created.identity.playerId,phase:'race',adminHostId:env.created.identity.playerId,requestId:'repeat-new-game',result:{ok:true,version:7,duplicate:true}}));
+  record=await env.ctx.storage.get<any>('room');assert.equal(record.members[0].renameUsed,true);assert.equal(record.chat.messages.length,2);
+});
+
+test('relay chat/rename disk failures expose no success and preserve quota, then retry commits',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);
+  await deliver(env,host,env.created.identity.playerId,{...env.created.room,phase:'race',version:2});
+  env.ctx.storage.failPut='room';await env.relay.webSocketMessage(host,JSON.stringify({type:'chat-send',requestId:'fail',clientMessageId:'fail',text:'测试'}));assert.equal((await env.ctx.storage.get<any>('room')).chat,undefined);
+  env.ctx.storage.failPut='room';await env.relay.webSocketMessage(host,JSON.stringify({type:'rename',requestId:'rename-fail',name:'新名'}));assert.equal((await env.ctx.storage.get<any>('room')).members[0].renameUsed,undefined);
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'rename',requestId:'rename-fail',name:'新名'}));assert.equal(host.sent.at(-3)?.result?.ok??host.sent.find(m=>m.type==='rename-result')?.result.ok,true);
+});
+
+test('relay heals legacy duplicate display names durably without consuming manual rename quota',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true);const guest=await join(env);
+  const record=await env.ctx.storage.get<any>('room');record.members[1].name=record.members[0].name;await env.ctx.storage.put('room',record);
+  const restored=await instance(env.ctx.storage,env.ctx.sockets),reconnect=connect(restored.ctx);await restored.relay.webSocketMessage(reconnect,JSON.stringify({type:'auth',identity:guest.identity}));
+  const meta=reconnect.sent.find(message=>message.type==='auth-ok').meta;assert.deepEqual(meta.members.map((person:any)=>person.name),['同名','同名1']);assert.equal(meta.members[1].renameUsed,false);
+  assert.equal((await env.ctx.storage.get<any>('room')).members[1].name,'同名1');assert.equal(host.readyState,1);
+});
+
+test('relay closure deletes actual chat history and durable resend receipt; reconstruction cannot read them',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),id=env.created.identity.playerId;
+  await env.relay.webSocketMessage(host,JSON.stringify({type:'chat-send',requestId:'chat-before-close',clientMessageId:'close-chat',text:'正式关闭后删除'}));
+  const receiptKey=`chat-receipt:${id}:close-chat`;assert(await env.ctx.storage.get(receiptKey));assert.equal((await env.ctx.storage.get<any>('room')).chat.messages.length,1);
+  await closeIntent(env,host,'close-with-chat');await deliver(env,host,id,{...env.created.room,version:2,closedAt:Date.now()},'close-with-chat');
+  assert.deepEqual([...env.ctx.storage.values.keys()],['closed']);assert.equal(await env.ctx.storage.get(receiptKey),undefined);assert.equal(await env.ctx.storage.get('room'),undefined);
+  const restored=await instance(env.ctx.storage),socket=connect(restored.ctx);await restored.relay.webSocketMessage(socket,JSON.stringify({type:'auth',identity:env.created.identity}));
+  assert.equal(socket.closeCode,4410);assert(socket.sent.some(message=>message.type==='room-closed'));assert(!socket.sent.some(message=>message.type==='chat'||message.type==='snapshot'));
+  const status=await restored.relay.fetch(new Request('https://room.internal/resume-status/ABC234',{method:'POST',body:JSON.stringify(env.created.identity)}));assert.equal(status.status,410);
+  assert.deepEqual([...env.ctx.storage.values.keys()],['closed']);
+});

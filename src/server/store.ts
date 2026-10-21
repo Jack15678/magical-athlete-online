@@ -13,6 +13,7 @@ export class Store {
     this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;
       CREATE TABLE IF NOT EXISTS rooms(code TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS closed_rooms(code TEXT PRIMARY KEY, state TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS member_receipts(room_code TEXT NOT NULL REFERENCES rooms(code) ON DELETE CASCADE, player_id TEXT NOT NULL, kind TEXT NOT NULL, request_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(room_code,player_id,kind,request_id));
       CREATE TABLE IF NOT EXISTS identities(room_code TEXT NOT NULL REFERENCES rooms(code) ON DELETE CASCADE, player_id TEXT NOT NULL, token_hash TEXT NOT NULL, PRIMARY KEY(room_code,player_id));
       CREATE TABLE IF NOT EXISTS receipts(room_code TEXT NOT NULL REFERENCES rooms(code) ON DELETE CASCADE, player_id TEXT NOT NULL, action_id TEXT NOT NULL, request TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(room_code,player_id,action_id));`);
   }
@@ -27,6 +28,7 @@ export class Store {
       this.save(room);
       this.db.prepare('DELETE FROM identities WHERE room_code=? AND player_id=?').run(room.code,id);
       this.db.prepare('DELETE FROM receipts WHERE room_code=? AND player_id=?').run(room.code,id);
+      this.db.prepare('DELETE FROM member_receipts WHERE room_code=? AND player_id=?').run(room.code,id);
     });
   }
   delete(code: string): void { this.db.prepare('DELETE FROM rooms WHERE code=?').run(code); }
@@ -40,6 +42,13 @@ export class Store {
   }
   commitAction(room: Room, id: string, actionId: string, request: string, result: ActionReply): void {
     this.transaction(() => { this.save(room); this.db.prepare('INSERT INTO receipts VALUES(?,?,?,?,?)').run(room.code,id,actionId,request,JSON.stringify(result)); });
+  }
+  memberReceipt<T>(code:string,id:string,kind:string,requestId:string):{request:string;result:T}|undefined {
+    const row=this.db.prepare('SELECT request,result FROM member_receipts WHERE room_code=? AND player_id=? AND kind=? AND request_id=?').get(code,id,kind,requestId) as {request:string;result:string}|undefined;
+    return row&&{request:row.request,result:JSON.parse(row.result) as T};
+  }
+  commitMember(room:Room,id:string,kind:string,requestId:string,request:string,result:unknown):void {
+    this.transaction(()=>{this.save(room);this.db.prepare('INSERT INTO member_receipts VALUES(?,?,?,?,?,?)').run(room.code,id,kind,requestId,request,JSON.stringify(result));});
   }
   transaction(fn: () => void): void { this.db.exec('BEGIN IMMEDIATE'); try { fn(); this.db.exec('COMMIT'); } catch(e) { this.db.exec('ROLLBACK'); throw e; } }
   close(): void { this.db.close(); }

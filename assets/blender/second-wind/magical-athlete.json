@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "magical-athlete",
+      "node": "toy_magical-athlete",
+      "url": "/models/second-wind/magical-athlete.glb",
+      "avatar": "/models/second-wind/avatars/magical-athlete.png",
+      "bytes": 40792,
+      "triangles": 3074,
+      "draws": 6,
+      "bounds": [
+        0.59129,
+        0.98,
+        0.46218
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange wizard athlete, blue star-covered robe and tall pointed hat, violet staff and golden star details.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Magical%20Athlete.png",
+      "editableSource": "assets/blender/second-wind/magical-athlete.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 40792,
+  "totalTriangles": 3074,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

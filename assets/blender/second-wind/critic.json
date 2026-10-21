@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "critic",
+      "node": "toy_critic",
+      "url": "/models/second-wind/critic.glb",
+      "avatar": "/models/second-wind/avatars/critic.png",
+      "bytes": 40032,
+      "triangles": 3300,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.96393,
+        0.58033
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Blue turtle, tall purple shell, green jacket, chin-resting hand and cup; shell plate seams wrap onto the back.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Critic.png",
+      "editableSource": "assets/blender/second-wind/critic.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 40032,
+  "totalTriangles": 3300,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

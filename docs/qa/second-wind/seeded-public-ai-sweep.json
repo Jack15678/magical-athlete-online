@@ -1,0 +1,230 @@
+{
+  "finished": 169,
+  "paused": [
+    {
+      "pool": "second-wind",
+      "count": 2,
+      "seed": 7,
+      "round": 2,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    },
+    {
+      "pool": "second-wind",
+      "count": 3,
+      "seed": 5,
+      "round": 2,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    },
+    {
+      "pool": "second-wind",
+      "count": 3,
+      "seed": 24,
+      "round": 3,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    },
+    {
+      "pool": "mixed",
+      "count": 2,
+      "seed": 12,
+      "round": 2,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    },
+    {
+      "pool": "mixed",
+      "count": 2,
+      "seed": 26,
+      "round": 3,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    },
+    {
+      "pool": "mixed",
+      "count": 3,
+      "seed": 23,
+      "round": 2,
+      "hold": {
+        "code": "mr-dice-no-repeat",
+        "message": "六颗主骰各不相同，没有合法重复点数；官方处理待核实，已保留队列暂停本场。"
+      }
+    }
+  ],
+  "limits": [
+    {
+      "pool": "second-wind",
+      "count": 3,
+      "seed": 8,
+      "round": 4,
+      "racers": [
+        {
+          "card": "soulmate",
+          "pos": 5,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "understudy",
+          "pos": 5,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "the-hose",
+          "pos": 30,
+          "eliminated": false,
+          "finished": true
+        }
+      ]
+    },
+    {
+      "pool": "mixed",
+      "count": 3,
+      "seed": 13,
+      "round": 2,
+      "racers": [
+        {
+          "card": "critic",
+          "pos": 26,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "huge-baby",
+          "pos": 30,
+          "eliminated": false,
+          "finished": true
+        },
+        {
+          "card": "diva",
+          "pos": 5,
+          "eliminated": false,
+          "finished": false
+        }
+      ]
+    },
+    {
+      "pool": "mixed",
+      "count": 3,
+      "seed": 21,
+      "round": 2,
+      "racers": [
+        {
+          "card": "hopfrog",
+          "pos": 26,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "critic",
+          "pos": 30,
+          "eliminated": false,
+          "finished": true
+        },
+        {
+          "card": "diva",
+          "pos": 5,
+          "eliminated": false,
+          "finished": false
+        }
+      ]
+    },
+    {
+      "pool": "mixed",
+      "count": 3,
+      "seed": 28,
+      "round": 2,
+      "racers": [
+        {
+          "card": "kingtripper",
+          "pos": 26,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "le-saboteur",
+          "pos": 26,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "diva",
+          "pos": 5,
+          "eliminated": false,
+          "finished": false
+        }
+      ],
+      "pending": "kingtripper"
+    },
+    {
+      "pool": "mixed",
+      "count": 8,
+      "seed": 3,
+      "round": 3,
+      "racers": [
+        {
+          "card": "null",
+          "pos": 12,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "nepo-baby",
+          "pos": 26,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "magical-athlete",
+          "pos": 20,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "kraken",
+          "pos": 13,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "hopfrog",
+          "pos": 9,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "egg",
+          "pos": 10,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "stunner",
+          "pos": 9,
+          "eliminated": false,
+          "finished": false
+        },
+        {
+          "card": "show-off",
+          "pos": 14,
+          "eliminated": false,
+          "finished": false
+        }
+      ]
+    }
+  ],
+  "failures": [],
+  "maxActions": 1264
+}

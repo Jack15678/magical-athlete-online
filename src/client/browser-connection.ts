@@ -1,7 +1,8 @@
 import { PresentationEventClient } from './presentation-events.js';
 import { BrowserAuthority } from '../browser/authority.js';
 import type { RelayMetadata, RelayServerMessage, RelayClientMessage } from '../shared/relay.js';
-import type { ActionEnvelope, ActionReply, Identity, PublicEventBatch, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, ChatReply, ChatSend, Identity, PublicEventBatch, RenameReply, RoomView } from '../shared/types.js';
+import { CommunityFeed } from './community.js';
 import type { ConnectionState, RoomConnection } from './network.js';
 
 const lockName = (code: string) => `magical-athlete:authority:${code}`;
@@ -49,6 +50,23 @@ export class BrowserRelayConnection implements RoomConnection {
   private hostQueue: Promise<void> = Promise.resolve();
   private tickBusy = false;
   private replies = new Map<string, AwaitingReply>();
+  private community = new CommunityFeed();
+  private communityReplies = new Map<string, {resolve: (reply: ChatReply | RenameReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>}>();
+  subscribeCommunity = this.community.subscribe;
+  sendChat(message: ChatSend): Promise<ChatReply> { return this.communityRequest({type: 'chat-send', requestId: crypto.randomUUID(), ...message}) as Promise<ChatReply>; }
+  rename(request: {requestId: string; name: string}): Promise<RenameReply> { return this.communityRequest({type: 'rename', ...request}) as Promise<RenameReply>; }
+  private communityRequest(message: Extract<RelayClientMessage, {type: 'chat-send' | 'rename'}>): Promise<ChatReply | RenameReply> {
+    if (!this.authenticated || this.roomClosed || this.disposed) return Promise.reject(Error('聊天连接已中断，请等待重连。'));
+    return new Promise((resolve,reject) => {
+      const timer = setTimeout(() => { this.communityReplies.delete(message.requestId); reject(Error('尚未收到确认，请重试。')); }, 6500);
+      this.communityReplies.set(message.requestId, {resolve,reject,timer});
+      if (!this.send(message)) { clearTimeout(timer); this.communityReplies.delete(message.requestId); reject(Error('聊天连接已断开。')); }
+    });
+  }
+  private communityRoster(meta: RelayMetadata) {
+    const self = meta.members.find(member => member.id === this.identity.playerId);
+    this.community.update({name: self?.name ?? meta.spectators?.find(viewer => viewer.id === this.identity.playerId)?.name, renameRemaining: self ? self.renameUsed ? 0 : 1 : 0});
+  }
   private readonly eventReplies=new Map<string,{resolve:(batch:PublicEventBatch)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
   private readonly eventClient:PresentationEventClient;
   private upkeep: ReturnType<typeof setInterval>;
@@ -185,10 +203,19 @@ export class BrowserRelayConnection implements RoomConnection {
     });
   }
   private receive(message: RelayServerMessage) {
-    if (message.type === 'room-closed') {
+    if (message.type === 'chat') {
+      this.community.update({messages: message.messages, latestId: message.latestId});
+      const pending = message.requestId ? this.communityReplies.get(message.requestId) : undefined;
+      if (pending && message.requestId && message.result) { clearTimeout(pending.timer); this.communityReplies.delete(message.requestId); pending.resolve(message.result); }
+    } else if (message.type === 'rename-result') {
+      const pending = this.communityReplies.get(message.requestId);
+      if (message.result.ok) this.community.update({name: message.result.name, renameRemaining: message.result.remaining});
+      if (pending) { clearTimeout(pending.timer); this.communityReplies.delete(message.requestId); pending.resolve(message.result); }
+    } else if (message.type === 'room-closed') {
       if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.roomClosedMessage=message.reason==='host-away'?'房主连续离开超过30分钟，房间已关闭。':ROOM_CLOSED; this.finishClosed(); }
     } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
+      this.community.update({connected: true}); this.communityRoster(message.meta); this.send({type: 'chat-sync', afterId: 0});
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
       this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
       if (this.requestedRole && (!message.authority || !this.authority)) { this.fail('中继未确认本页的计算资格，已停止计算。'); return; }
@@ -198,6 +225,7 @@ export class BrowserRelayConnection implements RoomConnection {
       this.emit('sync');
     } else if (message.type === 'roster') {
       this.metadata = message.meta;
+      this.communityRoster(message.meta);
       if (this.authorityRole && this.authority) this.enqueueHost(async () => { await this.authority!.roster(message.meta); this.broadcast(); });
     } else if (message.type === 'host-status') {
       const wasOnline = this.authorityOnline;
@@ -221,6 +249,8 @@ export class BrowserRelayConnection implements RoomConnection {
       const pending = this.replies.get(message.requestId); if (!pending) return;
       clearTimeout(pending.timer); this.replies.delete(message.requestId); pending.resolve(message.result);
     } else if (message.type === 'error') {
+      const communityReply = message.requestId ? this.communityReplies.get(message.requestId) : undefined;
+      if (communityReply && message.requestId) { clearTimeout(communityReply.timer); this.communityReplies.delete(message.requestId); communityReply.resolve({ok:false,error:message.message}); return; }
       const eventReply=message.requestId?this.eventReplies.get(message.requestId):undefined;
       if(eventReply&&message.requestId){clearTimeout(eventReply.timer);this.eventReplies.delete(message.requestId);eventReply.reject(Error(message.message));return;}
       if (!this.authorityOnline && message.requestId === this.syncRequestId) { this.reportStatus(); return; }
@@ -291,7 +321,7 @@ export class BrowserRelayConnection implements RoomConnection {
     } catch (error) { if (!this.disposed) this.fail(error instanceof Error ? error.message : '无法取得计算页面锁。'); }
     finally { this.tryingLock = false; }
   }
-  private rejectReplies(message: string) { for(const reply of this.eventReplies?.values()??[]){clearTimeout(reply.timer);reply.reject(Error(message));}this.eventReplies?.clear(); for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
+  private rejectReplies(message: string) { this.community.update({connected: false}); for (const reply of this.communityReplies.values()) {clearTimeout(reply.timer);reply.reject(Error(message));}this.communityReplies.clear();for(const reply of this.eventReplies?.values()??[]){clearTimeout(reply.timer);reply.reject(Error(message));}this.eventReplies?.clear(); for (const pending of this.replies.values()) { clearTimeout(pending.timer); pending.reject(Error(message)); } this.replies.clear(); }
   private finishClosed() {
     this.roomClosed = true;
     for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }

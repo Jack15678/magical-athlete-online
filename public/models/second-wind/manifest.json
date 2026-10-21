@@ -1,0 +1,1116 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "bite-mark",
+      "node": "toy_bite-mark",
+      "url": "/models/second-wind/bite-mark.glb",
+      "avatar": "/avatars/second-wind/bite-mark.svg",
+      "bytes": 39336,
+      "triangles": 3384,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.87734,
+        0.45245
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Olive pointed ears, long purple mane, off-white ringer shirt, hunched claw hands.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Bite%20Mark.png",
+      "editableSource": "assets/blender/second-wind/bite-mark.blend",
+      "modelPreview": "/models/second-wind/avatars/bite-mark.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "blunderdog",
+      "node": "toy_blunderdog",
+      "url": "/models/second-wind/blunderdog.glb",
+      "avatar": "/avatars/second-wind/blunderdog.svg",
+      "bytes": 41680,
+      "triangles": 3208,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.84167,
+        0.37351
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Yellow masked dog, red super-suit with large blue star, raised fists, blue boots and cape.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Blunderdog.png",
+      "editableSource": "assets/blender/second-wind/blunderdog.blend",
+      "modelPreview": "/models/second-wind/avatars/blunderdog.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "cheatah",
+      "node": "toy_cheatah",
+      "url": "/models/second-wind/cheatah.glb",
+      "avatar": "/avatars/second-wind/cheatah.svg",
+      "bytes": 47176,
+      "triangles": 4480,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.80444,
+        0.40718
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange spotted cheetah in a green spotted sweater, die in left paw, muzzle and curled tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Cheatah.png",
+      "editableSource": "assets/blender/second-wind/cheatah.blend",
+      "modelPreview": "/models/second-wind/avatars/cheatah.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "critic",
+      "node": "toy_critic",
+      "url": "/models/second-wind/critic.glb",
+      "avatar": "/avatars/second-wind/critic.svg",
+      "bytes": 40032,
+      "triangles": 3300,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.96393,
+        0.58033
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Blue turtle, tall purple shell, green jacket, chin-resting hand and cup; shell plate seams wrap onto the back.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Critic.png",
+      "editableSource": "assets/blender/second-wind/critic.blend",
+      "modelPreview": "/models/second-wind/avatars/critic.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "diva",
+      "node": "toy_diva",
+      "url": "/models/second-wind/diva.glb",
+      "avatar": "/avatars/second-wind/diva.svg",
+      "bytes": 45896,
+      "triangles": 3868,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.87123,
+        0.32712
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Broad olive diva in fluffy pink boa, dark sunglasses, prominent red lips, hand mirror.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Diva.png",
+      "editableSource": "assets/blender/second-wind/diva.blend",
+      "modelPreview": "/models/second-wind/avatars/diva.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "doppelgangster",
+      "node": "toy_doppelgangster",
+      "url": "/models/second-wind/doppelgangster.glb",
+      "avatar": "/avatars/second-wind/doppelgangster.svg",
+      "bytes": 49572,
+      "triangles": 4432,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.91406,
+        0.32813
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Two orange long-nosed gangsters, purple pinstripe suits and fedoras, red ties and lapel roses.",
+      "inferred": "Second companion, backs of suits, collars and pinstripe wrapping extrapolated in 3D.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Doppelgangster.png",
+      "editableSource": "assets/blender/second-wind/doppelgangster.blend",
+      "modelPreview": "/models/second-wind/avatars/doppelgangster.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "gloth",
+      "node": "toy_gloth",
+      "url": "/models/second-wind/gloth.glb",
+      "avatar": "/avatars/second-wind/gloth.svg",
+      "bytes": 33544,
+      "triangles": 2560,
+      "draws": 4,
+      "bounds": [
+        0.59517,
+        0.98,
+        0.46545
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Goth sloth/panda, black robe and hair, pale face, purple nose/collar, long purple raised claws.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Gloth.png",
+      "editableSource": "assets/blender/second-wind/gloth.blend",
+      "modelPreview": "/models/second-wind/avatars/gloth.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "hog-knight",
+      "node": "toy_hog-knight",
+      "url": "/models/second-wind/hog-knight.glb",
+      "avatar": "/avatars/second-wind/hog-knight.svg",
+      "bytes": 33584,
+      "triangles": 2574,
+      "draws": 4,
+      "bounds": [
+        0.55734,
+        0.98,
+        0.34435
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Grey plate-armour knight, pink inset visor, flared helmet, lance and gauntlets. Green hog is a transferable separate model.",
+      "inferred": "Armour rear seams and the dismounted standing pose inferred. Mount rendered separately to follow service-owned rider state.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Hog%20Knight.png",
+      "editableSource": "assets/blender/second-wind/hog-knight.blend",
+      "modelPreview": "/models/second-wind/avatars/hog-knight.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "hopfrog",
+      "node": "toy_hopfrog",
+      "url": "/models/second-wind/hopfrog.glb",
+      "avatar": "/avatars/second-wind/hopfrog.svg",
+      "bytes": 31676,
+      "triangles": 2352,
+      "draws": 3,
+      "bounds": [
+        0.6,
+        0.78595,
+        0.36322
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Bright red broad-faced frog, two tall eye stalks, stretched spring-like legs and webbed feet.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Hopfrog.png",
+      "editableSource": "assets/blender/second-wind/hopfrog.blend",
+      "modelPreview": "/models/second-wind/avatars/hopfrog.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "hotel",
+      "node": "toy_hotel",
+      "url": "/models/second-wind/hotel.glb",
+      "avatar": "/avatars/second-wind/hotel.svg",
+      "bytes": 40140,
+      "triangles": 2972,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.88359,
+        0.48
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Walking red gable-roof hotel with broad white grin, round nose, chimney, side and rear windows.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Hotel.png",
+      "editableSource": "assets/blender/second-wind/hotel.blend",
+      "modelPreview": "/models/second-wind/avatars/hotel.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "icarus",
+      "node": "toy_icarus",
+      "url": "/models/second-wind/icarus.glb",
+      "avatar": "/avatars/second-wind/icarus.svg",
+      "bytes": 46784,
+      "triangles": 3720,
+      "draws": 7,
+      "bounds": [
+        0.6,
+        0.7186,
+        0.32561
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Yellow aviator in pink coat/helmet, large green vertical wings with ribs and handheld poles; complete back harness.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Icarus.png",
+      "editableSource": "assets/blender/second-wind/icarus.blend",
+      "modelPreview": "/models/second-wind/avatars/icarus.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "kingtripper",
+      "node": "toy_kingtripper",
+      "url": "/models/second-wind/kingtripper.glb",
+      "avatar": "/avatars/second-wind/kingtripper.svg",
+      "bytes": 45780,
+      "triangles": 3852,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.94995,
+        0.43293
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Green grinning lizard monarch, red/yellow jester crown, purple cape and golden sceptre.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Kingtripper.png",
+      "editableSource": "assets/blender/second-wind/kingtripper.blend",
+      "modelPreview": "/models/second-wind/avatars/kingtripper.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "kraken",
+      "node": "toy_kraken",
+      "url": "/models/second-wind/kraken.glb",
+      "avatar": "/avatars/second-wind/kraken.svg",
+      "bytes": 41324,
+      "triangles": 3334,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.49157,
+        0.5958
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Pink kraken with eight curling volumetric tentacles, purple suction cups, cream mantle tip and focused eyes.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Kraken.png",
+      "editableSource": "assets/blender/second-wind/kraken.blend",
+      "modelPreview": "/models/second-wind/avatars/kraken.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "le-saboteur",
+      "node": "toy_le-saboteur",
+      "url": "/models/second-wind/le-saboteur.glb",
+      "avatar": "/avatars/second-wind/le-saboteur.svg",
+      "bytes": 41960,
+      "triangles": 3736,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.85006,
+        0.50197
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Green crocodile in black/white striped shirt, small black beret, large snout and yellow-gloved hands.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/LeSaboteur.png",
+      "editableSource": "assets/blender/second-wind/le-saboteur.blend",
+      "modelPreview": "/models/second-wind/avatars/le-saboteur.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "magical-athlete",
+      "node": "toy_magical-athlete",
+      "url": "/models/second-wind/magical-athlete.glb",
+      "avatar": "/avatars/second-wind/magical-athlete.svg",
+      "bytes": 40792,
+      "triangles": 3074,
+      "draws": 6,
+      "bounds": [
+        0.59129,
+        0.98,
+        0.46218
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange wizard athlete, blue star-covered robe and tall pointed hat, violet staff and golden star details.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Magical%20Athlete.png",
+      "editableSource": "assets/blender/second-wind/magical-athlete.blend",
+      "modelPreview": "/models/second-wind/avatars/magical-athlete.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "mole",
+      "node": "toy_mole",
+      "url": "/models/second-wind/mole.glb",
+      "avatar": "/avatars/second-wind/mole.svg",
+      "bytes": 38484,
+      "triangles": 3080,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.77872,
+        0.51232
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Large orange burrowing mole, pink nose/paws, two rectangular buckteeth, long molded whiskers and earth clods on back.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mole.png",
+      "editableSource": "assets/blender/second-wind/mole.blend",
+      "modelPreview": "/models/second-wind/avatars/mole.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "mr-dice-guy",
+      "node": "toy_mr-dice-guy",
+      "url": "/models/second-wind/mr-dice-guy.glb",
+      "avatar": "/avatars/second-wind/mr-dice-guy.svg",
+      "bytes": 59648,
+      "triangles": 5168,
+      "draws": 9,
+      "bounds": [
+        0.6,
+        0.88877,
+        0.48337
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Olive dice magician, violet top hat with large numbered die, blue suit and red bow tie, four coloured floating dice.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mr.%20Dice%20Guy.png",
+      "editableSource": "assets/blender/second-wind/mr-dice-guy.blend",
+      "modelPreview": "/models/second-wind/avatars/mr-dice-guy.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "mush",
+      "node": "toy_mush",
+      "url": "/models/second-wind/mush.glb",
+      "avatar": "/avatars/second-wind/mush.svg",
+      "bytes": 46776,
+      "triangles": 4512,
+      "draws": 3,
+      "bounds": [
+        0.57583,
+        0.98,
+        0.55519
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Asymmetric blue multi-face blob with four independently modelled expressions and rear lobe; no recycled base slime mesh.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mush.png",
+      "editableSource": "assets/blender/second-wind/mush.blend",
+      "modelPreview": "/models/second-wind/avatars/mush.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "nemesis",
+      "node": "toy_nemesis",
+      "url": "/models/second-wind/nemesis.glb",
+      "avatar": "/avatars/second-wind/nemesis.svg",
+      "bytes": 32284,
+      "triangles": 2496,
+      "draws": 3,
+      "bounds": [
+        0.53996,
+        0.98,
+        0.46014
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Pale classical statue, curled marble hair, draped toga with front/back folds, upright sword and open expression.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Nemesis.png",
+      "editableSource": "assets/blender/second-wind/nemesis.blend",
+      "modelPreview": "/models/second-wind/avatars/nemesis.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "nepo-baby",
+      "node": "toy_nepo-baby",
+      "url": "/models/second-wind/nepo-baby.glb",
+      "avatar": "/avatars/second-wind/nepo-baby.svg",
+      "bytes": 46536,
+      "triangles": 3788,
+      "draws": 7,
+      "bounds": [
+        0.52955,
+        0.98,
+        0.48222
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Round pink baby with orange pacifier, oversized blue top hat, matching formal suit, orange tie and silver rattle.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Nepo%20Baby.png",
+      "editableSource": "assets/blender/second-wind/nepo-baby.blend",
+      "modelPreview": "/models/second-wind/avatars/nepo-baby.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "null",
+      "node": "toy_null",
+      "url": "/models/second-wind/null.glb",
+      "avatar": "/avatars/second-wind/null.svg",
+      "bytes": 17012,
+      "triangles": 760,
+      "draws": 2,
+      "bounds": [
+        0.55682,
+        0.98,
+        0.43209
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Near-black closed void volume with tiny white eyes, matching the portrait without invented limbs.",
+      "inferred": "Card portrait has no defined body boundary: rounded full-volume silhouette and unseen side/back are explicit project inference.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Null.png",
+      "editableSource": "assets/blender/second-wind/null.blend",
+      "modelPreview": "/models/second-wind/avatars/null.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "overtaker",
+      "node": "toy_overtaker",
+      "url": "/models/second-wind/overtaker.glb",
+      "avatar": "/avatars/second-wind/overtaker.svg",
+      "bytes": 45304,
+      "triangles": 3776,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.7944,
+        0.356
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Blue gravedigger, cream wrapped cap, brown coat, shovel and skull-topped staff; sculpted snout and cap seams.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Overtaker.png",
+      "editableSource": "assets/blender/second-wind/overtaker.blend",
+      "modelPreview": "/models/second-wind/avatars/overtaker.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "party-pooper",
+      "node": "toy_party-pooper",
+      "url": "/models/second-wind/party-pooper.glb",
+      "avatar": "/avatars/second-wind/party-pooper.svg",
+      "bytes": 47724,
+      "triangles": 3632,
+      "draws": 8,
+      "bounds": [
+        0.54264,
+        0.98,
+        0.39774
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Yellow grumpy cat, pink/green nightcap and pajamas, blue nose, tall candle and green rear nightcap tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Party%20Pooper.png",
+      "editableSource": "assets/blender/second-wind/party-pooper.blend",
+      "modelPreview": "/models/second-wind/avatars/party-pooper.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "penguin",
+      "node": "toy_penguin",
+      "url": "/models/second-wind/penguin.glb",
+      "avatar": "/avatars/second-wind/penguin.svg",
+      "bytes": 40992,
+      "triangles": 3408,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.65138,
+        0.30675
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Purple/orange penguin with white buttoned belly, upraised long flippers, flat orange beak and little brown hat.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Penguin.png",
+      "editableSource": "assets/blender/second-wind/penguin.blend",
+      "modelPreview": "/models/second-wind/avatars/penguin.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "re-runner",
+      "node": "toy_re-runner",
+      "url": "/models/second-wind/re-runner.glb",
+      "avatar": "/avatars/second-wind/re-runner.svg",
+      "bytes": 48484,
+      "triangles": 4144,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.91633,
+        0.38336
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Grey curly-haired veteran runner, violet sweatband, pink tracksuit with yellow stripes and bent jogging arms.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Re-Runner.png",
+      "editableSource": "assets/blender/second-wind/re-runner.blend",
+      "modelPreview": "/models/second-wind/avatars/re-runner.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "show-off",
+      "node": "toy_show-off",
+      "url": "/models/second-wind/show-off.glb",
+      "avatar": "/avatars/second-wind/show-off.svg",
+      "bytes": 46472,
+      "triangles": 3412,
+      "draws": 8,
+      "bounds": [
+        0.56024,
+        0.98,
+        0.41474
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Violet circus elephant, curled trunk, pink hat/skates with green wheels, tall cyan/yellow chair behind.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Show-Off.png",
+      "editableSource": "assets/blender/second-wind/show-off.blend",
+      "modelPreview": "/models/second-wind/avatars/show-off.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "soulmate",
+      "node": "toy_soulmate",
+      "url": "/models/second-wind/soulmate.glb",
+      "avatar": "/avatars/second-wind/soulmate.svg",
+      "bytes": 44768,
+      "triangles": 3740,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.84669,
+        0.45623
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Bright yellow lovestruck creature, huge heart pupils, pink nose and open tongue smile, long curled tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Soulmate.png",
+      "editableSource": "assets/blender/second-wind/soulmate.blend",
+      "modelPreview": "/models/second-wind/avatars/soulmate.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "speed-demon",
+      "node": "toy_speed-demon",
+      "url": "/models/second-wind/speed-demon.glb",
+      "avatar": "/avatars/second-wind/speed-demon.svg",
+      "bytes": 49368,
+      "triangles": 3940,
+      "draws": 8,
+      "bounds": [
+        0.38767,
+        0.82645,
+        0.6
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Olive horned biker in blue jacket, orange streaming hair, complete red motorcycle, tyres/hubs, yellow headlamp.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Speed%20Demon.png",
+      "editableSource": "assets/blender/second-wind/speed-demon.blend",
+      "modelPreview": "/models/second-wind/avatars/speed-demon.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "spoilsport",
+      "node": "toy_spoilsport",
+      "url": "/models/second-wind/spoilsport.glb",
+      "avatar": "/avatars/second-wind/spoilsport.svg",
+      "bytes": 38092,
+      "triangles": 2992,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.88863,
+        0.49521
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Pink sobbing pig, large snout, raised brow/ears, physical blue tear streams and curly rear tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Spoilsport.png",
+      "editableSource": "assets/blender/second-wind/spoilsport.blend",
+      "modelPreview": "/models/second-wind/avatars/spoilsport.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "stepdad",
+      "node": "toy_stepdad",
+      "url": "/models/second-wind/stepdad.glb",
+      "avatar": "/avatars/second-wind/stepdad.svg",
+      "bytes": 47480,
+      "triangles": 4016,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.89447,
+        0.37031
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Violet walrus with brown moustache, white tusks, red suspenders, bow tie and orange raised foam finger.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Stepdad.png",
+      "editableSource": "assets/blender/second-wind/stepdad.blend",
+      "modelPreview": "/models/second-wind/avatars/stepdad.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "streaker",
+      "node": "toy_streaker",
+      "url": "/models/second-wind/streaker.glb",
+      "avatar": "/avatars/second-wind/streaker.svg",
+      "bytes": 30728,
+      "triangles": 2336,
+      "draws": 3,
+      "bounds": [
+        0.6,
+        0.94063,
+        0.29901
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Pale elongated pointed creature, long hanging arms, big nose, narrow feet, and swept-back tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Streaker.png",
+      "editableSource": "assets/blender/second-wind/streaker.blend",
+      "modelPreview": "/models/second-wind/avatars/streaker.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "stunner",
+      "node": "toy_stunner",
+      "url": "/models/second-wind/stunner.glb",
+      "avatar": "/avatars/second-wind/stunner.svg",
+      "bytes": 41808,
+      "triangles": 3076,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.96928,
+        0.50142
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange bell pepper with five thick lobes, brown bent stalk, lashes, red lips, pink feet and coy raised arm.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Stunner.png",
+      "editableSource": "assets/blender/second-wind/stunner.blend",
+      "modelPreview": "/models/second-wind/avatars/stunner.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "switcharoo",
+      "node": "toy_switcharoo",
+      "url": "/models/second-wind/switcharoo.glb",
+      "avatar": "/avatars/second-wind/switcharoo.svg",
+      "bytes": 35268,
+      "triangles": 2424,
+      "draws": 5,
+      "bounds": [
+        0.48567,
+        0.98,
+        0.49418
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Yellow kangaroo, very long ears/feet/tail, pink round glasses, cream pouch, slender tucked forearms.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Switcharoo.png",
+      "editableSource": "assets/blender/second-wind/switcharoo.blend",
+      "modelPreview": "/models/second-wind/avatars/switcharoo.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "tail",
+      "node": "toy_tail",
+      "url": "/models/second-wind/tail.glb",
+      "avatar": "/avatars/second-wind/tail.svg",
+      "bytes": 25252,
+      "triangles": 1486,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.94276,
+        0.30227
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Standalone curled green dinosaur tail with olive triangular back spikes, top-mounted eyes and tiny feet.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Tail.png",
+      "editableSource": "assets/blender/second-wind/tail.blend",
+      "modelPreview": "/models/second-wind/avatars/tail.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "the-hose",
+      "node": "toy_the-hose",
+      "url": "/models/second-wind/the-hose.glb",
+      "avatar": "/avatars/second-wind/the-hose.svg",
+      "bytes": 36916,
+      "triangles": 2792,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.81417,
+        0.25285
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Three deep green garden-hose coils, upright eyed neck, brass nozzle with spray holes, hose tail; no opaque water-cone geometry.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/The%20Hose.png",
+      "editableSource": "assets/blender/second-wind/the-hose.blend",
+      "modelPreview": "/models/second-wind/avatars/the-hose.png",
+      "avatarStyle": "flat-cartoon-svg"
+    },
+    {
+      "id": "understudy",
+      "node": "toy_understudy",
+      "url": "/models/second-wind/understudy.glb",
+      "avatar": "/avatars/second-wind/understudy.svg",
+      "bytes": 54104,
+      "triangles": 4692,
+      "draws": 7,
+      "bounds": [
+        0.6,
+        0.89136,
+        0.44676
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Violet long-nosed actor, yellow Elizabethan tunic, white pleated ruff, green feathered hat and handheld script.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Understudy.png",
+      "editableSource": "assets/blender/second-wind/understudy.blend",
+      "modelPreview": "/models/second-wind/avatars/understudy.png",
+      "avatarStyle": "flat-cartoon-svg"
+    }
+  ],
+  "variants": [
+    {
+      "id": "bite-mark-were",
+      "node": "toy_bite-mark-were",
+      "url": "/models/second-wind/bite-mark-were.glb",
+      "bytes": 39688,
+      "triangles": 3446,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.7776,
+        0.42243
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "W.E.R.E.M.O.U.T.H. derived monster silhouette, same olive skin and purple mane, enlarged toothed maw.",
+      "inferred": "Transformation sculpture is project interpretation; no official transformed reverse-view illustration was available. Side/back mane and claws inferred.",
+      "referenceChecked": true,
+      "variantOf": "bite-mark",
+      "editableSource": "assets/blender/second-wind/bite-mark-were.blend"
+    },
+    {
+      "id": "hog-knight-hog",
+      "node": "toy_hog-knight-hog",
+      "url": "/models/second-wind/hog-knight-hog.glb",
+      "bytes": 38072,
+      "triangles": 2752,
+      "draws": 5,
+      "bounds": [
+        0.50012,
+        0.69256,
+        0.6
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Separate green boar mount, long ears, white tusks, pink mouth, four legs, saddle, curled tail.",
+      "inferred": "Hog rear, saddle straps and back legs inferred from front view.",
+      "referenceChecked": true,
+      "variantOf": "hog-knight",
+      "editableSource": "assets/blender/second-wind/hog-knight-hog.blend"
+    }
+  ],
+  "totalBytes": 1570536,
+  "totalTriangles": 126714,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

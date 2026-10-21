@@ -1,4 +1,4 @@
-import { systemAction } from '../engine/index.js';
+import { hasRoomRules, systemRoomAction as systemAction } from '../engine/runtime.js';
 import { decideAI } from '../engine/ai.js';
 import { projectRoom } from './room-core.js';
 import type { GameAction, Room } from './types.js';
@@ -7,7 +7,7 @@ export interface ScheduledAction {playerId:string;action:GameAction;reason:'syst
 /** Authority scheduling. AI pauses between intents; presentation never changes
  * rules, deadlines, legal choices, or the resulting state. */
 export function immediateRoomAction(room:Room,now:number):ScheduledAction|undefined {
-  if(room.closedAt!==undefined)return;
+  if(room.closedAt!==undefined||!hasRoomRules(room.game))return;
   const system=systemAction(room.game);if(system)return{...system,reason:'system'};
   if(now<room.updatedAt+1_200)return;
   for(const p of room.game.players.filter(p=>p.isAI)){

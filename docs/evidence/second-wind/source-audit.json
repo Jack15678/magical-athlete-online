@@ -1,0 +1,652 @@
+{
+  "blender": "5.2.3 LTS Release Candidate",
+  "sources": [
+    {
+      "id": "bite-mark",
+      "source": "assets/blender/second-wind/bite-mark.blend",
+      "sourceSha256": "0458e35aaf95d9258ff17834faf58e7b9eb884bc21bd9060381e3a0d9520811c",
+      "glbSha256": "9ce3f187df8fa0a2bb6cb500f057689ea10faf666a39a2f1dea847d4f8b46920",
+      "editableParts": 22,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "blunderdog",
+      "source": "assets/blender/second-wind/blunderdog.blend",
+      "sourceSha256": "027bfd759bc37318c86dbf11c81ea15853f9dbdeb448baf5a04527ab3d0bcbeb",
+      "glbSha256": "57615faa04b3a5f6204b725999b934d8b42eff775482eaa37d890b3f6f0778f2",
+      "editableParts": 25,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "cheatah",
+      "source": "assets/blender/second-wind/cheatah.blend",
+      "sourceSha256": "ba03aa8b710ebf7dc86b5dfde2f3b939f0802c443852070842f79a90fff35229",
+      "glbSha256": "da25f75c961e8433296a7b4a24e84258a70f840a98b2764b10ffb85b7947a6dd",
+      "editableParts": 40,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "critic",
+      "source": "assets/blender/second-wind/critic.blend",
+      "sourceSha256": "61e47df6190ca94ff1b4cbfc22d4a4e060dde30a3d017be41837ba0515509d8c",
+      "glbSha256": "0a23bd39cad91b430c847db12a1f3e74aa688d9a689fb84081df7eb50bb6fbec",
+      "editableParts": 20,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "diva",
+      "source": "assets/blender/second-wind/diva.blend",
+      "sourceSha256": "0c7b3db784f8df5917dcebfac5be166f0ce0242b65ad5da96e4069303638cdb5",
+      "glbSha256": "687a5d1c6e87137e741d46d433a00651b17150883462ebb3f17a83528811f9f8",
+      "editableParts": 29,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "doppelgangster",
+      "source": "assets/blender/second-wind/doppelgangster.blend",
+      "sourceSha256": "1501ccb8662d08f6bcf0b7be612ee95cc5a22648403278a18b00db9316ab9975",
+      "glbSha256": "af94b123217a37c95a14db5622d466ac9b4c071a436bf6c7a3a95354b79df62f",
+      "editableParts": 38,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "gloth",
+      "source": "assets/blender/second-wind/gloth.blend",
+      "sourceSha256": "283f9dec90a13c1ee3faaeed84ea8d7e4298710ad1e1ad3ebef726013443effb",
+      "glbSha256": "050a6249627a57790041f7b86a7e625116ef0fd11a155051fa4f13296ebeb042",
+      "editableParts": 21,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "hog-knight",
+      "source": "assets/blender/second-wind/hog-knight.blend",
+      "sourceSha256": "404a120b8597620182f783eb824989abedd1e6897a979c6d1d0d14a61ae59ee9",
+      "glbSha256": "570b2a03ec16d62a07d595aa4d461d6429f05611a8b244fd3bc2afb5cc718b86",
+      "editableParts": 21,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "hopfrog",
+      "source": "assets/blender/second-wind/hopfrog.blend",
+      "sourceSha256": "e72f697aedb1fe7c180c7ec54baed79f1a1a06e8f0e4348b77a248ea69287b34",
+      "glbSha256": "dd7645431ad36d3e5b4323b82291058750513ef0031638cf4d67caead03198c1",
+      "editableParts": 15,
+      "gameMeshes": 3,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "hotel",
+      "source": "assets/blender/second-wind/hotel.blend",
+      "sourceSha256": "312f923ebe8a07b336f4ce6d53f26cd29db486094353b9fa56d70c2043f7bbd0",
+      "glbSha256": "abad924141b1558b8072c5e1f29d70da1087f880b9542d513b3538eac7cd6ae7",
+      "editableParts": 27,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "icarus",
+      "source": "assets/blender/second-wind/icarus.blend",
+      "sourceSha256": "53e029b0a3c98120d09ff52bab63703a06f6441a7760b9e3e68b73e1ad1d74c2",
+      "glbSha256": "38c7a76f51e931b7455b7d2342fbfa68a8034b45d594ea86b200f3b09641e715",
+      "editableParts": 29,
+      "gameMeshes": 7,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "kingtripper",
+      "source": "assets/blender/second-wind/kingtripper.blend",
+      "sourceSha256": "fbcd7046933ad4f3a3316d28af79f83ff4e2d8268b4df6e9dc97e634991a6b9d",
+      "glbSha256": "d114d42603d3e88a1c7f6576f944c9bbd06686a92671412593a5c2b54eb6a97c",
+      "editableParts": 26,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "kraken",
+      "source": "assets/blender/second-wind/kraken.blend",
+      "sourceSha256": "b4faf831d84072d4b77a559d79bcd218c11d24bce3910ae23928600849adf25f",
+      "glbSha256": "b41feced422ae17a4f1480e7d44f3a0fb8126611f28029bb932eb0655c1f612f",
+      "editableParts": 32,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "le-saboteur",
+      "source": "assets/blender/second-wind/le-saboteur.blend",
+      "sourceSha256": "ac890637299f1a72b44c51aebdfa5dccb8094120b0b785ffb7914645a9a7f0e0",
+      "glbSha256": "3c885a6f24499d6b0496ddc030d47561af32267807f213384fe4bdad59e25c20",
+      "editableParts": 24,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "magical-athlete",
+      "source": "assets/blender/second-wind/magical-athlete.blend",
+      "sourceSha256": "bfd69227ecebebd8b9b74ab5f3924c3165721ce363d05be23c3da73a6e6f8193",
+      "glbSha256": "39914fac7b21d1423f443782c6f14124fbc8574261e7f4c642017feac5f9da95",
+      "editableParts": 26,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "mole",
+      "source": "assets/blender/second-wind/mole.blend",
+      "sourceSha256": "0b029697e0dbabc51095b5a3b0738fc5c71f5b9698536dc30ddacf83c0e7ac92",
+      "glbSha256": "78c770ff56b639e265b43201e6d4981a27de33ad2b0fd03160bfe63fa6777704",
+      "editableParts": 20,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "mr-dice-guy",
+      "source": "assets/blender/second-wind/mr-dice-guy.blend",
+      "sourceSha256": "6e4db242238e320fa537ddf01e40f13c799f2679b3fbb78a11aff2a57da5d7e5",
+      "glbSha256": "b933e5dba64c8e8190664160dd252f98ebe2dcf9fedc86a0e43bf7d7eef52ecb",
+      "editableParts": 57,
+      "gameMeshes": 9,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "mush",
+      "source": "assets/blender/second-wind/mush.blend",
+      "sourceSha256": "8c954c0dc0d5f960529c92f47d04e9c029eeed7ac48ca7a88e944fc05e2d7c9d",
+      "glbSha256": "ae7039b54be7b9f45ca3f244863244783650d0fba8ae07ca925d2f25a9cb6eb9",
+      "editableParts": 42,
+      "gameMeshes": 3,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "nemesis",
+      "source": "assets/blender/second-wind/nemesis.blend",
+      "sourceSha256": "4b35a4eadb8353289a22d5db95dc91a3f5447f1d91a30bdd3d3d96e66889566b",
+      "glbSha256": "8e718edaf3495ae42916a1b11407d220371e207c859bebbfc2508ed333ddb7fc",
+      "editableParts": 30,
+      "gameMeshes": 3,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "nepo-baby",
+      "source": "assets/blender/second-wind/nepo-baby.blend",
+      "sourceSha256": "74e397ba0cdb3981ce6fb006af81d793f7cf41884fe782f0f201e0833a049aab",
+      "glbSha256": "9487b2670a235d2e05696a40d5208acca2ac1c9e6e9ceaa4ea83b6f9c4724705",
+      "editableParts": 27,
+      "gameMeshes": 7,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "null",
+      "source": "assets/blender/second-wind/null.blend",
+      "sourceSha256": "199fee95b5cb5ad0b60f235d93016ee10d8d032328f5d507343a6656ffa45fb7",
+      "glbSha256": "b2507eb7c385791360f39520e11fc02f5609a26313eea1d92b52627a7edc4528",
+      "editableParts": 5,
+      "gameMeshes": 2,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "overtaker",
+      "source": "assets/blender/second-wind/overtaker.blend",
+      "sourceSha256": "8748ae7e76f80760a37cd3e965e17302d7d0c6036dac6f8e2537d2c797f80cb3",
+      "glbSha256": "ecef776c10de6fdc23d0fa28dd0a4bf8e5564e29ff056a3f0024d5add9f9b3d5",
+      "editableParts": 28,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "party-pooper",
+      "source": "assets/blender/second-wind/party-pooper.blend",
+      "sourceSha256": "b027c27f780562ae5b7483e46d65dba5536e7af93ae99ea5e20eb9c4aabc2f94",
+      "glbSha256": "bb2e86cdc0374ba329c5c2f963400687167c47c196e411cc2d8cf374989478c3",
+      "editableParts": 29,
+      "gameMeshes": 8,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "penguin",
+      "source": "assets/blender/second-wind/penguin.blend",
+      "sourceSha256": "5a9458de3ea44e1b30b50792164508de62d877a01256e5633ae1ce4f197f2a4f",
+      "glbSha256": "11dd3de74ac7f232406cb9ba32aa52a7f7858b7d1107be5858ffd3df2195fafc",
+      "editableParts": 20,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "re-runner",
+      "source": "assets/blender/second-wind/re-runner.blend",
+      "sourceSha256": "39c4c177916b04dd6232285c09c24e3115cf3af627d32180dd4d2d15940f6efa",
+      "glbSha256": "079712940acff93386acadeea223af9af458debca5056aed979f114e53c627f5",
+      "editableParts": 26,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "show-off",
+      "source": "assets/blender/second-wind/show-off.blend",
+      "sourceSha256": "eb16d7f9eff70ab2288ee22a82035bd0dd64c6bdbfb4fcd49e2b4410d295683b",
+      "glbSha256": "46858aebdad8378981b52f4c6c91f2f7bfcfcacae5af97f1328fb8a13e24428f",
+      "editableParts": 24,
+      "gameMeshes": 8,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "soulmate",
+      "source": "assets/blender/second-wind/soulmate.blend",
+      "sourceSha256": "f937937043c50fc89eec0d0853ba2b4bf916337462126a4e5df2f37b2592603d",
+      "glbSha256": "2a7ca735bde576b61c11acd5d1f6710e18adad1561a347b2148b59b99c8061de",
+      "editableParts": 29,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "speed-demon",
+      "source": "assets/blender/second-wind/speed-demon.blend",
+      "sourceSha256": "cc8ecfd054b5a17c2432c6a28dc49780be0929c8d5189f39d383f4fb5832fa82",
+      "glbSha256": "80febe6c9954dfad7959a8efcfa9e01e701374abb66aea6b8af9340ba333c364",
+      "editableParts": 24,
+      "gameMeshes": 8,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "spoilsport",
+      "source": "assets/blender/second-wind/spoilsport.blend",
+      "sourceSha256": "f67d14f4b6c5962bfaaca787762c2be4826d127107ed89ad5f63999a202e7655",
+      "glbSha256": "8db87456f86ad92cbba5732d0a9b6a0e2b73be23b1e30a47b2de27c884ebf130",
+      "editableParts": 26,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "stepdad",
+      "source": "assets/blender/second-wind/stepdad.blend",
+      "sourceSha256": "1aa2f62f7b3e3c2367eadd93d46cab7ad8644c2bf986f9533502ad128cc0f7b0",
+      "glbSha256": "3e831dcb58784b1edaded97a061f7461a3d952c009fa3b4c001935b2972f58ce",
+      "editableParts": 27,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "streaker",
+      "source": "assets/blender/second-wind/streaker.blend",
+      "sourceSha256": "0178e496efedf2f8b572894bf56a7cfcb4cc7a50c4f12829b8b955b86482a351",
+      "glbSha256": "9ee5ab7dad4d0a53aa9105e64502482ff99083d0043a314577ba3498d891eb2d",
+      "editableParts": 16,
+      "gameMeshes": 3,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "stunner",
+      "source": "assets/blender/second-wind/stunner.blend",
+      "sourceSha256": "08e5448784fbd26616f4385febb089fe9afb8c3862d6dda8625de8e1f68f68a6",
+      "glbSha256": "cd2ebfc36291164731dcb0d2c447800951186081b38d72bf3bb3b51a8a340924",
+      "editableParts": 20,
+      "gameMeshes": 6,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "switcharoo",
+      "source": "assets/blender/second-wind/switcharoo.blend",
+      "sourceSha256": "66cd023653e60ef09e465c6df107195b534a78ca40f1b0d0fd93627494ea6b15",
+      "glbSha256": "37e061aca9fc0fee96c33ad8875e1c1b9d7010ec92b182fb175e70a2bab08b4a",
+      "editableParts": 18,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "tail",
+      "source": "assets/blender/second-wind/tail.blend",
+      "sourceSha256": "e4432fa9ae39b9839852a4b47fc565874c8603cd4731a288b87705dc00d0fbb7",
+      "glbSha256": "4cfdca631f23bc262c4efef1daedbc186ea616f93fcb72be3c9cb7919a335c19",
+      "editableParts": 15,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "the-hose",
+      "source": "assets/blender/second-wind/the-hose.blend",
+      "sourceSha256": "a54828360ee585e43a79084f4ca42e34a37923bd79d73f352bbf823b04f8aa84",
+      "glbSha256": "2be40fc7b5cd11b4134502a3690a3d63c98858f952a629cc1791c67709254a38",
+      "editableParts": 17,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "understudy",
+      "source": "assets/blender/second-wind/understudy.blend",
+      "sourceSha256": "7cfda193cfba9fe810e2108f0d490d6da6f0993bca5bf40baa0140ceef165b4d",
+      "glbSha256": "5db6a3c663cd95de0f8b3a1ad76a977512226ee0b1378444e4523d23710b0728",
+      "editableParts": 44,
+      "gameMeshes": 7,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "bite-mark-were",
+      "source": "assets/blender/second-wind/bite-mark-were.blend",
+      "sourceSha256": "8d95d6c6f76e6b998f620484ebea216ccac80cce4229f9c9fe92872c26ca3ad5",
+      "glbSha256": "accaa72ab10551eecd49ae0a5aeb76bd3494e20481258c4138141a3a3daf2211",
+      "editableParts": 25,
+      "gameMeshes": 4,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    },
+    {
+      "id": "hog-knight-hog",
+      "source": "assets/blender/second-wind/hog-knight-hog.blend",
+      "sourceSha256": "715a406e9c671d3f4cdd74f93ce8fffbc466b8ae6bdfcb3c2c91342b28f4ad22",
+      "glbSha256": "693e289ad2243ca8c386291259793a20647bdb571334ea97b40060e378d4f5e6",
+      "editableParts": 22,
+      "gameMeshes": 5,
+      "boundaryEdges": 0,
+      "looseEdges": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "move",
+        "recover",
+        "skill"
+      ]
+    }
+  ],
+  "passed": true
+}

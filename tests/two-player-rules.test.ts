@@ -165,7 +165,7 @@ test('a reloaded legacy partial practice draft replaces the old hand without los
       assert.equal(authority.view('p0').phase,'selection');assert.deepEqual(authority.view('p0').players[0]!.hand,selected);
       const verify=await new Promise<IDBDatabase>((resolve,reject)=>{const r=options.indexedDB.open(options.databaseName,1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
       const game=await new Promise<GameState>((resolve,reject)=>{const r=verify.transaction('rooms').objectStore('rooms').get(meta.code);r.onsuccess=()=>resolve(r.result.room.game);r.onerror=()=>reject(r.error);});verify.close();
-      assert.equal(game.deck.length,32);assert.deepEqual(new Set([...game.deck,...selected]),new Set(CHARACTERS.map(c=>c.id)));assert.deepEqual(game.randomLog,randomBefore);assert.equal(game.rngState,rngBefore);
+      assert.equal(game.deck.length,CHARACTERS.length-selected.length);assert.deepEqual(new Set([...game.deck,...selected]),new Set(CHARACTERS.map(c=>c.id)));assert.deepEqual(game.randomLog,randomBefore);assert.equal(game.rngState,rngBefore);
       const selectionVersion=authority.view('p0').version;assert.equal((await authority.action('p0',{actionId:'cannot-repick',expectedVersion:selectionVersion,action:{type:'practice-team',characterIds:oldHand}})).ok,false);
     }finally{authority.dispose();}
   }

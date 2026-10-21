@@ -1,0 +1,203 @@
+{
+  "pool": "mixed",
+  "results": [
+    {
+      "round": 1,
+      "placements": [
+        {
+          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:1:0",
+          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+          "characterId": "coach",
+          "rank": 1,
+          "points": 3
+        },
+        {
+          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:1:0",
+          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+          "characterId": "hypnotist",
+          "rank": 2,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "placements": [
+        {
+          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:2:0",
+          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+          "characterId": "blunderdog",
+          "rank": 1,
+          "points": 4
+        },
+        {
+          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:2:0",
+          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+          "characterId": "copycat",
+          "rank": 2,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "placements": [
+        {
+          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:3:0",
+          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+          "characterId": "doppelgangster",
+          "rank": 1,
+          "points": 5
+        },
+        {
+          "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:3:0",
+          "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
+          "characterId": "magical-athlete",
+          "rank": 2,
+          "points": 3
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "placements": [
+        {
+          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:4:0",
+          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+          "characterId": "penguin",
+          "rank": 1,
+          "points": 6
+        },
+        {
+          "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:4:0",
+          "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
+          "characterId": "nepo-baby",
+          "rank": 2,
+          "points": 4
+        }
+      ]
+    }
+  ],
+  "summaries": [
+    {
+      "round": 1,
+      "characters": [
+        "flip-flop",
+        "hypnotist",
+        "coach"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 2,
+      "characters": [
+        "genius",
+        "blunderdog",
+        "copycat"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 3,
+      "characters": [
+        "magical-athlete",
+        "doppelgangster",
+        "dicemonger"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 4,
+      "characters": [
+        "nepo-baby",
+        "gloth",
+        "penguin"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "phase": "finished",
+      "results": [
+        {
+          "round": 1,
+          "placements": [
+            {
+              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:1:0",
+              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+              "characterId": "coach",
+              "rank": 1,
+              "points": 3
+            },
+            {
+              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:1:0",
+              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+              "characterId": "hypnotist",
+              "rank": 2,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "placements": [
+            {
+              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:2:0",
+              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+              "characterId": "blunderdog",
+              "rank": 1,
+              "points": 4
+            },
+            {
+              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:2:0",
+              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+              "characterId": "copycat",
+              "rank": 2,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "placements": [
+            {
+              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:3:0",
+              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+              "characterId": "doppelgangster",
+              "rank": 1,
+              "points": 5
+            },
+            {
+              "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:3:0",
+              "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
+              "characterId": "magical-athlete",
+              "rank": 2,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "round": 4,
+          "placements": [
+            {
+              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:4:0",
+              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
+              "characterId": "penguin",
+              "rank": 1,
+              "points": 6
+            },
+            {
+              "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:4:0",
+              "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
+              "characterId": "nepo-baby",
+              "rank": 2,
+              "points": 4
+            }
+          ]
+        }
+      ],
+      "steps": 425
+    }
+  ],
+  "errors": [],
+  "limitations": "Browser mobile viewport, not physical device GPU. Public-view automated intents sent through real authenticated relay."
+}

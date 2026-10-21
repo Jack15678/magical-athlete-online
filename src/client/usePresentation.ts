@@ -40,6 +40,6 @@ export function usePresentation(room: RoomView | null, options: PresentationOpti
   }, [beat?.key, durationMs, startedAt]);
   const skip = useCallback(() => setState(previous => previous && latestRoom.current ? skipPlayback(previous, latestRoom.current) : previous), []);
   // While a completed action is still being shown, the action prompt must wait.
-  const displayRoom: RoomView | null = state ? { ...state.confirmed, racers: state.racers, ...(state.queue.length && ['results', 'finished'].includes(state.confirmed.phase) ? { phase: 'race' as const } : {}) } : room;
+  const displayRoom: RoomView | null = state ? { ...state.confirmed, players: state.confirmed.players.map(player => ({...player, name: room?.players.find(current => current.id === player.id)?.name ?? player.name})), spectators: room?.spectators ?? state.confirmed.spectators, racers: state.racers, ...(state.queue.length && ['results', 'finished'].includes(state.confirmed.phase) ? { phase: 'race' as const } : {}) } : room;
   return { state, beat, racers: state?.racers ?? room?.racers ?? [], playing: (state?.queue.length ?? 0) > 0, skip, startedAt, durationMs, displayRoom };
 }

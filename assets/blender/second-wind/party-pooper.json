@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "party-pooper",
+      "node": "toy_party-pooper",
+      "url": "/models/second-wind/party-pooper.glb",
+      "avatar": "/models/second-wind/avatars/party-pooper.png",
+      "bytes": 47724,
+      "triangles": 3632,
+      "draws": 8,
+      "bounds": [
+        0.54264,
+        0.98,
+        0.39774
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Yellow grumpy cat, pink/green nightcap and pajamas, blue nose, tall candle and green rear nightcap tail.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Party%20Pooper.png",
+      "editableSource": "assets/blender/second-wind/party-pooper.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 47724,
+  "totalTriangles": 3632,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}
