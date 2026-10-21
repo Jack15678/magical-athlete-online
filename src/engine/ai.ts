@@ -6,6 +6,13 @@ import type { GameAction, Racer, RoomView } from '../shared/types.js';
 const strength:Record<string,number>={legs:10,hare:8,blimp:8,'lovable-loser':7,alchemist:7,'rocket-scientist':7,magician:7,'party-animal':6,coach:6,'flip-flop':6,genius:5,hypnotist:5,'third-wheel':5,cheerleader:5,suckerfish:5,sisyphus:3};
 const value=(id:string)=>strength[id]??4;
 const active=(r:Racer)=>!r.finished&&!r.eliminated;
+/** A reproducible public-only seed varies secret/guess decisions without reading
+ * another player's choice, the private queue, or the authoritative RNG state. */
+function publicChoice(view: RoomView, salt: string, count: number): number {
+  let seed = 2166136261;
+  for (const char of `${view.code}:${view.selfId}:${view.version}:${view.logs.at(-1)?.id ?? 0}:${salt}`) seed = Math.imul(seed ^ char.charCodeAt(0), 16777619) >>> 0;
+  return count ? seed % count : 0;
+}
 function repeatedFollow(view:RoomView,r:Racer):boolean {
   // A copied Fish can repeatedly carry a Scoocher onto the same backward arrow.
   // Recognize the repeated public journey, without inspecting the pending
@@ -32,6 +39,19 @@ export function decideAI(view:RoomView):GameAction|undefined {
     const targets=available.map(id=>view.racers.find(r=>r.id===id)).filter((r):r is Racer=>!!r&&active(r));
     const others=targets.filter(t=>t.playerId!==self.id);
     switch(c.kind){
+      case 'cheatah': case 'cheatah-guess': pick = available[publicChoice(view, c.kind, available.length)]; break;
+      case 'mr-dice-pick': pick = available.toSorted((a,b) => Number(b)-Number(a))[0]; break;
+      case 'show-off': if (has('stop')) pick = 'stop'; break;
+      case 'mole': if (has('use')) pick = 'use'; break;
+      case 'critic': if (has('use') && (view.lastRoll?.face ?? 0) >= 4) pick = 'use'; break;
+      case 'nemesis': if (has('use')) pick = 'use'; break;
+      case 'tail': if (has('use')) pick = 'use'; break;
+      case 'diva': {const target = targets.filter(t => t.id !== r?.id).sort((a,b) => (r && r.position >= a.position ? a.position-b.position : b.position-a.position))[0]; if(target)pick=target.id; break;}
+      case 'understudy': case 'soulmate': {const target = others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0]; if(target)pick=target.id;break;}
+      case 'kingtripper': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
+      case 'magical-last': {const target=targets.find(t=>t.playerId===self.id)??targets[0];if(target)pick=target.id;break;}
+      case 'magical-lead': case 'magical-warp': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
+      case 'switcharoo': {const target=others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0];if(target&&r&&value(target.characterId)>value(r.characterId))pick=target.id;break;}
       case 'legs':case 'alchemist':case 'cheerleader': if(has('use'))pick='use';break;
       case 'suckerfish':if(has('use')&&r&&!repeatedFollow(view,r))pick='use';break;
       case 'rocket-scientist':if(has('use')&&(view.lastRoll?.face??0)>=3)pick='use';break;

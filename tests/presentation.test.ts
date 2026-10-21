@@ -14,6 +14,25 @@ function motion(id: number, targets: string[], before: number[], after: number[]
 const die = (id: number, face: number): GameEvent => ({ id, type: 'die', source: 'a', text: `教练掷出${face}` });
 const roll = (id: number, face: number): GameEvent => ({ id, type: 'roll', source: 'a', text: `教练最终骰面为${face}` });
 
+test('successive control, form and mount changes replay their event snapshots instead of jumping to the final state', () => {
+  const racers = [racer('a'),racer('b')];
+  const events: GameEvent[] = [
+    {id:1,type:'control',text:'第一次交换',targets:['a','b'],changes:[{racerId:'a',playerId:'pb'},{racerId:'b',playerId:'pa'}]},
+    {id:2,type:'transform',text:'变身',source:'a',changes:[{racerId:'a',form:'were-mouth'}]},
+    {id:3,type:'mount',text:'骑上野猪',source:'a',changes:[{racerId:'a',mount:'hog'}]},
+    {id:4,type:'mount',text:'转移坐骑',source:'b',changes:[{racerId:'a',mount:null},{racerId:'b',mount:'hog'}]},
+    {id:5,type:'control',text:'交换回来',targets:['a','b'],changes:[{racerId:'a',playerId:'pa'},{racerId:'b',playerId:'pb'}]},
+  ];
+  const final=structuredClone(racers);final[0]!.flags.form='were-mouth';final[1]!.flags.hogOwnerId='hog';
+  let state=receiveRoom(createPlayback(view(1,[],racers)),view(2,events,final));
+  assert.equal(state.racers[0]!.playerId,'pa');
+  state=completeBeat(state);assert.equal(state.racers[0]!.playerId,'pb');
+  state=completeBeat(state);assert.equal(state.racers[0]!.flags.form,'were-mouth');assert.equal(state.racers[0]!.flags.hogOwnerId,undefined);
+  state=completeBeat(state);assert.equal(state.racers[0]!.flags.hogOwnerId,'hog');assert.equal(state.racers[1]!.flags.hogOwnerId,undefined);
+  state=completeBeat(state);assert.equal(state.racers[0]!.flags.hogOwnerId,undefined);assert.equal(state.racers[1]!.flags.hogOwnerId,'hog');
+  state=completeBeat(state);assert.deepEqual(state.racers,final);
+});
+
 test('initial snapshots restore the confirmed board without replaying historical dice', () => {
   const room = view(9, [die(1, 6), roll(2, 6), motion(3, ['a'], [0], [6])], [racer('a', 6)]);
   const state = createPlayback(room);

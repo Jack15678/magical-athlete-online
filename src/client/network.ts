@@ -1,6 +1,7 @@
 import { PresentationEventClient } from './presentation-events.js';
 import { io, type Socket } from 'socket.io-client';
-import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, Phase, PublicEventReply, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, CharacterPool, ChatReply, ChatSend, GameAction, GameMode, Identity, Phase, PublicEventReply, RenameReply, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
+import { CommunityFeed, type CommunityState } from './community.js';
 import type { RelayJoinReply } from '../shared/relay.js';
 import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
 
@@ -15,6 +16,9 @@ export interface RoomConnection {
   emit(event: 'sync'): unknown;
   request(envelope: ActionEnvelope): Promise<ActionReply>;
   acknowledgeEvents?(cursor:number):void;
+  subscribeCommunity?(listener: (state: CommunityState) => void): () => void;
+  sendChat?(message: ChatSend): Promise<ChatReply>;
+  rename?(request: {requestId: string; name: string}): Promise<RenameReply>;
 }
 
 const identityKey = (code: string) => `magical-athlete:identity:${code.toUpperCase()}`;
@@ -127,7 +131,7 @@ export async function leaveRoom(identity: Identity): Promise<void> {
   if (!response.ok) throw Error(reply.error || '退出房间未确认，请重试。');
   if (!reply.retainIdentity) forgetIdentity(identity.roomCode, identity);
 }
-export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number; role?: RoomRole }): Promise<JoinReply> {
+export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number; role?: RoomRole; characterPool?: CharacterPool }): Promise<JoinReply> {
   const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
   const { role, ...creation } = data;
   const response = await fetch(code ? `${prefix}/${encodeURIComponent(code)}/join` : prefix, {
@@ -144,6 +148,12 @@ export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error' | 'c
 export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => void, onStatus: (state: ConnectionState, message?: string) => void): RoomConnection {
   if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
+  const community = new CommunityFeed();
+  const chatSync = () => { socket.timeout(6500).emit('chat-sync', {afterId: 0}, (error: Error | null, reply: {ok: boolean; messages?: RoomView['chat']; latestId?: number}) => { if (!error && reply.ok) community.update({messages: reply.messages, latestId: reply.latestId}); }); };
+  socket.on('chat', (payload: {messages: NonNullable<RoomView['chat']>; latestId: number}) => community.update(payload));
+  socket.on('connect', () => { community.update({connected: true}); chatSync(); });
+  socket.on('disconnect', () => community.update({connected: false}));
+  socket.on('snapshot', (room: RoomView) => community.update({messages: room.chat, latestId: room.chatLatestId, renameRemaining: room.renameRemaining, name: room.players.find(player => player.id === identity.playerId)?.name ?? room.spectators?.find(viewer => viewer.id === identity.playerId)?.name}));
   let closed = false;
   let expired = false;
   let closedMessage='房间已解散，请创建或加入其他房间。';
@@ -157,7 +167,10 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
   socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主连续离开超过30分钟，房间已关闭。'; finishClosed(); } });
   socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
   socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || /房间已解散|房间已关闭/.test(error.message)) {if(error.message.includes('30分钟'))closedMessage=error.message;finishClosed();} else onStatus('error', error.message); });
-  return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
+  return { get connected() { return !closed && socket.connected; }, subscribeCommunity: community.subscribe,
+    sendChat(message) { return new Promise((resolve,reject) => socket.timeout(6500).emit('chat-send', message, (error: Error | null, reply: ChatReply) => { if (error) reject(error); else { if (reply.message) community.update({messages: [reply.message]}); resolve(reply); } })); },
+    rename(request) { return new Promise((resolve,reject) => socket.timeout(6500).emit('rename', request, (error: Error | null, reply: RenameReply) => { if (error) reject(error); else { if (reply.ok) community.update({name: reply.name, renameRemaining: reply.remaining}); resolve(reply); } })); },
+    connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');chatSync();}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
 }
 function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {
   return new Promise((resolve, reject) => socket.timeout(6500).emit('action', envelope, (error: Error | null, reply: ActionReply) => error ? reject(error) : resolve(reply)));

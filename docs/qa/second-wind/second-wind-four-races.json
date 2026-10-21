@@ -1,0 +1,203 @@
+{
+  "pool": "second-wind",
+  "results": [
+    {
+      "round": 1,
+      "placements": [
+        {
+          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:1:0",
+          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+          "characterId": "hopfrog",
+          "rank": 1,
+          "points": 3
+        },
+        {
+          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:1:0",
+          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+          "characterId": "blunderdog",
+          "rank": 2,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "placements": [
+        {
+          "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:2:0",
+          "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
+          "characterId": "diva",
+          "rank": 1,
+          "points": 4
+        },
+        {
+          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:2:0",
+          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+          "characterId": "mush",
+          "rank": 2,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "placements": [
+        {
+          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:3:0",
+          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+          "characterId": "mole",
+          "rank": 1,
+          "points": 5
+        },
+        {
+          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:3:0",
+          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+          "characterId": "nepo-baby",
+          "rank": 2,
+          "points": 3
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "placements": [
+        {
+          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:4:0",
+          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+          "characterId": "penguin",
+          "rank": 1,
+          "points": 6
+        },
+        {
+          "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:4:0",
+          "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
+          "characterId": "switcharoo",
+          "rank": 2,
+          "points": 4
+        }
+      ]
+    }
+  ],
+  "summaries": [
+    {
+      "round": 1,
+      "characters": [
+        "hopfrog",
+        "blunderdog",
+        "cheatah"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 2,
+      "characters": [
+        "hotel",
+        "mush",
+        "diva"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 3,
+      "characters": [
+        "mole",
+        "nepo-baby",
+        "null"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "round": 4,
+      "characters": [
+        "penguin",
+        "show-off",
+        "switcharoo"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+    },
+    {
+      "phase": "finished",
+      "results": [
+        {
+          "round": 1,
+          "placements": [
+            {
+              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:1:0",
+              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+              "characterId": "hopfrog",
+              "rank": 1,
+              "points": 3
+            },
+            {
+              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:1:0",
+              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+              "characterId": "blunderdog",
+              "rank": 2,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "placements": [
+            {
+              "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:2:0",
+              "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
+              "characterId": "diva",
+              "rank": 1,
+              "points": 4
+            },
+            {
+              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:2:0",
+              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+              "characterId": "mush",
+              "rank": 2,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "placements": [
+            {
+              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:3:0",
+              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+              "characterId": "mole",
+              "rank": 1,
+              "points": 5
+            },
+            {
+              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:3:0",
+              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
+              "characterId": "nepo-baby",
+              "rank": 2,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "round": 4,
+          "placements": [
+            {
+              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:4:0",
+              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
+              "characterId": "penguin",
+              "rank": 1,
+              "points": 6
+            },
+            {
+              "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:4:0",
+              "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
+              "characterId": "switcharoo",
+              "rank": 2,
+              "points": 4
+            }
+          ]
+        }
+      ],
+      "steps": 400
+    }
+  ],
+  "errors": [],
+  "limitations": "Browser mobile viewport, not physical device GPU. Public-view automated intents sent through real authenticated relay."
+}

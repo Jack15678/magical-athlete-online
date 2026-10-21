@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "mole",
+      "node": "toy_mole",
+      "url": "/models/second-wind/mole.glb",
+      "avatar": "/models/second-wind/avatars/mole.png",
+      "bytes": 38484,
+      "triangles": 3080,
+      "draws": 5,
+      "bounds": [
+        0.6,
+        0.77872,
+        0.51232
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Large orange burrowing mole, pink nose/paws, two rectangular buckteeth, long molded whiskers and earth clods on back.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mole.png",
+      "editableSource": "assets/blender/second-wind/mole.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 38484,
+  "totalTriangles": 3080,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

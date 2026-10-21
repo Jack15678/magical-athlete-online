@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "stunner",
+      "node": "toy_stunner",
+      "url": "/models/second-wind/stunner.glb",
+      "avatar": "/models/second-wind/avatars/stunner.png",
+      "bytes": 41808,
+      "triangles": 3076,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.96928,
+        0.50142
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Orange bell pepper with five thick lobes, brown bent stalk, lashes, red lips, pink feet and coy raised arm.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Stunner.png",
+      "editableSource": "assets/blender/second-wind/stunner.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 41808,
+  "totalTriangles": 3076,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

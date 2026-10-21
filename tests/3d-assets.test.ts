@@ -4,7 +4,9 @@ import test from 'node:test';
 import { Box3, LoadingManager, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { CHARACTER_IDS } from '../src/shared/characters.js';
+import { ORIGINAL_CHARACTERS } from '../src/shared/characters.js';
+
+const CHARACTER_IDS = ORIGINAL_CHARACTERS.map(character => character.id);
 
 for (const variant of [
   { name: 'toy-racers', bytes: 2 * 1024 * 1024, triangles: 220_000, modelTriangles: 10_000 },

@@ -98,7 +98,7 @@ function beatForEvent(event: GameEvent, room: RoomView): PresentationBeat | unde
   else if (event.type === 'warp') kind = event.cause === 'flip-flop' ? 'swap' : 'warp';
   else if (event.type === 'place') kind = 'warp';
   else if (['trip', 'recover', 'score', 'finish', 'eliminate'].includes(event.type)) kind = event.type as PresentationKind;
-  else if (['power', 'copy', 'prediction', 'duel', 'cancel', 'reroll', 'skip'].includes(event.type)) kind = 'skill';
+  else if (['power', 'copy', 'prediction', 'duel', 'cancel', 'reroll', 'skip', 'transform', 'mount', 'control', 'secret-reveal', 'die-modified', 'cancel-race'].includes(event.type)) kind = 'skill';
   else return undefined;
   const face = kind === 'dice' ? confirmedFace(event, room) : undefined;
   if (kind === 'dice' && face === undefined) return undefined;
@@ -142,6 +142,13 @@ function applyBeatToRacers(racers: Racer[], beat: PresentationBeat, confirmed: R
     if (beat.kind === 'trip' && targets.has(racer.id)) next.tripped = true;
     if (beat.kind === 'recover' && targets.has(racer.id)) next.tripped = false;
     if (beat.kind === 'eliminate' && targets.has(racer.id)) next.eliminated = true;
+    for (const event of beat.events) for (const change of event.changes ?? []) {
+      if (change.racerId !== racer.id) continue;
+      if (change.playerId !== undefined) next.playerId = change.playerId;
+      if (change.form !== undefined) next.flags.form = change.form;
+      if (change.mount === null) delete next.flags.hogOwnerId;
+      else if (change.mount !== undefined) next.flags.hogOwnerId = change.mount;
+    }
     const prediction = beat.events.find(event => event.type === 'prediction' && event.source === racer.id);
     if (prediction?.targets?.[0]) next.flags.prediction = prediction.targets[0];
     if (beat.kind === 'finish' && racer.id === beat.source) {
@@ -212,7 +219,7 @@ export function receiveRoom(state: PlaybackState, room: RoomView, options: { rec
   if (changedRoster && !revealingRace) return createPlayback(room);
   // A race starts from the published start cell before any pre-race abilities.
   // Reconstruct that baseline only when the fresh server reveal proves it.
-  const baseRacers = revealingRace ? cloneRacers(room.racers).map(racer => ({ ...racer, flags: { ...racer.flags, prediction: undefined }, position: 0, tripped: false, finished: false, eliminated: false, rank: undefined })) : state.racers;
+  const baseRacers = revealingRace ? cloneRacers(room.racers).map(racer => ({ ...racer, playerId: racer.identityPlayerId ?? racer.playerId, flags: { ...racer.flags, prediction: undefined, form: undefined, hogOwnerId: undefined }, position: 0, tripped: false, finished: false, eliminated: false, rank: undefined })) : state.racers;
   const queue = revealingRace ? [] : [...state.queue];
   let lastDie = revealingRace ? undefined : state.lastDie;
   for (const event of fresh) {

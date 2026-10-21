@@ -53,9 +53,9 @@ async function actAsHuman(page: Page, room: Room, selfId: string) {
     if (game.draft?.order[game.draft.cursor] !== selfId) return false;
     if (game.mode === 'practice') {
       const pool=page.getByRole('region',{name:'练习角色牌池'});
-      await expect(pool.locator('.character-card')).toHaveCount(36);
+      await expect(pool.locator('.character-card')).toHaveCount(72);
       for(let index=0;index<4;index++)await pool.locator('.character-card .character-art').nth(index).click();
-      await expect(pool.getByRole('status')).toHaveText('已选 4 / 4 张 · 完整牌池 36 张');
+      await expect(pool.getByRole('status')).toHaveText('已选 4 / 4 张 · 完整牌池 72 张');
       await pool.getByRole('button',{name:'确认练习阵容',exact:true}).click();return true;
     }
     await page.locator('.character-card .character-art').first().click();

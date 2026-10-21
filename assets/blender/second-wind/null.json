@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "null",
+      "node": "toy_null",
+      "url": "/models/second-wind/null.glb",
+      "avatar": "/models/second-wind/avatars/null.png",
+      "bytes": 17012,
+      "triangles": 760,
+      "draws": 2,
+      "bounds": [
+        0.55682,
+        0.98,
+        0.43209
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Near-black closed void volume with tiny white eyes, matching the portrait without invented limbs.",
+      "inferred": "Card portrait has no defined body boundary: rounded full-volume silhouette and unseen side/back are explicit project inference.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Null.png",
+      "editableSource": "assets/blender/second-wind/null.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 17012,
+  "totalTriangles": 760,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

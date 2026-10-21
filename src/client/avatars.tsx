@@ -1,4 +1,8 @@
 import type { ReactNode } from 'react';
+import { SECOND_WIND_CHARACTERS } from '../shared/second-wind.js';
+import { SECOND_WIND_PORTRAITS_A } from './second-wind-portraits-a.js';
+import { SECOND_WIND_PORTRAITS_B } from './second-wind-portraits-b.js';
+import { SECOND_WIND_PORTRAITS_C } from './second-wind-portraits-c.js';
 
 // Original geometric portraits. These paths are not traced from the game artwork.
 const yellow = '#ffda27', red = '#f44735', blue = '#254de4', pink = '#f6a8d0', green = '#b5d66b', paper = '#fffdf4', ink = '#191919';
@@ -45,7 +49,9 @@ const portraits: Record<string, ReactNode> = {
   twin: <><path d="M11 65q-4-40 24-40 28-1 27 40l-7 32H18z" fill={pink} /><path d="M59 65q0-41 29-40 26 0 24 40l-7 32H66z" fill={blue} /><Eyes x={26} y={48} gap={16} small /><Eyes x={77} y={48} gap={16} small /><path d="M27 70q10 8 20-1m31 1q10 8 20-1M26 97v14H15m30-14v14h9m24-14v14h-9m29-14v14h12M61 76v15" fill="none" /><path d="M31 15h62m-62 0 6-6m-6 6 6 6m56-6-6-6m6 6-6 6" stroke={red} fill="none" /></>,
 };
 
-export const AVATAR_IDS = Object.keys(portraits);
+const secondWindIds = new Set(SECOND_WIND_CHARACTERS.map(character => character.id));
+const allPortraits = { ...portraits, ...SECOND_WIND_PORTRAITS_A, ...SECOND_WIND_PORTRAITS_B, ...SECOND_WIND_PORTRAITS_C };
+export const AVATAR_IDS = Object.keys(allPortraits);
 export function Avatar({ id, className = '' }: { id: string; className?: string }) {
-  return <svg className={`avatar ${className}`} viewBox="0 0 120 120" fill="none" stroke={ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{portraits[id] ?? <><circle cx="60" cy="58" r="42" fill={yellow} /><Eyes /><path d="M43 79q17 16 35-2" /></>}</svg>;
+  return <svg className={`avatar${secondWindIds.has(id) ? ' sw-avatar' : ''} ${className}`} viewBox="0 0 120 120" fill="none" stroke={ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{allPortraits[id] ?? <><circle cx="60" cy="58" r="42" fill={yellow} /><Eyes /><path d="M43 79q17 16 35-2" /></>}</svg>;
 }

@@ -15,6 +15,7 @@
     "start": "node dist/server/server/index.js",
     "test": "tsx --test tests/*.test.ts tests/host.test.mjs",
     "test:e2e": "playwright test",
+    "build:avatars": "tsx scripts/export-second-wind-avatars.ts",
     "build:browser": "node scripts/build-browser.mjs",
     "dev:browser": "wrangler dev --ip 127.0.0.1 --port 8787",
     "test:relay": "playwright test -c playwright.relay.config.ts",

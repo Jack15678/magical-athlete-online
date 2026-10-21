@@ -2,8 +2,8 @@ import { LatheGeometry, MeshPhysicalMaterial, MeshStandardMaterial, Vector2 } fr
 
 /** The existing GLB palette remains the source of every character's identity. */
 function toySurface(source: MeshStandardMaterial, lowQuality: boolean) {
-  const paper = source.name === 'toy-paper';
-  const ink = source.name === 'toy-ink';
+  const paper = source.name === 'toy-paper' || source.name === 'toy-sw-paper';
+  const ink = source.name === 'toy-ink' || source.name === 'toy-sw-ink' || source.name === 'toy-sw-dark';
   const material = lowQuality ? source.clone() : new MeshPhysicalMaterial({
     color: source.color,
     side: source.side,

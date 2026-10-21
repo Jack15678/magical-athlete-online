@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyGameAction, createGame, effectivePower, resolveTasks } from '../src/engine/index.js';
+import { abilityState, applyGameAction, createGame, effectivePower, resolveTasks } from '../src/engine/index.js';
 import { projectRoom } from '../src/shared/room-core.js';
 import type { GameState, Player, Room } from '../src/shared/types.js';
 
@@ -47,7 +47,7 @@ test('Egg choosing Twin retains the drawn Twin separately from its champion and 
   const egg = s.racers[0]!;
   assert.equal(egg.flags.eggCardId, 'twin'); assert.equal(egg.flags.twinCardId, 'egg');
   assert.equal(effectivePower(s, egg), 'sisyphus'); assert.equal(s.players[0]!.score, 4);
-  assert.deepEqual(view(JSON.parse(JSON.stringify(s))).racers[0]!.flags, egg.flags);
+  assert.deepEqual(view(JSON.parse(JSON.stringify(s))).racers[0]!.flags, {...egg.flags, publicAbilities: abilityState(s, egg)});
   assert.deepEqual(s.logs.filter(event=>event.type==='copy').map(event=>event.selectedCardId), ['twin', 'egg']);
 });
 

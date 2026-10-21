@@ -18,6 +18,17 @@ function environment(seed=19) {
   const options:AuthorityOptions={indexedDB,databaseName,now:()=>clock.now,randomSeed:()=>seed};
   return {indexedDB,databaseName,clock,options};
 }
+
+test('relay-owned rename reconciles by stable identity and survives authority reload without resetting game data',async()=>{
+  const env=environment(),meta=metadata(),authority=await BrowserAuthority.create(meta,env.options);
+  await readyAndStart(authority,meta);const before=await raw(env);
+  const renamed={...meta,phase:authority.view('p0').phase,members:meta.members.map(member=>member.id==='p1'?{...member,name:'唯一新昵称',renameUsed:true}:member)};
+  await authority.roster(renamed);const after=await raw(env);
+  assert.equal(after.room.game.players[1]!.name,'唯一新昵称');assert.equal(authority.view('p1').renameRemaining,0);
+  assert.equal(after.room.game.players[1]!.id,before.room.game.players[1]!.id);assert.deepEqual(after.room.game.players[1]!.hand,before.room.game.players[1]!.hand);
+  assert.equal(after.room.game.rngState,before.room.game.rngState);assert.deepEqual(after.room.game.queue,before.room.game.queue);
+  authority.dispose();const loaded=await BrowserAuthority.load(renamed,env.options);assert.equal(loaded.view('p1').renameRemaining,0);assert.equal(loaded.view('p0').players[1]!.name,'唯一新昵称');loaded.dispose();
+});
 async function raw(env:ReturnType<typeof environment>,code='ABC234'):Promise<{code:string;authorityId:string;room:Room}> {
   return new Promise((resolve,reject)=>{
     const open=env.indexedDB.open(env.databaseName);open.onerror=()=>reject(open.error);
@@ -169,9 +180,11 @@ test('Pending choices, queue, random history and receipts recover exactly; the h
   const before=await raw(env);assert.ok(before.room.game.pending);assert.ok(before.room.game.randomLog.length);a.dispose();
   env.clock.now+=900_000;
   const loaded=await BrowserAuthority.load({...meta,phase:before.room.game.phase},env.options);const restored=await raw(env);
-  assert.deepEqual(restored.room.game,before.room.game);assert.equal(restored.room.version,before.room.version);assert.equal(restored.room.deadline,env.clock.now+120_000);
+  assert.deepEqual(restored.room.game,before.room.game);assert.equal(restored.room.version,before.room.version);assert.equal(restored.room.deadline,null, 'a restored human choice waits for its controller');
   assert.equal((await loaded.action(last!.playerId,last!.envelope)).duplicate,true);
-  const next=automaticAction(restored.room.game)!;
+  assert.equal(automaticAction(restored.room.game), undefined);
+  const pending=restored.room.game.pending!;
+  const next={playerId:pending.playerId,action:{type:'choose',choiceId:pending.id,optionId:pending.options[0]!.id} as GameAction};
   const expected=reduceRoomAction(restored.room,next.playerId,next.action,{now:env.clock.now,rematchSeed:0});
   assert.equal((await command(loaded,next.playerId,next.action)).reply.ok,true);assert.deepEqual((await raw(env)).room.game,expected.game);loaded.dispose();
 });

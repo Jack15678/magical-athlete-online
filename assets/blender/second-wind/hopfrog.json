@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "hopfrog",
+      "node": "toy_hopfrog",
+      "url": "/models/second-wind/hopfrog.glb",
+      "avatar": "/models/second-wind/avatars/hopfrog.png",
+      "bytes": 31676,
+      "triangles": 2352,
+      "draws": 3,
+      "bounds": [
+        0.6,
+        0.78595,
+        0.36322
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Bright red broad-faced frog, two tall eye stalks, stretched spring-like legs and webbed feet.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Hopfrog.png",
+      "editableSource": "assets/blender/second-wind/hopfrog.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 31676,
+  "totalTriangles": 2352,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

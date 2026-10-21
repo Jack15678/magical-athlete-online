@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CHARACTERS } from '../src/shared/characters.js';
+import { ORIGINAL_CHARACTERS as CHARACTERS } from '../src/shared/characters.js';
 import { TRACKS } from '../src/shared/tracks.js';
 import type { GameState, GameAction, Racer } from '../src/shared/types.js';
 import { applyGameAction, effectivePower, enqueueMove, enqueueWarp, resolveTasks } from '../src/engine/index.js';

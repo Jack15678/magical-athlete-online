@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "tail",
+      "node": "toy_tail",
+      "url": "/models/second-wind/tail.glb",
+      "avatar": "/models/second-wind/avatars/tail.png",
+      "bytes": 25252,
+      "triangles": 1486,
+      "draws": 4,
+      "bounds": [
+        0.6,
+        0.94276,
+        0.30227
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Standalone curled green dinosaur tail with olive triangular back spikes, top-mounted eyes and tiny feet.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Tail.png",
+      "editableSource": "assets/blender/second-wind/tail.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 25252,
+  "totalTriangles": 1486,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

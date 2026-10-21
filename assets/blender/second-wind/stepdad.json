@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "stepdad",
+      "node": "toy_stepdad",
+      "url": "/models/second-wind/stepdad.glb",
+      "avatar": "/models/second-wind/avatars/stepdad.png",
+      "bytes": 47480,
+      "triangles": 4016,
+      "draws": 6,
+      "bounds": [
+        0.6,
+        0.89447,
+        0.37031
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Violet walrus with brown moustache, white tusks, red suspenders, bow tie and orange raised foam finger.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Stepdad.png",
+      "editableSource": "assets/blender/second-wind/stepdad.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 47480,
+  "totalTriangles": 4016,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

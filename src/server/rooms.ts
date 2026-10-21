@@ -1,8 +1,10 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import type { ActionEnvelope, ActionReply, GameMode, Identity, Player, Room, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, CharacterPool, ChatReply, GameMode, Identity, Player, RenameReply, Room, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
+import { appendChat, appendPlayerChat, chatBatch, deduplicateStoredNicknames, uniqueNickname, validateChatSend, validateNickname } from '../shared/chat.js';
 import { immediateRoomAction } from '../shared/automation.js';
 import { projectRoom, reduceRoomAction, setRoomDeadline } from '../shared/room-core.js';
-import { createGame, startGame, automaticAction } from '../engine/index.js';
+import { createGame, startGame } from '../engine/index.js';
+import { automaticRoomAction as automaticAction, LEGACY_RULES_VERSION } from '../engine/runtime.js';
 import { Store } from './store.js';
 import { MAX_SPECTATORS, ROOM_TTL_MS } from '../shared/constants.js';
 import { roomExpiry, type RoomCloseReason, type RoomClosure } from '../shared/room-lifecycle.js';
@@ -17,6 +19,10 @@ export class Rooms {
   constructor(readonly store: Store, readonly defaultTimeout = 120, readonly now=Date.now) {
     const restoredAt=this.now();
     for(const room of store.load()) {
+      room.game.rulesVersion??=LEGACY_RULES_VERSION;
+      const healed=deduplicateStoredNicknames([...room.game.players,...(room.spectators??[])]);
+      room.game.players=room.game.players.map(player=>({...player,name:healed.find(member=>member.id===player.id)!.name}));
+      room.spectators=room.spectators?.map(spectator=>({...spectator,name:healed.find(member=>member.id===spectator.id)!.name}));
       room.ownerId??=room.game.players.find(player=>player.seat===0)?.id??room.hostId;
       room.hostId=room.ownerId;
       if(room.closedAt!==undefined){store.closeRoom({code:room.code,closedAt:room.closedAt,reason:room.closeReason??'dismissed',hostId:room.hostId,version:room.version});continue;}
@@ -49,22 +55,25 @@ export class Rooms {
     }));
   }
   player(name: string, seat: number): Player { return {id:randomUUID(),name,seat,color:PLAYER_COLORS[seat]!,ready:false,connected:false,score:0,hand:[],used:[],selection:[]}; }
-  create(name: string, maxPlayers: number, timeoutSeconds?: number, mode:GameMode='multiplayer', aiCount=3): {identity:Identity;room:RoomView} {
+  create(name: string, maxPlayers: number, timeoutSeconds?: number, mode:GameMode='multiplayer', aiCount=3, characterPool:CharacterPool='original'): {identity:Identity;room:RoomView} {
     for(const code of this.rooms.keys())this.expire(code);
     if(this.rooms.size >= 500) throw Error('当前房间较多，请稍后重试。');
     let code: string; do { code = Array.from(randomBytes(6), b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 31]).join(''); } while(this.rooms.has(code)||this.closed(code));
     if(!['multiplayer','practice','ai'].includes(mode))throw Error('比赛模式无效。');
     if(mode==='ai'&&(!Number.isInteger(aiCount)||aiCount<1||aiCount>7))throw Error('AI人数需为1～7。');
     if(mode!=='multiplayer')maxPlayers=mode==='practice'?1:aiCount+1;
-    const p = this.player(name,0); const now=this.now();
+    if(!['original','second-wind','mixed'].includes(characterPool))throw Error('角色牌池无效。');
+    const p = this.player(uniqueNickname(name,[]),0); const now=this.now();
     const players=[p,...Array.from({length:mode==='ai'?aiCount:0},(_,i)=>({...this.player(`电脑${i+1}`,i+1),isAI:true,ready:true,connected:true}))];
-    const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,randomBytes(4).readUInt32LE(),mode)};
+    for(let i=1;i<players.length;i++)players[i]!.name=uniqueNickname(players[i]!.name,players.slice(0,i).map(person=>person.name));
+    const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,randomBytes(4).readUInt32LE(),mode,characterPool)};
     if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);this.deadline(room);}
     const token = randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(code,room);
     return {identity:{roomCode:code,playerId:p.id,token,role:'player'},room:this.view(room,p.id)};
   }
   join(code: string, name: string,role:RoomRole='player'): {identity:Identity;room:RoomView} {
     const original=this.get(code); if(original.closedAt!==undefined) throw Error('房间已解散。请创建或加入其他房间。');
+    name=uniqueNickname(name,[...original.game.players,...(original.spectators??[])].map(person=>person.name));
     if(role==='spectator') {
       if((original.spectators?.length??0)>=MAX_SPECTATORS)throw Error('观战人数已满，请稍后再试。');
       const room=structuredClone(original),spectator={id:randomUUID(),name,connected:false};
@@ -123,6 +132,40 @@ export class Rooms {
       if(room.closedAt!==undefined){this.closePersonal(room,'dismissed',room.closedAt,envelope.actionId);return{ok:true,version:room.version};}
       const result={ok:true,version:room.version};this.store.commitAction(room,id,envelope.actionId,request,result);this.rooms.set(code,room);return result;
     }catch(e){return{ok:false,error:e instanceof Error?e.message:'操作失败，请重试。',version:original.version};}
+  }
+  chat(code:string,id:string,input:unknown):ChatReply {
+    try {
+      const original=this.get(code),person=original.game.players.find(p=>p.id===id)??original.spectators?.find(p=>p.id===id);
+      if(!person||('isAI' in person&&person.isAI))throw Error('只有当前房间内的真人成员可以聊天。');
+      const message=validateChatSend(input),prior=this.store.memberReceipt<ChatReply>(code,id,'chat',message.clientMessageId);
+      if(prior)return prior.request===message.text?{...prior.result,duplicate:true}:{ok:false,error:'同一消息编号不能用于不同内容。'};
+      const room=structuredClone(original);room.chat=appendPlayerChat(room.chat,id,person.name,message,this.now());
+      const result:ChatReply={ok:true,message:room.chat.messages.at(-1)!};
+      this.store.commitMember(room,id,'chat',message.clientMessageId,message.text,result);this.rooms.set(code,room);return result;
+    }catch(error){return{ok:false,error:error instanceof Error?error.message:'消息发送失败。'};}
+  }
+  chatHistory(code:string,id:string,afterId=0){
+    const room=this.get(code);if(!room.game.players.some(p=>p.id===id)&&!room.spectators?.some(p=>p.id===id))throw Error('你不是当前房间成员。');
+    return chatBatch(room.chat,afterId);
+  }
+  rename(code:string,id:string,requestId:unknown,name:unknown):RenameReply {
+    try {
+      if(typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(requestId))throw Error('改名请求编号无效。');
+      const original=this.get(code),player=original.game.players.find(p=>p.id===id);
+      if(!player||player.isAI)throw Error('只有真人参赛玩家可以修改昵称。');
+      const requested=validateNickname(name);
+      const prior=this.store.memberReceipt<RenameReply>(code,id,'rename',requestId);
+      if(prior)return prior.request===requested?{...prior.result,duplicate:true}:{ok:false,error:'同一请求编号不能用于不同昵称。'};
+      if(original.game.phase==='lobby')throw Error('请在对局开始后修改昵称。');
+      if(player.renameUsed)throw Error('本局已修改过昵称。');
+      const finalName=uniqueNickname(requested,[...original.game.players,...(original.spectators??[])].filter(p=>p.id!==id).map(p=>p.name));
+      if(finalName===player.name)throw Error('新昵称与当前昵称相同。');
+      const room=structuredClone(original),next=room.game.players.find(p=>p.id===id)!;
+      next.name=finalName;next.renameUsed=true;next.renameRequestId=requestId;room.version++;room.updatedAt=this.now();
+      room.chat=appendChat(room.chat,{senderId:id,senderName:'系统',text:`${player.name} 已改名为 ${finalName}`,sentAt:this.now(),kind:'system'});
+      const result:RenameReply={ok:true,name:finalName,remaining:0};
+      this.store.commitMember(room,id,'rename',requestId,requested,result);this.rooms.set(code,room);return result;
+    }catch(error){return{ok:false,error:error instanceof Error?error.message:'修改昵称失败。'};}
   }
   deadline(room: Room): void { setRoomDeadline(room,this.now()); }
   tick(now=this.now()): string[] {

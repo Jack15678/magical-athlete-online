@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "edition": "second-wind",
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "source": "assets/blender/second-wind.blend",
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
+  "compression": "EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "nepo-baby",
+      "node": "toy_nepo-baby",
+      "url": "/models/second-wind/nepo-baby.glb",
+      "avatar": "/models/second-wind/avatars/nepo-baby.png",
+      "bytes": 46536,
+      "triangles": 3788,
+      "draws": 7,
+      "bounds": [
+        0.52955,
+        0.98,
+        0.48222
+      ],
+      "pivotY": 0,
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "recognition": "Round pink baby with orange pacifier, oversized blue top hat, matching formal suit, orange tie and silver rattle.",
+      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+      "referenceChecked": true,
+      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Nepo%20Baby.png",
+      "editableSource": "assets/blender/second-wind/nepo-baby.blend"
+    }
+  ],
+  "variants": [],
+  "totalBytes": 46536,
+  "totalTriangles": 3788,
+  "materialCount": 15,
+  "textureCount": 0,
+  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+}

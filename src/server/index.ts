@@ -1,4 +1,5 @@
 import { publicEventBatch } from '../shared/public-events.js';
+import { chatBatch } from '../shared/chat.js';
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
@@ -8,7 +9,7 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import { Store } from './store.js';
 import { Rooms } from './rooms.js';
-import { systemAction } from '../engine/index.js';
+import { systemRoomAction as systemAction } from '../engine/runtime.js';
 import type { ActionEnvelope, Identity } from '../shared/types.js';
 
 const action=z.discriminatedUnion('type',[
@@ -37,7 +38,7 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
   const scheduleContinuation=(code:string)=>{if(closing||rooms.expire(code))return;const current=rooms.rooms.get(code);if(resuming.has(code)||!current||current.closedAt!==undefined||!systemAction(current.game))return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing||rooms.expire(code))return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;const next=systemAction(room.game);if(!next)return;const result=rooms.act(code,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:next.action});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
   app.get('/api/health',(_req,res)=>res.json({ok:true,storage:'sqlite',version:'0.1.0'}));
   app.get('/api/rooms',(_req,res,next)=>{try{res.json({rooms:rooms.list()});}catch(e){next(e);}});
-  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount));}catch(e){next(e);}});
+  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional(),characterPool:z.enum(['original','second-wind','mixed']).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount,b.characterPool));}catch(e){next(e);}});
   app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname,role:z.enum(['player','spectator']).optional()}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name,b.role);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
   app.post('/api/rooms/:code/resume-status',(req,res,next)=>{try{
     const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');
@@ -70,6 +71,26 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
       if(typeof ack!=='function')return;
       try{if(!socketRate.accept(key))throw Error('动画记录请求太频繁。');const query=z.object({afterId:z.number().int().nonnegative()}).strict().parse(input);ack({ok:true,batch:publicEventBatch(rooms.get(i.roomCode),i.playerId,query.afterId)});}
       catch(error){ack({ok:false,error:error instanceof z.ZodError?'动画记录请求格式不正确。':error instanceof Error?error.message:'无法读取动画记录。'});}
+    });
+    const publishChat=()=>{
+      // A committed send/rename can cross the owner's absence deadline before
+      // publication; rename's preceding snapshot broadcast may already close it.
+      if(rooms.expire(i.roomCode))return;
+      const room=rooms.rooms.get(i.roomCode);if(!room||room.closedAt!==undefined)return;
+      const batch=chatBatch(room.chat);
+      for(const target of io.sockets.sockets.values())if(target.data.identity?.roomCode===i.roomCode)target.emit('chat',batch);
+    };
+    socket.on('chat-send',(input:unknown,ack:unknown)=>{
+      const result=rooms.chat(i.roomCode,i.playerId,input);if(typeof ack==='function')ack(result);if(result.ok&&!result.duplicate)publishChat();
+    });
+    socket.on('chat-sync',(input:unknown,ack:unknown)=>{
+      if(typeof ack!=='function')return;
+      try{if(!socketRate.accept(key))throw Error('聊天同步太频繁。');const query=z.object({afterId:z.number().int().nonnegative().optional()}).strict().parse(input);ack({ok:true,...rooms.chatHistory(i.roomCode,i.playerId,query.afterId??0)});}
+      catch(error){ack({ok:false,error:error instanceof Error?error.message:'聊天同步失败。'});}
+    });
+    socket.on('rename',(input:unknown,ack:unknown)=>{
+      let result;try{if(!socketRate.accept(key))throw Error('操作太频繁。');const query=z.object({requestId:z.string().max(100),name:z.string()}).strict().parse(input);result=rooms.rename(i.roomCode,i.playerId,query.requestId,query.name);}catch(error){result={ok:false,error:error instanceof Error?error.message:'修改昵称失败。'};}
+      if(typeof ack==='function')ack(result);if(result.ok){broadcast(i.roomCode);publishChat();}
     });
     socket.on('action',(input:unknown,ack:unknown)=>{let result;let parsed:ActionEnvelope|undefined;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。');parsed=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,parsed);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);if(result.ok&&parsed?.action.type==='close'&&(rooms.rooms.get(i.roomCode)?.closedAt!==undefined||rooms.closed(i.roomCode))){resuming.delete(i.roomCode);notifyClosed(i.roomCode);return;}broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
     socket.on('disconnect',()=>{const list=connections.get(key);list?.delete(socket.id);if(!list?.size){connections.delete(key);rooms.presence(i.roomCode,i.playerId,false);broadcast(i.roomCode);}});
