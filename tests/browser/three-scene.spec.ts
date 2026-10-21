@@ -68,10 +68,10 @@ async function seed(room: Pair, characterIds: string[], positions: number[], dic
   }
   for (const page of [room.host, room.guest]) {
     await expect(page.getByTestId('board-3d')).toBeVisible();
-    await expect(page.getByTestId('board-3d').locator('canvas')).toBeVisible();
+    await expect(page.getByTestId('board-3d').locator('.board-webgl canvas')).toBeVisible();
     await expect.poll(async () => {
       const boardBox = (await page.getByTestId('board-3d').boundingBox())!;
-      const canvasBox = (await page.getByTestId('board-3d').locator('canvas').boundingBox())!;
+      const canvasBox = (await page.getByTestId('board-3d').locator('.board-webgl canvas').boundingBox())!;
       return Math.abs(canvasBox.x - boardBox.x) <= 3 && Math.abs(canvasBox.y - boardBox.y) <= 3 && canvasBox.width > boardBox.width * .95 && canvasBox.height > boardBox.height * .95;
     }).toBe(true);
     await expect.poll(async () => Number(await page.getByTestId('board-3d').getAttribute('data-triangles'))).toBeGreaterThan(100);
@@ -135,18 +135,27 @@ test('3D dice settles on the authoritative face before movement; reconnect does 
     await room.host.getByTestId('presentation-settings').click();
     await canvasDiagnostics(room.host);
     const board = room.host.getByTestId('board-3d');
+    await expect(board.locator('canvas')).toHaveCount(2);
+    const diceCanvas = await room.host.locator('.dice-spotlight canvas').elementHandle();
+    expect(diceCanvas).not.toBeNull();
+    await expect(room.host.locator('.dice-spotlight')).toBeHidden();
     await recordBeats(room.host);
     const started = Date.now();
     await room.host.getByRole('button', { name: '掷骰子', exact: true }).click();
     await expect(board).toHaveAttribute('data-phase', 'dice');
+    expect(await room.host.evaluate(original => document.querySelector('.dice-spotlight canvas') === original, diceCanvas)).toBe(true);
     await expect(room.host.getByRole('button', { name: '正在演出…', exact: true })).toBeDisabled();
     await expect(room.host.getByRole('region', { name: '待处理技能' })).toHaveCount(0);
     expect(application.rooms.get(room.code).game.lastRoll?.face).toBe(1);
     await expect(token(room.host, 'r0')).toHaveAttribute('data-position', '5');
-    await expect(room.host.locator('.dice-spotlight')).toHaveAttribute('data-up-face', '1');
+    // The final-face pause is intentionally brief (~400 ms); sample it at a
+    // steady interval instead of the assertion runner's expanding backoff.
+    await expect.poll(() => room.host.locator('.dice-spotlight').getAttribute('data-up-face'), { intervals: [25] }).toBe('1');
     await expect(room.host.getByTestId('dice-value')).toHaveText(/1/);
     await captureBoard(room.host, 'dice-settled-desktop');
     await expect(board).toHaveAttribute('data-phase', 'idle');
+    expect(await room.host.evaluate(original => document.querySelector('.dice-spotlight canvas') === original, diceCanvas)).toBe(true);
+    await expect(board.locator('canvas')).toHaveCount(2);
     expect(Date.now() - started).toBeGreaterThanOrEqual(2300);
     expect((await beats(room.host)).filter(beat => beat.phase === 'dice')).toHaveLength(1);
 
