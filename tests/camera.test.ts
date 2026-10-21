@@ -18,6 +18,13 @@ test('the default camera follows my live racer and switches to my active racer',
   assert.deepEqual(ownFocus(room, racers.map(value => ({ ...value, finished: value.id === 'a' }))).ids, ['c']);
 });
 
+test('spectators follow the current racer and retain a useful fallback when that racer is absent', () => {
+  const watching = { ...room, role: 'spectator' as const, selfId: 'watcher' };
+  assert.deepEqual(ownFocus(watching, racers), { state: 'self', ids: ['b'], positions: [14] });
+  assert.deepEqual(ownFocus({ ...watching, currentRacerId: undefined }, racers).ids, ['a']);
+  assert.deepEqual(ownFocus(watching, []).positions, [0]);
+});
+
 test('one confirmed chain frames its actor, full movement path and reactions, excluding later turns', () => {
   const move = beat('move', 'turn1', 'b', 14, 20);
   const reaction = beat('reaction', 'turn1', 'a', 2, 4);

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import type { ActionEnvelope, Identity, RoomView } from '../src/shared/types.js';
 import type { RelayJoinReply } from '../src/shared/relay.js';
+import { MAX_SPECTATORS, ROOM_TTL_MS } from '../src/shared/constants.js';
 
 // Exercise the real relay handlers. Only the platform base class, persistent
 // storage, and socket transport are substituted; rule/network logic is not.
@@ -26,6 +27,7 @@ class Socket {
 class Storage {
   values=new Map<string,unknown>();alarmAt:number|null=null;failPut?:string;failAlarm=false;
   async get<T>(key:string):Promise<T|undefined>{return structuredClone(this.values.get(key)) as T|undefined;}
+  async list<T>(options:{prefix:string;limit?:number;startAfter?:string}){return new Map([...this.values.entries()].filter(([key])=>key.startsWith(options.prefix)&&(!options.startAfter||key>options.startAfter)).sort(([a],[b])=>a.localeCompare(b)).slice(0,options.limit??1000).map(([key,value])=>[key,structuredClone(value) as T]));}
   async put(key:string,value:unknown){if(this.failPut===key){this.failPut=undefined;throw Error('simulated storage write failure');}this.values.set(key,structuredClone(value));}
   async delete(keys:string|string[]){let removed=0;for(const key of Array.isArray(keys)?keys:[keys])if(this.values.delete(key))removed++;return removed;}
   async getAlarm(){return this.alarmAt;}
@@ -202,7 +204,7 @@ for(const phase of ['lobby','race'] as const)test(`relay close in ${phase} commi
   await deliver(env,host,env.created.identity.playerId,closedView,'close-room');
   const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.closedAt,closedAt);assert.equal(stored.pendingClose,undefined);
   assert.equal(await env.ctx.storage.get('view:'+guest.identity.playerId),undefined);
-  assert.ok(stored.expiresAt>=closedAt+30*86_400_000);assert.equal(env.ctx.storage.alarmAt,stored.expiresAt);
+  assert.equal(stored.expiresAt,stored.createdAt+ROOM_TTL_MS);assert.equal(stored.expiresAt,env.created.room.expiresAt);assert.equal(env.ctx.storage.alarmAt,stored.expiresAt);
   for(const socket of [host,peer,viewer]){assert.equal(socket.closeCode,4410);assert.equal(socket.sent.find(m=>m.type==='room-closed').closedAt,closedAt);}
   const ack=host.sent.findIndex(m=>m.type==='ack');assert.ok(ack>=0);assert.equal(host.sent[ack].result.ok,true);
   assert.ok(ack<host.sent.findIndex(m=>m.type==='room-closed'));
@@ -325,4 +327,127 @@ test('relay event backfill derives the reader identity and only the authenticate
   assert.deepEqual(peer.sent.find(message=>message.type==='events'),{type:'events',requestId:'missing-events',batch});assert(!other.sent.some(message=>message.type==='events'));
   peer.clear();other.clear();await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver-events',to:guest.identity.playerId,requestId:'event-error',error:'无法读取动画记录。'}));assert.deepEqual(peer.sent.at(-1),{type:'error',requestId:'event-error',message:'无法读取动画记录。'});assert.equal(other.sent.length,0);assert.equal(host.readyState,1);
   host.clear();await env.relay.webSocketMessage(peer,JSON.stringify({type:'events',requestId:'injected-reader',afterId:120,playerId:env.created.identity.playerId}));assert.equal(host.sent.length,0);assert.match(peer.sent.at(-1).message,/格式/);
+});
+
+async function spectate(env:Awaited<ReturnType<typeof create>>,nickname='观众'){
+  const response=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:JSON.stringify({name:nickname,role:'spectator'})}));
+  assert.equal(response.status,201);return await response.json() as RelayJoinReply;
+}
+async function leave(env:Awaited<ReturnType<typeof create>>,identity:Identity){return env.relay.fetch(new Request('https://room.internal/leave/ABC234',{method:'POST',body:JSON.stringify(identity)}));}
+
+test('spectators join ongoing full rooms separately, receive public state/events, and cannot act or host',async()=>{
+  const env=await create(2),host=await authenticate(env,env.created.identity,true),guest=await join(env);
+  const active={...guest.room,phase:'race' as const,version:9,players:guest.room.players.map(player=>({...player,hand:['secret'],selection:['private']})),pending:{id:'secret-choice',playerId:guest.identity.playerId,title:'秘密选项',options:[{id:'secret',label:'隐藏'}],optional:false,kind:'test'}};
+  await deliver(env,host,guest.identity.playerId,active);
+  const spectator=await spectate(env);assert.equal(spectator.identity.role,'spectator');assert.equal(spectator.meta.members.length,2);assert.equal(spectator.meta.spectators?.length,1);
+  assert.equal(spectator.room.phase,'race');assert.equal(spectator.room.version,9);assert.equal(spectator.room.role,'spectator');assert(!JSON.stringify(spectator.room).includes('secret'));assert.equal(spectator.room.pending,undefined);
+  const socket=await authenticate(env,spectator.identity);host.clear();
+  await env.relay.webSocketMessage(socket,JSON.stringify({type:'sync',requestId:'spectator-sync'}));assert.equal(host.sent.at(-1).playerId,spectator.identity.playerId);
+  await deliver(env,host,spectator.identity.playerId,{...active,selfId:spectator.identity.playerId},'spectator-sync');
+  assert.equal(socket.sent.find(message=>message.type==='snapshot').room.role,'spectator');assert(!JSON.stringify(socket.sent.find(message=>message.type==='snapshot')).includes('secret'));
+  host.clear();await env.relay.webSocketMessage(socket,JSON.stringify({type:'events',requestId:'spectator-events',afterId:0}));assert.equal(host.sent.at(-1).operation,'events');
+  const batch={afterId:0,latestId:1,events:[{id:1,type:'move',text:'公开动作'}]};await env.relay.webSocketMessage(host,JSON.stringify({type:'deliver-events',to:spectator.identity.playerId,requestId:'spectator-events',batch}));assert.deepEqual(socket.sent.at(-1).batch,batch);
+  host.clear();await env.relay.webSocketMessage(socket,JSON.stringify({type:'action',requestId:'spectator-action',envelope:act()}));assert.match(socket.sent.at(-1).message,/观战者/);assert.equal(host.sent.length,0);
+  const impostor=await authenticate(env,spectator.identity,true);assert.equal(impostor.closeCode,4401);
+});
+
+test('spectators may watch solo and offline rooms without consuming player seats, up to the spectator limit',async()=>{
+  const env=await create(),record=await env.ctx.storage.get<any>('room');record.mode='practice';record.maxPlayers=1;await env.ctx.storage.put('room',record);
+  const restored={...env,...await instance(env.ctx.storage)};
+  for(let index=0;index<MAX_SPECTATORS;index++){const spectator=await spectate(restored,'观众'+index);assert.equal(spectator.meta.members.length,1);}
+  const full=await restored.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"满员观众","role":"spectator"}'}));assert.equal(full.status,409);
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.members.length,1);assert.equal(stored.spectators.length,MAX_SPECTATORS);assert.match(stored.spectators[0].tokenHash,/^[a-f0-9]{64}$/);assert(!JSON.stringify(restored.created.meta).includes('tokenHash'));
+});
+
+test('explicit leave removes lobby guests and spectators, closes all their tabs, and rejects credentials afterwards',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),nextGuest=await join(env),spectator=await spectate(env);
+  const tabs=await Promise.all([authenticate(env,guest.identity),authenticate(env,guest.identity)]),viewer=await authenticate(env,spectator.identity);
+  const denied=await leave(env,{...guest.identity,token:'A'.repeat(43)});assert.equal(denied.status,401);assert.equal((await env.ctx.storage.get<any>('room')).members.length,3);
+  host.clear();assert.deepEqual(await (await leave(env,guest.identity)).json(),{ok:true,retainIdentity:false});assert(tabs.every(socket=>socket.closeCode===4401));assert.equal((await authenticate(env,guest.identity)).closeCode,4401);
+  const replacement=await join(env);assert.equal(replacement.meta.members.find(player=>player.id===replacement.identity.playerId)!.seat,1);assert.equal(replacement.meta.members.find(player=>player.id===nextGuest.identity.playerId)!.seat,2);
+  assert.deepEqual(await (await leave(env,spectator.identity)).json(),{ok:true,retainIdentity:false});assert.equal(viewer.closeCode,4401);assert.equal((await authenticate(env,spectator.identity)).closeCode,4401);assert.equal((await env.ctx.storage.get<any>('room')).spectators.length,0);
+  assert(host.sent.some(message=>message.type==='roster'&&message.meta.spectators.length===0));
+});
+
+test('explicit leave preserves active players and creator credentials while pausing an exiting authority',async()=>{
+  const env=await create(),host=await authenticate(env,env.created.identity,true),guest=await join(env),peer=await authenticate(env,guest.identity);
+  await deliver(env,host,guest.identity.playerId,{...guest.room,phase:'race',version:2});
+  assert.deepEqual(await (await leave(env,guest.identity)).json(),{ok:true,retainIdentity:true});assert.equal(peer.closeCode,4401);assert.equal((await authenticate(env,guest.identity)).readyState,1);
+  const viewer=await authenticate(env,env.created.identity);assert.deepEqual(await (await leave(env,env.created.identity)).json(),{ok:true,retainIdentity:true});assert.equal(host.closeCode,4401);assert.equal(viewer.closeCode,4401);
+  const stored=await env.ctx.storage.get<any>('room');assert.equal(stored.members.length,2);assert.equal(stored.expiresAt,stored.createdAt+ROOM_TTL_MS);
+  assert.equal((await authenticate(env,env.created.identity,true)).sent.find(message=>message.type==='auth-ok').authority,true);
+  const lobby=await create();await authenticate(lobby,lobby.created.identity,true);assert.deepEqual(await (await leave(lobby,lobby.created.identity)).json(),{ok:true,retainIdentity:true});assert.equal((await authenticate(lobby,lobby.created.identity,true)).readyState,1);
+});
+
+test('three-hour lifetime applies to legacy records on HTTP, WebSocket, and alarms and sends terminal expiry',async()=>{
+  for(const entry of ['http','socket','alarm'] as const){
+    const env=await create(),socket=await authenticate(env,env.created.identity,true),record=await env.ctx.storage.get<any>('room');
+    record.createdAt=Date.now()-ROOM_TTL_MS;record.expiresAt=Date.now()+30*86_400_000;await env.ctx.storage.put('room',record);
+    const restored=await instance(env.ctx.storage,env.ctx.sockets);socket.clear();
+    if(entry==='http')assert.equal((await restored.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:'{"name":"过期"}'}))).status,404);
+    if(entry==='socket')await restored.relay.webSocketMessage(socket,JSON.stringify({type:'sync',requestId:'expired-sync'}));
+    if(entry==='alarm')await restored.relay.alarm();
+    assert.equal(socket.closeCode,4404);assert.equal(socket.sent.find(message=>message.type==='room-closed').reason,'expired');assert.equal(await env.ctx.storage.get('room'),undefined);assert.equal(env.ctx.storage.values.size,0);
+  }
+});
+
+test('expired and missing room WebSocket upgrades deliver a terminal notice rather than an unreadable handshake error',async()=>{
+  const NativeResponse=globalThis.Response;
+  class UpgradeResponse extends NativeResponse {constructor(value:BodyInit|null,init:ResponseInit&{webSocket?:unknown}){super(value,{...init,status:init.status===101?200:init.status});if(init.status===101)Object.defineProperty(this,'status',{value:101});}}
+  try{
+    globalThis.Response=UpgradeResponse as typeof Response;
+    for(const exists of [true,false]){
+      const env=exists?await create():await instance();
+      if(exists){const record=await env.ctx.storage.get<any>('room');record.createdAt=Date.now()-ROOM_TTL_MS;await env.ctx.storage.put('room',record);}
+      const restored=await instance(env.ctx.storage),response=await restored.relay.fetch(new Request('https://room.internal/ws/ABC234',{headers:{Upgrade:'websocket'}}));
+      assert.equal(response.status,101);const socket=restored.ctx.sockets.at(-1)!;assert.equal(socket.closeCode,4404);assert.equal(socket.sent[0].type,'room-closed');assert.equal(socket.sent[0].reason,'expired');assert.equal(await restored.ctx.storage.get('room'),undefined);
+    }
+  }finally{globalThis.Response=NativeResponse;}
+});
+
+async function namespace(){
+  const instances=new Map<string,{ctx:Context;relay:any}>(),hooks:{before?:(code:string,request:Request)=>Promise<void>;after?:(code:string,request:Request,response:Response)=>Promise<void>}={};
+  const env:any={ASSETS:{fetch:()=>new Response('asset')},ROOMS:{idFromName:(code:string)=>code,get:(code:string)=>({fetch:async(input:string|Request,init?:RequestInit)=>{
+    const request=new Request(input,init);await hooks.before?.(code,request);
+    let instance=instances.get(code);if(!instance){const ctx=new Context(),relay=new worker.RoomRelay(ctx,env);instance={ctx,relay};instances.set(code,instance);await ctx.ready();}
+    const response=await instance.relay.fetch(request);await hooks.after?.(code,request,response);return response;
+  }})}};
+  return {env,instances,hooks};
+}
+async function listedRooms(env:any){const response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms'),env);assert.equal(response.status,200);return (await response.json()).rooms as import('../src/shared/types.js').RoomSummary[];}
+function deferred(){let resolve!:()=>void;const promise=new Promise<void>(done=>{resolve=done;});return {promise,resolve};}
+async function bounded<T>(operation:Promise<T>):Promise<T>{let timeout:ReturnType<typeof setTimeout>|undefined;try{return await Promise.race([operation,new Promise<never>((_,reject)=>{timeout=setTimeout(()=>reject(Error('directory operation deadlocked')),1000);})]);}finally{clearTimeout(timeout);}}
+
+test('worker room directory lists all live modes, fresh presence and spectator counts, and hides closed/expired rooms',async()=>{
+  const ns=await namespace(),created:RelayJoinReply[]=[];
+  for(const mode of ['multiplayer','practice','ai']){const response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:mode,mode,aiCount:1})}),ns.env);assert.equal(response.status,201);created.push(await response.json() as RelayJoinReply);}
+  let rooms=await listedRooms(ns.env);assert.equal(rooms.length,3);assert(rooms.every(room=>room.expiresAt-room.createdAt===ROOM_TTL_MS&&!room.authorityOnline));assert.deepEqual(rooms.map(room=>room.mode).sort(),['ai','multiplayer','practice']);
+  const first=created[0]!,active=ns.instances.get(first.identity.roomCode)!,env={...active,created:first},host=await authenticate(env,first.identity,true);
+  const spectatorResponse=await worker.default.fetch(new Request(`https://game.test/api/browser/rooms/${first.identity.roomCode}/join`,{method:'POST',body:'{"name":"观众","role":"spectator"}'}),ns.env);assert.equal(spectatorResponse.status,201);
+  assert.equal((await listedRooms(ns.env)).find(room=>room.code===first.identity.roomCode)!.spectatorCount,0);
+  const spectator=await spectatorResponse.json() as RelayJoinReply;await authenticate(env,spectator.identity);
+  rooms=await listedRooms(ns.env);assert.equal(rooms.find(room=>room.code===first.identity.roomCode)!.spectatorCount,1);assert.equal(rooms.find(room=>room.code===first.identity.roomCode)!.authorityOnline,true);assert(!JSON.stringify(rooms).includes(first.identity.token));assert(!JSON.stringify(rooms).includes('tokenHash'));
+  const state=host.deserializeAttachment() as any;state.authorityLeaseAt=Date.now()-40_000;host.serializeAttachment(state);
+  assert.equal((await listedRooms(ns.env)).find(room=>room.code===first.identity.roomCode)!.authorityOnline,false);
+  const recovered=await authenticate(env,first.identity,true),requestId='directory-close';await closeIntent(env,recovered,requestId);await deliver(env,recovered,first.identity.playerId,{...first.room,version:2,closedAt:Date.now()},requestId);
+  assert(!(await listedRooms(ns.env)).some(room=>room.code===first.identity.roomCode));
+  const expired=created[1]!,old=ns.instances.get(expired.identity.roomCode)!,record=await old.ctx.storage.get<any>('room');record.createdAt=Date.now()-ROOM_TTL_MS;record.expiresAt=Date.now()+ROOM_TTL_MS;await old.ctx.storage.put('room',record);
+  const restored=new worker.RoomRelay(old.ctx,ns.env);await old.ctx.ready();old.relay=restored;
+  assert(!(await listedRooms(ns.env)).some(room=>room.code===expired.identity.roomCode));
+});
+
+test('directory listing cannot deadlock with a room publishing presence',async()=>{
+  const ns=await namespace(),response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:'{"name":"并发房间"}'}),ns.env),created=await response.json() as RelayJoinReply;
+  const current=ns.instances.get(created.identity.roomCode)!,env={...current,created},publishing=deferred(),release=deferred(),reading=deferred();
+  ns.hooks.before=async(_code,request)=>{const path=new URL(request.url).pathname;if(path==='/directory/upsert'){publishing.resolve();await release.promise;}if(path.startsWith('/summary/'))reading.resolve();};
+  const auth=authenticate(env,created.identity,true);await publishing.promise;const listing=listedRooms(ns.env);await reading.promise;release.resolve();
+  const [,rooms]=await bounded(Promise.all([auth,listing]));assert.equal(rooms.length,1);assert.equal(rooms[0]!.authorityOnline,true);
+});
+
+test('directory summary refresh cannot resurrect a room removed after the summary was read',async()=>{
+  const ns=await namespace(),response=await worker.default.fetch(new Request('https://game.test/api/browser/rooms',{method:'POST',body:'{"name":"并发关闭"}'}),ns.env),created=await response.json() as RelayJoinReply;
+  const current=ns.instances.get(created.identity.roomCode)!,env={...current,created},host=await authenticate(env,created.identity,true),reading=deferred(),release=deferred();
+  ns.hooks.after=async(_code,request)=>{if(new URL(request.url).pathname.startsWith('/summary/')){reading.resolve();await release.promise;}};
+  const listing=listedRooms(ns.env);await reading.promise;await closeIntent(env,host,'raced-close');await deliver(env,host,created.identity.playerId,{...created.room,version:2,closedAt:Date.now()},'raced-close');release.resolve();await bounded(listing);
+  const directory=ns.instances.get('__room_directory__')!;assert.equal(await directory.ctx.storage.get('directory:'+created.identity.roomCode),undefined);assert.equal((await listedRooms(ns.env)).length,0);
 });

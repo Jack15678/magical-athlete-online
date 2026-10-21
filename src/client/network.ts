@@ -1,6 +1,6 @@
 import { PresentationEventClient } from './presentation-events.js';
 import { io, type Socket } from 'socket.io-client';
-import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, PublicEventReply, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, PublicEventReply, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
 import type { RelayJoinReply } from '../shared/relay.js';
 import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
 
@@ -15,19 +15,47 @@ export interface RoomConnection {
 }
 
 const identityKey = (code: string) => `magical-athlete:identity:${code.toUpperCase()}`;
-export function readIdentity(code: string): Identity | null {
+export function readIdentity(code: string, role?: RoomRole): Identity | null {
   try {
-    const value = JSON.parse(localStorage.getItem(identityKey(code)) ?? 'null');
+    const saved = localStorage.getItem(identityKey(code));
+    const current = saved ? JSON.parse(saved) : null;
+    const value = role ? JSON.parse(localStorage.getItem(`${identityKey(code)}:${role}`) ?? 'null') ?? ((current?.role ?? 'player') === role ? current : null) : current;
     return value && value.roomCode === code.toUpperCase() && typeof value.playerId === 'string' && typeof value.token === 'string' ? value : null;
   } catch { return null; }
 }
-export function saveIdentity(identity: Identity) { localStorage.setItem(identityKey(identity.roomCode), JSON.stringify(identity)); }
-export function forgetIdentity(code: string) { localStorage.removeItem(identityKey(code)); }
+export function saveIdentity(identity: Identity) {
+  const previous = readIdentity(identity.roomCode);
+  if (previous) localStorage.setItem(`${identityKey(previous.roomCode)}:${previous.role ?? 'player'}`, JSON.stringify(previous));
+  localStorage.setItem(`${identityKey(identity.roomCode)}:${identity.role ?? 'player'}`, JSON.stringify(identity));
+  localStorage.setItem(identityKey(identity.roomCode), JSON.stringify(identity));
+}
+export function forgetIdentity(code: string, identity = readIdentity(code)) {
+  if (identity) localStorage.removeItem(`${identityKey(code)}:${identity.role ?? 'player'}`);
+  const current = readIdentity(code);
+  if (!identity || current?.playerId === identity.playerId) localStorage.removeItem(identityKey(code));
+}
 export interface JoinReply { identity: Identity; room: RoomView }
-export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number }): Promise<JoinReply> {
+export async function listRooms(): Promise<RoomSummary[]> {
+  const response = await fetch(BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms', { cache: 'no-store' });
+  const reply = await response.json().catch(() => ({}));
+  if (!response.ok) throw Error(reply.error || '暂时无法获取房间列表。');
+  return reply.rooms;
+}
+export async function leaveRoom(identity: Identity): Promise<void> {
   const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
+  let response: Response;
+  try { response = await fetch(`${prefix}/${encodeURIComponent(identity.roomCode)}/leave`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identity), signal: AbortSignal.timeout(4000) }); }
+  catch { return; } // Local exit remains available offline; retain credentials for a later return.
+  const reply = await response.json().catch(() => ({}));
+  if ([401, 404, 410].includes(response.status)) { forgetIdentity(identity.roomCode, identity); return; }
+  if (!response.ok) throw Error(reply.error || '退出房间未确认，请重试。');
+  if (!reply.retainIdentity) forgetIdentity(identity.roomCode, identity);
+}
+export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number; role?: RoomRole }): Promise<JoinReply> {
+  const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
+  const { role, ...creation } = data;
   const response = await fetch(code ? `${prefix}/${encodeURIComponent(code)}/join` : prefix, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(code ? { name: data.name } : data),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(code ? { name: data.name, ...(role ? { role } : {}) } : creation),
   });
   const reply = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(reply.error || '暂时无法进入房间，请稍后重试。');
@@ -35,21 +63,22 @@ export async function enterRoom(code: string | null, data: { name: string; maxPl
   if (BROWSER_HOST_MODE && !code) await prepareBrowserRoom((reply as RelayJoinReply).meta);
   return reply;
 }
-export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error' | 'closed';
+export type ConnectionState = 'connecting' | 'online' | 'offline' | 'error' | 'closed' | 'expired';
 export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => void, onStatus: (state: ConnectionState, message?: string) => void): RoomConnection {
   if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
   let closed = false;
+  let expired = false;
   const eventClient=new PresentationEventClient(async afterId=>{
     const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
     if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
   },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
-  const finishClosed = () => { closed = true; socket.io.reconnection(false); socket.disconnect(); onStatus('closed', '房间已解散，请创建或加入其他房间。'); };
+  const finishClosed = () => { closed = true; eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已达到3小时上限，请重新创建。' : '房间已解散，请创建或加入其他房间。'); };
   socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
-  socket.on('room-closed', (event: { code: string }) => { if (event.code === identity.roomCode) finishClosed(); });
+  socket.on('room-closed', (event: { code: string; reason?: 'expired' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; finishClosed(); } });
   socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
-  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_CLOSED' || error.message.includes('房间已解散')) finishClosed(); else onStatus('error', error.message); });
+  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || error.message.includes('房间已解散')) finishClosed(); else onStatus('error', error.message); });
   return { get connected() { return !closed && socket.connected; }, connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };
 }
 function socketRequest(socket: Socket, envelope: ActionEnvelope): Promise<ActionReply> {

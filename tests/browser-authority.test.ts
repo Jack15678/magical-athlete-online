@@ -4,7 +4,7 @@ import { IDBFactory, IDBDatabase, IDBObjectStore } from 'fake-indexeddb';
 import { BrowserAuthority, type AuthorityOptions } from '../src/browser/authority.js';
 import { automaticAction } from '../src/engine/index.js';
 import { createBrowserRoom, projectRoom, reduceRoomAction } from '../src/shared/room-core.js';
-import { PLAYER_COLORS } from '../src/shared/constants.js';
+import { PLAYER_COLORS, ROOM_TTL_MS } from '../src/shared/constants.js';
 import type { ActionEnvelope, GameAction, Room } from '../src/shared/types.js';
 import type { RelayMetadata } from '../src/shared/relay.js';
 
@@ -213,4 +213,53 @@ test('Pure room projection returns independent objects and never exposes pending
   const view=projectRoom(room,'p0',{authorityId:'p0',authorityOnline:true});assert.equal(view.pending,undefined);assert.equal(JSON.stringify(view).includes('futureSecret'),false);
   const own=projectRoom(room,'p1',{authorityId:'p0',authorityOnline:true});assert.ok(own.pending);assert.equal('context' in own.pending!,false);
   own.players[1]!.hand!.push('twin');assert.deepEqual(room.game.players[1]!.hand,['egg']);
+});
+
+test('spectators join a running match with public views and animation events, but cannot act or take management',async()=>{
+  const env=environment(),meta=metadata(),a=await BrowserAuthority.create(meta,env.options);
+  await readyAndStart(a,meta);
+  while((await raw(env)).room.game.phase==='draft'){
+    const next=automaticAction((await raw(env)).room.game)!;
+    assert.equal((await command(a,next.playerId,next.action)).reply.ok,true);
+  }
+  const spectator={id:'watcher',name:'观众',connected:true};
+  const watching={...meta,phase:'selection' as const,spectators:[spectator]};
+  await a.roster(watching);
+  const record=(await raw(env)).room;
+  record.game.pending={id:'private-choice',playerId:'p0',title:'私密选择',options:[{id:'secret',label:'秘密'}],optional:true,kind:'test',context:{secret:'secret-context'}};
+  await replace(env,{...(await raw(env)),room:record});
+  await a.roster(watching);
+  const view=a.view('watcher');assert.equal(view.role,'spectator');assert.equal(view.players.length,2);
+  assert(view.players.every(p=>p.hand===undefined&&p.selection===undefined));assert.equal(view.pending,undefined);
+  assert(!JSON.stringify(view).match(/secret-context|rngState|randomLog|"deck"/));
+  assert(a.events('watcher',0).events.length>0);
+  const before=(await raw(env)).room;
+  for(const action of [{type:'ready',ready:true},{type:'roll'},{type:'close'},{type:'transfer',playerId:'watcher'}] as GameAction[]){
+    assert.equal((await a.action('watcher',{actionId:crypto.randomUUID(),expectedVersion:before.version,action})).ok,false);
+  }
+  assert.deepEqual((await raw(env)).room,before);
+  assert.equal((await command(a,'p0',{type:'transfer',playerId:'watcher'})).reply.ok,false);
+  await a.roster({...watching,spectators:[]});
+  assert.throws(()=>a.view('watcher'),/参赛席位/);assert.throws(()=>a.events('watcher',0),/参赛席位/);a.dispose();
+});
+
+test('explicit lobby departures free seats before a replacement joins, without changing retained identities',async()=>{
+  const env=environment(),meta=metadata(),a=await BrowserAuthority.create(meta,env.options);
+  await command(a,'p0',{type:'ready',ready:true});
+  const replacement={...meta,members:[meta.members[0]!,{id:'replacement',name:'后来者',seat:1,connected:true}]};
+  await a.roster(replacement);
+  assert.deepEqual(a.view('p0').players.map(p=>p.id),['p0','replacement']);
+  assert.equal(a.view('p0').players[0]!.ready,true);assert.throws(()=>a.view('p1'),/参赛席位/);a.dispose();
+});
+
+test('room lifetime remains fixed through resume and rematch and rejects actions at the exact 3-hour boundary',async()=>{
+  const env=environment(),meta=metadata(),a=await BrowserAuthority.create(meta,env.options);
+  const expiresAt=meta.createdAt+ROOM_TTL_MS;assert.equal(a.view('p0').expiresAt,expiresAt);
+  env.clock.now=expiresAt-1;await a.resume(meta);assert.equal(a.view('p0').expiresAt,expiresAt);
+  assert.equal((await command(a,'p0',{type:'ready',ready:true})).reply.ok,true);
+  const finished=await raw(env);finished.room.game.phase='finished';await replace(env,finished);await a.roster({...meta,phase:'finished'});
+  assert.equal((await command(a,'p0',{type:'rematch'})).reply.ok,true);assert.equal(a.view('p0').expiresAt,expiresAt);
+  env.clock.now=expiresAt;assert.equal((await command(a,'p0',{type:'ready',ready:false})).reply.ok,false);
+  assert.equal(await a.tick(),false);a.dispose();
+  await assert.rejects(BrowserAuthority.load(meta,env.options),/3小时/);
 });

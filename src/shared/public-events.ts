@@ -3,7 +3,7 @@ import type { GameEvent, PublicEventBatch, Room } from './types.js';
 // Leaves ample framing space under the relay's 256 KiB authority message cap.
 export const PUBLIC_EVENT_BATCH_BYTES = 96 * 1024;
 export function publicEventBatch(room:Room,playerId:string,afterId:number):PublicEventBatch {
-  if(!room.game.players.some(player=>player.id===playerId))throw Error('你不在这个房间的参赛席位中。');
+  if(!room.game.players.some(player=>player.id===playerId)&&!room.spectators?.some(spectator=>spectator.id===playerId))throw Error('你不在这个房间的参赛席位中。');
   if(!Number.isSafeInteger(afterId)||afterId<0)throw Error('动画记录游标无效。');
   const events:GameEvent[]=[];let bytes=128;
   for(const event of room.game.logs){
