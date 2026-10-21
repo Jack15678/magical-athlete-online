@@ -6,12 +6,15 @@
   "firstVersion": "329ab155-6bd6-43f3-82c7-3763f7e022ab",
   "deployedAt": "2026-10-21",
   "planVerification": "User confirmed Workers Free in dashboard",
-  "verifiedDeploymentVersion": "a91e63c0-f1c8-4a50-8022-0a1ea872a21b",
+  "verifiedDeploymentVersion": "55fa9883-e669-437b-b471-8f6acbbecf0a",
   "githubAutoDeploy": true,
-  "verifiedCommit": "46f407118f35668f95dcc38c19c11b71778871ed",
-  "verifiedBuildId": "b40b3c4f-2e44-4482-b046-00a51b392b9a",
-  "browserBundle": "/assets/index-x7MX-wCO.js",
-  "publicMultiplayer": [2, 6, 8],
-  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39468302305",
-  "ciConclusion": "success"
+  "verifiedCommit": "02daad2d8bc739773fedc927f6f99e79749f8cd7",
+  "browserBundle": "/assets/index-TzQNhr8y.js",
+  "publicMultiplayer": [8],
+  "localMultiplayer": [2, 6, 8],
+  "boardCorners": [12, 15],
+  "modelBytes": 465736,
+  "modelSha256": "02f6391d21c87fa43fe80849462adc9a175a203f6422646845b9fbbaabba15ac",
+  "verifiedCiRun": null,
+  "ciConclusion": "pending-focused-ci"
 }

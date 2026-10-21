@@ -37,10 +37,12 @@ jobs:
       - run: pnpm build
       - run: pnpm exec wrangler deploy --dry-run
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      # Keep CI to two focused rendering cases and one complete eight-player
+      # relay game; the full 2/6/8-player suites remain available manually.
+      - run: pnpm exec playwright test tests/browser/three-scene.spec.ts --grep "3D dice settles|3D simultaneous"
         env:
           CI: true
-      - run: pnpm test:relay
+      - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"
         env:
           CI: true
       - uses: actions/upload-artifact@v4

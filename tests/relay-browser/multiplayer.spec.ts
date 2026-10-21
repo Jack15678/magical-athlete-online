@@ -31,7 +31,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
   try{
     mkdirSync('test-results/browser-authority',{recursive:true});
     for(let i=0;i<n;i++){
-      const context=await browser.newContext({viewport:i===n-1?{width:390,height:844}:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(context);
+      const context=await browser.newContext({viewport:i===n-1?{width:390,height:844}:process.env.CI?i===0?{width:1280,height:900}:{width:768,height:650}:{width:1440,height:1000},deviceScaleFactor:1,permissions:['clipboard-read','clipboard-write']});contexts.push(context);
       await context.addInitScript(()=>{try{localStorage.setItem('magical-athlete:animation-speed','4');localStorage.setItem('magical-athlete:reduced-motion','true');localStorage.setItem('magical-athlete:low-quality','true');}catch{/* Opaque about:blank recovery pages have no storage. */}});
       const page=await context.newPage();pages.push(page);observe(page);
     }

@@ -12,7 +12,7 @@
 
 计算房主的网页需要保持打开和联网。关闭页面或设备休眠时对局暂停；回到原设备、原浏览器和同一网站后，可从IndexedDB中的存档恢复。其他玩家不会接管完整秘密状态。手机切到后台可能暂停网页，请在游玩时保持前台；清理站点数据或使用无痕窗口可能丢失恢复能力。这是熟人联机方案，计算房主可以访问完整对局状态。
 
-**正式网站：[打开胡闹运动会](https://magical-athlete.qiuh23.workers.dev)。** 已部署到用户确认的Workers Free，使用固定`workers.dev`域名，无需购买域名或云服务器。122项本地自动检查通过，公网2、6、8人完整四场、刷新恢复与再来一局通过，弱网恢复与GitHub自动发布已验证。使用和维护方式见 [浏览器房主说明](docs/browser-host.md)，证据见 [测试报告](docs/testing.md)。
+**正式网站：[打开胡闹运动会](https://magical-athlete.qiuh23.workers.dev)。** 已部署到用户确认的Workers Free，使用固定`workers.dev`域名，无需购买域名或云服务器。3D版本162项自动检查通过；真实浏览器两种模式2、6、8人完整四场通过，正式网站8人四场、房主与客人恢复、再来一局通过，0页面错误。使用和维护方式见 [浏览器房主说明](docs/browser-host.md)，证据见 [测试报告](docs/testing.md)。
 
 ## 本地开发与检查
 
@@ -34,7 +34,7 @@ pnpm dev:browser
 
 代码仓库为私有的 [qiuh23/magical-athlete-online](https://github.com/qiuh23/magical-athlete-online)。GitHub Actions配置类型检查、自动化测试、两种生产构建、Worker打包预演及两种联机模式的浏览器测试；最新远端运行结果见仓库的Actions页，不能由本地通过推断远端已通过。
 
-最终代码`46f4071`的[完整CI已通过](https://github.com/qiuh23/magical-athlete-online/actions/runs/39468302305)：122项回归和两种模式共6组完整网页验收全部通过。
+此前2D版本代码`46f4071`的[完整CI已通过](https://github.com/qiuh23/magical-athlete-online/actions/runs/39468302305)：122项回归和两种模式共6组完整网页验收全部通过。
 
 Cloudflare Workers Builds已连接此私有仓库和生产分支`main`，已实际验证一次推送后自动构建、部署成功，网站地址不变。默认构建`pnpm build`同时生成两种版本，面板也可用`pnpm build:browser`只构建网页版本；部署命令`pnpm exec wrangler deploy`。现有对局结束后再发布涉及规则或协议的更新。具体配置见 [GitHub自动同步步骤](docs/browser-host.md#github-自动同步)。
 
