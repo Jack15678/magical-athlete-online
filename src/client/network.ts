@@ -1,5 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
-import type { ActionEnvelope, ActionReply, GameAction, Identity, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, RoomView } from '../shared/types.js';
 import type { RelayJoinReply } from '../shared/relay.js';
 import { BrowserRelayConnection, prepareBrowserRoom } from './browser-connection.js';
 
@@ -22,7 +22,7 @@ export function readIdentity(code: string): Identity | null {
 export function saveIdentity(identity: Identity) { localStorage.setItem(identityKey(identity.roomCode), JSON.stringify(identity)); }
 export function forgetIdentity(code: string) { localStorage.removeItem(identityKey(code)); }
 export interface JoinReply { identity: Identity; room: RoomView }
-export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number }): Promise<JoinReply> {
+export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number }): Promise<JoinReply> {
   const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
   const response = await fetch(code ? `${prefix}/${encodeURIComponent(code)}/join` : prefix, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(code ? { name: data.name } : data),

@@ -11,6 +11,8 @@ export interface PresentationMotion {
 }
 export interface PresentationBeat {
   key: string;
+  /** All movement and reactions from one authoritative turn share a camera chain. */
+  chainId?: string;
   kind: PresentationKind;
   events: GameEvent[];
   source?: string;
@@ -94,8 +96,44 @@ function beatForEvent(event: GameEvent, room: RoomView): PresentationBeat | unde
   if (kind === 'dice' && face === undefined) return undefined;
   const motions = eventMotion(event, kind);
   const longest = motions.reduce((steps, motion) => Math.max(steps, Math.abs(motion.to - motion.from)), 0);
-  const durationMs = kind === 'dice' ? 2500 : kind === 'move' ? 200 + Math.max(1, longest) * 220 : kind === 'swap' || kind === 'warp' ? 950 : kind === 'trip' ? 850 : kind === 'finish' ? 850 : kind === 'score' ? 650 : 600;
-  return { key: `${room.code}:${room.round}:${event.id}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, cause: event.cause, durationMs };
+  const durationMs = kind === 'dice' ? 2500 : kind === 'move' ? Math.min(1800, 200 + Math.max(1, longest) * 220) : kind === 'swap' || kind === 'warp' ? 800 : kind === 'trip' ? 650 : kind === 'finish' ? 800 : kind === 'score' ? 550 : 600;
+  const boundary = room.logs.findLast(log => log.id <= event.id && (log.type === 'turn' || log.type === 'reveal'));
+  return { key: `${room.code}:${room.round}:${event.id}`, chainId: `${room.code}:${room.round}:chain:${boundary?.id ?? 0}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, cause: event.cause, durationMs };
+}
+
+/** Long cascades retain every confirmed event, with a shared visual-time budget. */
+function boundChainDurations(queue: PresentationBeat[], activeKey?: string) {
+  const chains = new Map<string, PresentationBeat[]>();
+  for (const beat of queue) {
+    const id = beat.chainId ?? beat.key;
+    chains.set(id, [...(chains.get(id) ?? []), beat]);
+  }
+  const durations = new Map<string, number>();
+  for (const beats of chains.values()) {
+    const active = beats.find(beat => beat.key === activeKey);
+    const tail = beats.filter(beat => beat !== active);
+    const total = tail.reduce((sum, beat) => sum + beat.durationMs, 0);
+    const budget = Math.max(0, 9000 - (active?.durationMs ?? 0));
+    if (total > budget) for (const beat of tail) durations.set(beat.key, Math.max(1, Math.floor(beat.durationMs * budget / total)));
+  }
+  const bounded = queue.map(beat => durations.has(beat.key) ? { ...beat, durationMs: durations.get(beat.key)! } : beat);
+  const active = bounded.find(beat => beat.key === activeKey);
+  const tailDuration = bounded.filter(beat => beat !== active).reduce((sum, beat) => sum + beat.durationMs, 0);
+  const tailBudget = Math.max(0, 11000 - (active?.durationMs ?? 0));
+  // Fast AI turns can arrive while an earlier confirmed action is still playing.
+  // Keep its clock untouched and compress only the unstarted tail.
+  return tailDuration <= tailBudget ? bounded : bounded.map(beat => beat === active ? beat : { ...beat, durationMs: Math.max(1, Math.floor(beat.durationMs * tailBudget / tailDuration)) });
+}
+
+/** My legal choice takes priority over watching an unrelated queued action. */
+function prioritizeLocalChoice(state: PlaybackState): PlaybackState {
+  const pending = state.confirmed.pending;
+  const active = state.queue[0];
+  if (!pending || pending.playerId !== state.confirmed.selfId || !pending.racerId || !active) return state;
+  if (active.source === pending.racerId || active.targets.includes(pending.racerId)) return state;
+  // Restore the full confirmed position/status baseline together, so the prompt
+  // can never be shown against positions from a partially played older turn.
+  return createPlayback(state.confirmed);
 }
 
 function mergeSimultaneous(previous: PresentationBeat | undefined, next: PresentationBeat): PresentationBeat | undefined {
@@ -137,7 +175,7 @@ export function receiveRoom(state: PlaybackState, room: RoomView, options: { rec
     if (merged) queue[queue.length - 1] = merged;
     else queue.push(beat);
   }
-  return { ...state, round: room.round, version: room.version, eventCursor: latestId, confirmed: room, queue, lastDie, racers: queue.length ? baseRacers : cloneRacers(room.racers) };
+  return prioritizeLocalChoice({ ...state, round: room.round, version: room.version, eventCursor: latestId, confirmed: room, queue: boundChainDurations(queue, state.queue[0]?.key), lastDie, racers: queue.length ? baseRacers : cloneRacers(room.racers) });
 }
 
 /** Apply all targets together after their visual beat; later skills cannot jump ahead. */
@@ -161,7 +199,7 @@ export function completeBeat(state: PlaybackState): PlaybackState {
     return next;
   });
   const queue = state.queue.slice(1);
-  return { ...state, racers: queue.length ? racers : cloneRacers(state.confirmed.racers), queue };
+  return prioritizeLocalChoice({ ...state, racers: queue.length ? racers : cloneRacers(state.confirmed.racers), queue });
 }
 
 /** Skipping is strictly local: the already-confirmed rule result remains identical. */

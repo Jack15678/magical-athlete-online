@@ -6,8 +6,10 @@ import type { RelayMember, RelayMetadata } from './relay.js';
 /** Pure room policy shared by browser authority and future server adapters.
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
 export function validateMetadata(meta: RelayMetadata): void {
-  if (!meta || !/^[A-Z2-9]{6}$/.test(meta.code) || !Number.isSafeInteger(meta.createdAt) || meta.createdAt < 0) throw Error('房间元数据无效。');
-  if (!Number.isInteger(meta.maxPlayers) || meta.maxPlayers < 2 || meta.maxPlayers > 8) throw Error('房间人数范围无效。');
+  if (!meta) throw Error('房间元数据无效。');
+  if (meta.mode !== undefined && !['multiplayer','practice','ai'].includes(meta.mode)) throw Error('比赛模式无效。');
+  if (!/^[A-Z2-9]{6}$/.test(meta.code) || !Number.isSafeInteger(meta.createdAt) || meta.createdAt < 0) throw Error('房间元数据无效。');
+  if (!Number.isInteger(meta.maxPlayers) || meta.maxPlayers < (meta.mode==='practice'?1:2) || meta.maxPlayers > 8) throw Error('房间人数范围无效。');
   if (!Number.isInteger(meta.timeoutSeconds) || (meta.timeoutSeconds !== 0 && (meta.timeoutSeconds < 30 || meta.timeoutSeconds > 600))) throw Error('房间超时配置无效。');
   if (!Array.isArray(meta.members) || !meta.members.length || meta.members.length > meta.maxPlayers) throw Error('房间成员数量无效。');
   if (new Set(meta.members.map(m => m.id)).size !== meta.members.length || new Set(meta.members.map(m => m.seat)).size !== meta.members.length) throw Error('房间成员身份或座位重复。');
@@ -15,22 +17,26 @@ export function validateMetadata(meta: RelayMetadata): void {
     if (typeof m.id !== 'string' || !m.id.length || m.id.length > 100 || typeof m.name !== 'string' || !m.name.trim() || m.name.length > 20 || /[\p{Cc}\p{Cf}]/u.test(m.name)) throw Error('房间成员信息无效。');
     if (!Number.isInteger(m.seat) || m.seat < 0 || m.seat >= meta.maxPlayers || typeof m.connected !== 'boolean') throw Error('房间成员座位无效。');
   }
+  if(meta.members.some(m=>m.isAI!==undefined&&typeof m.isAI!=='boolean')||meta.members.find(m=>m.id===meta.authorityId)?.isAI||meta.members.find(m=>m.id===meta.adminHostId)?.isAI)throw Error('AI不能成为房主或计算设备。');
+  if(meta.mode==='practice'&&(meta.maxPlayers!==1||meta.members.length!==1||meta.members[0]?.isAI))throw Error('练习模式只允许自己参加。');
   if (!meta.members.some(m => m.id === meta.authorityId) || !meta.members.some(m => m.id === meta.adminHostId)) throw Error('主持设备或房主管理身份无效。');
 }
 export function memberPlayer(member: RelayMember): Player {
-  return { ...member, color: PLAYER_COLORS[member.seat]!, ready: false, score: 0, hand: [], used: [], selection: [] };
+  return { ...member, connected:!!member.isAI||member.connected, color: PLAYER_COLORS[member.seat]!, ready: false, score: 0, hand: [], used: [], selection: [] };
 }
 export function createBrowserRoom(meta: RelayMetadata, seed: number, now: number): Room {
   validateMetadata(meta);
   if (meta.phase !== 'lobby') throw Error('主持设备没有这局的本地存档，无法恢复已开始的比赛。请创建新房间。');
-  return { code: meta.code, hostId: meta.adminHostId, createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
-    game: createGame([...meta.members].sort((a,b) => a.seat-b.seat).map(memberPlayer), seed) };
+  const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
+    game: createGame([...meta.members].sort((a,b) => a.seat-b.seat).map(memberPlayer), seed,meta.mode) };
+  if(meta.mode==='practice'||meta.mode==='ai'){room.game.players.forEach(p=>p.ready=true);startGame(room.game);setRoomDeadline(room,now);}
+  return room;
 }
 /** Reconcile only relay-owned roster facts. Game state, hands and administrative
  * transfers remain authoritative in the already committed room. */
 export function reconcileRoster(original: Room, meta: RelayMetadata, now: number): { room: Room; changed: boolean } {
   validateMetadata(meta);
-  if (original.code !== meta.code || original.createdAt !== meta.createdAt || original.maxPlayers !== meta.maxPlayers || original.timeoutSeconds !== meta.timeoutSeconds) throw Error('房间配置与本地存档不一致，无法覆盖。');
+  if (original.code !== meta.code || original.createdAt !== meta.createdAt || original.maxPlayers !== meta.maxPlayers || original.timeoutSeconds !== meta.timeoutSeconds || (original.mode??'multiplayer')!==(meta.mode??'multiplayer')) throw Error('房间配置与本地存档不一致，无法覆盖。');
   const room = structuredClone(original);
   // Keep the committed tombstone available to replay a lost close receipt, but
   // never let a reconnect or administrative transfer reopen the room.
@@ -43,14 +49,14 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
       if (room.game.players.some(p => p.seat === member.seat)) throw Error('新成员的座位已被占用。');
       room.game.players.push(memberPlayer(member)); changed = true;
     } else {
-      if (p.seat !== member.seat || p.name !== member.name) throw Error('已加入成员的固定身份信息发生变化。');
-      if (p.connected !== member.connected) { p.connected = member.connected; changed = true; }
+      if (p.seat !== member.seat || p.name !== member.name || !!p.isAI!==!!member.isAI) throw Error('已加入成员的固定身份信息发生变化。');
+      if (p.connected !== (member.isAI||member.connected)) { p.connected = !!member.isAI||member.connected; changed = true; }
     }
   }
   // A transiently absent connection never removes its identity or resets a hand.
-  for (const p of room.game.players) if (!meta.members.some(m => m.id === p.id) && p.connected) { p.connected = false; changed = true; }
+  for (const p of room.game.players) if (!meta.members.some(m => m.id === p.id) && !p.isAI && p.connected) { p.connected = false; changed = true; }
   if (!room.game.players.some(p => p.id === room.hostId && p.connected)) {
-    const next = room.game.players.find(p => p.connected);
+    const next = room.game.players.find(p => p.connected&&!p.isAI);
     if (next && next.id !== room.hostId) { room.hostId = next.id; changed = true; }
   }
   if (changed) { room.version++; room.updatedAt = now; }
@@ -74,15 +80,16 @@ export function reduceRoomAction(original: Room, playerId: string, action: GameA
       p.ready = action.ready; break;
     case 'start':
       if (room.hostId !== playerId) throw Error('只有房主能开始比赛。');
-      if (room.game.phase !== 'lobby' || room.game.players.length < 2 || !room.game.players.every(p => p.ready && p.connected)) throw Error('需要至少2名玩家，且全员在线并准备。');
+      if (room.game.phase !== 'lobby' || room.game.players.length < (room.mode==='practice'?1:2) || !room.game.players.every(p => p.ready && p.connected)) throw Error('需要至少2名玩家，且全员在线并准备。');
       startGame(room.game); break;
     case 'transfer':
       if (room.hostId !== playerId) throw Error('只有房主能移交管理权。');
-      if (!room.game.players.some(p => p.id === action.playerId && p.connected)) throw Error('请选择在线玩家。');
+      if (!room.game.players.some(p => p.id === action.playerId && p.connected&&!p.isAI)) throw Error('请选择在线玩家。');
       room.hostId = action.playerId; break;
     case 'rematch':
       if (room.hostId !== playerId || room.game.phase !== 'finished') throw Error('终局后由房主再来一局。');
-      room.game = createGame(room.game.players.map(p => ({ ...p, ready:false, score:0, hand:[], used:[], selection:[] })), options.rematchSeed); break;
+      room.game = createGame(room.game.players.map(p => ({ ...p, ready:!!p.isAI, score:0, hand:[], used:[], selection:[] })), options.rematchSeed,room.mode);
+      if(room.mode==='practice'||room.mode==='ai'){room.game.players.forEach(p=>p.ready=true);startGame(room.game);}break;
     default: applyGameAction(room.game, playerId, action);
   }
   room.version++; room.updatedAt = options.now; setRoomDeadline(room, options.now);
@@ -123,7 +130,7 @@ export interface ProjectionOptions { authorityId: string; authorityOnline: boole
 export function projectRoom(room: Room, playerId: string, options: ProjectionOptions): RoomView {
   if (!room.game.players.some(p => p.id === playerId)) throw Error('你不在这个房间的参赛席位中。');
   const g=room.game, pending=g.pending;
-  return { code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
+  return { mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
     draft:g.draft ? structuredClone(g.draft) : undefined, racers:structuredClone(g.racers), currentRacerId:g.currentRacerId,

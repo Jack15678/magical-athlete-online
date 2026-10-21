@@ -288,15 +288,19 @@ test('CHAR-extra-02 Declining Flip Flop keeps the same actor waiting for a norma
   assert.equal(s.currentRacerId, 'r0'); assert.equal(s.flags.awaitRoll, true); assert.equal(s.randomLog.length, 0);
   act(s, { type: 'roll' }, 'p0'); assert.equal(racer(s).position, 6); assert.equal(racer(s, 1).position, 15); assert.equal(s.currentRacerId, 'r1');
 });
-test('CHAR-extra-03 A single public roll intent recovers a tripped racer and hands over normally', () => {
+test('CHAR-extra-03 System turn setup recovers a tripped racer before the next legal roll', () => {
   const s = fixture(['alchemist', 'coach'], [8, 3]); racer(s).tripped = true; s.flags.needsBegin = true; dice(s, 3);
-  act(s, { type: 'roll' }, 'p0');
+  assert.throws(() => act(s, { type: 'roll' }, 'p0'), /系统处理/);
+  act(s, { type: 'next' }, 'p0');
   assert.equal(racer(s).tripped, false); assert.equal(racer(s).position, 8); assert.equal(s.randomLog.length, 0); assert.equal(s.currentRacerId, 'r1');
+  act(s, { type: 'next' }, 'p0');
   act(s, { type: 'roll' }, 'p1'); assert.equal(racer(s, 1).position, 7); assert.equal(s.randomLog.length, 1); assert.equal(s.currentRacerId, 'r0');
 });
-test('CHAR-extra-04 A single public roll intent skips an alone-leading Hare without rolling the next racer', () => {
+test('CHAR-extra-04 System turn setup skips an alone-leading Hare without rolling the next racer', () => {
   const s = fixture(['hare', 'coach'], [8, 3]); s.flags.needsBegin = true; dice(s, 3);
-  act(s, { type: 'roll' }, 'p0'); assert.equal(racer(s).position, 8); assert.equal(s.randomLog.length, 0); assert.equal(s.currentRacerId, 'r1');
+  assert.throws(() => act(s, { type: 'roll' }, 'p0'), /系统处理/);
+  act(s, { type: 'next' }, 'p0'); assert.equal(racer(s).position, 8); assert.equal(s.randomLog.length, 0); assert.equal(s.currentRacerId, 'r1');
+  act(s, { type: 'next' }, 'p0');
   act(s, { type: 'roll' }, 'p1'); assert.equal(racer(s, 1).position, 7); assert.equal(s.randomLog.length, 1);
 });
 test('CHAR-extra-05 A queued Duelist opportunity rechecks current targets before asking', () => {

@@ -87,8 +87,9 @@ test('close: the management host can dissolve an active race without rolling or 
       const selfId = ids[room.pages.indexOf(page)]!;
       await expect.poll(async () => { const game = (await saved(host, room.code)).game; return game.phase === 'selection' ? game.players.find(player => player.id === selfId)!.selection.length : 2; }).toBe(2);
     }
-    await expect(host.getByRole('heading', { name: '比赛进行中', exact: true })).toBeVisible();
+    await expect(host.getByTestId('immersive-race')).toBeVisible();
     await expect(guest.getByRole('button', { name: '结束房间', exact: true })).toHaveCount(0);
+    await host.getByTestId('presentation-settings').click();
     await host.getByRole('button', { name: '结束房间', exact: true }).click(); await host.getByRole('dialog', { name: '结束此房间？' }).getByRole('button', { name: '确认结束', exact: true }).click();
     await Promise.all(room.pages.map(expectClosed)); expect(room.closeRequests).toEqual([1, 0]);
     await guest.reload(); await expectClosed(guest); await host.getByRole('button', { name: '返回首页', exact: true }).click(); await expect(host.getByRole('button', { name: '创建房间，召集朋友' })).toBeVisible();

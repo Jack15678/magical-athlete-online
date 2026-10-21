@@ -1,6 +1,6 @@
 import { TRACKS } from '../../shared/tracks.js';
 
-export const TILE = 1.72;
+export const TILE = 2.05;
 export const TRACK_FIRST_CORNER = TRACKS.mild.firstCorner;
 export const TRACK_SECOND_CORNER = TRACKS.mild.secondCorner;
 export const TRACK_FINISH = TRACKS.mild.finish;

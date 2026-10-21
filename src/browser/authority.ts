@@ -1,3 +1,4 @@
+import { immediateRoomAction } from '../shared/automation.js';
 import { automaticAction } from '../engine/index.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
 import type { ActionEnvelope, ActionReply, Room, RoomView } from '../shared/types.js';
@@ -164,14 +165,14 @@ export class BrowserAuthority {
       if(!this.meta.members.some(m=>m.id===this.meta.authorityId&&m.connected))return false;
       const cached=this.record.room;
       if(cached.closedAt!==undefined)return false;
-      if(!cached.game.flags.continuation&&(cached.deadline===null||cached.deadline>now))return false;
+      if(!immediateRoomAction(cached,now)&&(cached.deadline===null||cached.deadline>now))return false;
       return this.commit<boolean>((record,receipts,save) => {
         if(record.room.closedAt!==undefined){save(record,false);return;}
-        const continuation=!!record.room.game.flags.continuation;
-        if(!continuation && (record.room.deadline===null||record.room.deadline>now)){save(record,false);return;}
-        const next=automaticAction(record.room.game);
+        const immediate=immediateRoomAction(record.room,now);
+        if(!immediate && (record.room.deadline===null||record.room.deadline>now)){save(record,false);return;}
+        const next=immediate??automaticAction(record.room.game);
         if(!next){save(record,false);return;}
-        this.perform(record,receipts,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:record.room.version,action:next.action},!continuation,(updated,result)=>save(updated,result.ok));
+        this.perform(record,receipts,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:record.room.version,action:next.action},!immediate,(updated,result)=>save(updated,result.ok));
       });
     });
   }

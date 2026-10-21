@@ -79,7 +79,7 @@ export class BrowserRelayConnection implements RoomConnection {
         this.tickBusy = true;
         this.enqueueHost(async () => { try { if (await this.authority!.tick()) this.broadcast(); } finally { this.tickBusy = false; } });
       }
-    }, 1000);
+    }, 250);
     this.open(false);
   }
   get connected() { return !this.disposed && !this.blocked && !this.roomClosed && this.authenticated && this.synchronized && this.authorityOnline && this.ws?.readyState === WebSocket.OPEN; }
@@ -232,7 +232,7 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private broadcast() {
     if (!this.metadata) return;
-    for (const member of this.metadata.members) if (member.connected) this.deliver(member.id);
+    for (const member of this.metadata.members) if (member.connected&&!member.isAI) this.deliver(member.id);
   }
   private async tryAuthority() {
     const meta = this.metadata;

@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import { Store } from './store.js';
 import { Rooms } from './rooms.js';
+import { systemAction } from '../engine/index.js';
 import type { ActionEnvelope, Identity } from '../shared/types.js';
 
 const action=z.discriminatedUnion('type',[
@@ -31,9 +32,9 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
   const broadcast=(code:string)=>{const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;for(const socket of io.sockets.sockets.values()) if(socket.data.identity?.roomCode===code) socket.emit('snapshot',rooms.view(room,socket.data.identity.playerId));};
   const notifyClosed=(code:string)=>{const room=rooms.rooms.get(code);if(room?.closedAt===undefined)return;const sockets=[...io.sockets.sockets.values()].filter(socket=>socket.data.identity?.roomCode===code);for(const socket of sockets)socket.emit('room-closed',{code,closedAt:room.closedAt});for(const socket of sockets)socket.disconnect(true);};
   const resuming=new Set<string>();let closing=false;
-  const scheduleContinuation=(code:string)=>{const current=rooms.rooms.get(code);if(closing||resuming.has(code)||!current||current.closedAt!==undefined||!current.game.flags.continuation)return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing)return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined||!room.game.flags.continuation)return;const result=rooms.act(code,room.hostId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'next'}});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
+  const scheduleContinuation=(code:string)=>{const current=rooms.rooms.get(code);if(closing||resuming.has(code)||!current||current.closedAt!==undefined||!systemAction(current.game))return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing)return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;const next=systemAction(room.game);if(!next)return;const result=rooms.act(code,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:next.action});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
   app.get('/api/health',(_req,res)=>res.json({ok:true,storage:'sqlite',version:'0.1.0'}));
-  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds));}catch(e){next(e);}});
+  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount));}catch(e){next(e);}});
   app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
   const connections=new Map<string,Set<string>>(); const socketRate=new RateLimiter(40,10000);
   io.use((socket,next)=>{try{const i=identity.parse(socket.handshake.auth) as Identity;rooms.authenticate(i);if((connections.get(`${i.roomCode}:${i.playerId}`)?.size??0)>=5) throw Error('同一身份打开的页面过多。');socket.data.identity=i;next();}catch(e){next(Error(e instanceof Error?e.message:'身份无效。'));}});
@@ -44,7 +45,7 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
     socket.on('action',(input:unknown,ack:unknown)=>{let result;let parsed:ActionEnvelope|undefined;try{if(!socketRate.accept(key))throw Error('操作太快，请稍后重试。');parsed=envelope.parse(input) as ActionEnvelope;result=rooms.act(i.roomCode,i.playerId,parsed);}catch(e){result={ok:false,error:e instanceof z.ZodError?'操作格式不正确。':e instanceof Error?e.message:'操作失败。'};} if(typeof ack==='function')ack(result);if(result.ok&&parsed?.action.type==='close'&&rooms.rooms.get(i.roomCode)?.closedAt!==undefined){notifyClosed(i.roomCode);return;}broadcast(i.roomCode);scheduleContinuation(i.roomCode);});
     socket.on('disconnect',()=>{const list=connections.get(key);list?.delete(socket.id);if(!list?.size){connections.delete(key);rooms.presence(i.roomCode,i.playerId,false);broadcast(i.roomCode);}});
   });
-  const timer=setInterval(()=>{for(const code of rooms.tick()){broadcast(code);scheduleContinuation(code);}},1000);timer.unref();
+  const timer=setInterval(()=>{for(const code of rooms.tick()){broadcast(code);scheduleContinuation(code);}},250);timer.unref();
   for(const code of rooms.rooms.keys())scheduleContinuation(code);
   const clientDir=resolve(fileURLToPath(new URL('../../../dist/client/',import.meta.url)));
   // Compiled entry is dist/server/server/index.js; dev entry is src/server/index.ts.

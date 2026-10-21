@@ -1,0 +1,112 @@
+{
+  "elapsedMs": 203031,
+  "actions": 220,
+  "aiAdvances": 178,
+  "observedAI": {
+    "draft": 12,
+    "selection": 12,
+    "choice": 20,
+    "roll": 125
+  },
+  "errors": [],
+  "results": [
+    {
+      "round": 1,
+      "placements": [
+        {
+          "racerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13:1:0",
+          "playerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13",
+          "characterId": "baba-yaga",
+          "rank": 1,
+          "points": 3
+        },
+        {
+          "racerId": "61cfbfbf-0247-413b-ad21-89aa53c8769d:1:0",
+          "playerId": "61cfbfbf-0247-413b-ad21-89aa53c8769d",
+          "characterId": "party-animal",
+          "rank": 2,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "placements": [
+        {
+          "racerId": "61cfbfbf-0247-413b-ad21-89aa53c8769d:2:0",
+          "playerId": "61cfbfbf-0247-413b-ad21-89aa53c8769d",
+          "characterId": "suckerfish",
+          "rank": 1,
+          "points": 4
+        },
+        {
+          "racerId": "15dc622a-3828-4747-bd1c-311fbae25648:2:0",
+          "playerId": "15dc622a-3828-4747-bd1c-311fbae25648",
+          "characterId": "mastermind",
+          "rank": 2,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "placements": [
+        {
+          "racerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13:3:0",
+          "playerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13",
+          "characterId": "copycat",
+          "rank": 1,
+          "points": 5
+        },
+        {
+          "racerId": "15dc622a-3828-4747-bd1c-311fbae25648:3:0",
+          "playerId": "15dc622a-3828-4747-bd1c-311fbae25648",
+          "characterId": "duelist",
+          "rank": 2,
+          "points": 3
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "placements": [
+        {
+          "racerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13:4:0",
+          "playerId": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13",
+          "characterId": "gunk",
+          "rank": 1,
+          "points": 6
+        },
+        {
+          "racerId": "e6bdac68-659c-4918-8b5c-af8b83fb75de:4:0",
+          "playerId": "e6bdac68-659c-4918-8b5c-af8b83fb75de",
+          "characterId": "twin",
+          "rank": 2,
+          "points": 4
+        }
+      ]
+    }
+  ],
+  "scores": [
+    {
+      "id": "15dc622a-3828-4747-bd1c-311fbae25648",
+      "name": "人机验收玩家",
+      "score": 6
+    },
+    {
+      "id": "e6bdac68-659c-4918-8b5c-af8b83fb75de",
+      "name": "电脑1",
+      "score": 5
+    },
+    {
+      "id": "61cfbfbf-0247-413b-ad21-89aa53c8769d",
+      "name": "电脑2",
+      "score": 6
+    },
+    {
+      "id": "adfe3ef9-589e-4b06-9d48-6129bd2d2e13",
+      "name": "电脑3",
+      "score": 16
+    }
+  ]
+}

@@ -35,6 +35,7 @@ for(const n of [2,6,8])test(`${n}独立BrowserContext完整四场、刷新断线
     while(app.rooms.get(code).game.phase!=='finished') {
       const room=app.rooms.get(code),g=room.game;if(++actions>5000)throw Error(`Test execution budget exceeded in ${g.phase}; no game state was truncated.`);
       if(g.phase==='paused')throw Error('Engine paused; diagnostic must be resolved.');
+      if(g.phase==='race'&&!g.pending&&(g.flags.needsBegin||g.flags.continuation)){await expect.poll(()=>app.rooms.get(code).version).toBeGreaterThan(room.version);continue;}
       if(g.phase==='selection'){
         const player=g.players.find(p=>!p.selection.length)!;const p=pages[ids.indexOf(player.id)]!;const count=n===2?2:1;await synced(p,room.version);
         for(let i=0;i<count;i++)await p.locator('.hand-selection .character-card').filter({has:p.getByRole('button',{name:/选择/})}).nth(i).getByRole('button',{name:/选择/}).click();

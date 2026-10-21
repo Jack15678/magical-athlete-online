@@ -149,3 +149,57 @@ test('presentation speed and reduced motion only change durations, never final r
   assert.deepEqual(trackPath(2, 2), [2]);
   assert.deepEqual(skipPlayback(state).racers, room.racers);
 });
+
+test('server turn boundaries keep movement and reaction chains together across snapshots', () => {
+  const events: GameEvent[] = [{ id: 1, type: 'turn', text: '轮到a', source: 'a' }, motion(2, ['a'], [0], [4]), { id: 3, type: 'power', text: 'b反应', source: 'b' }, motion(4, ['b'], [0], [2])];
+  let state = receiveRoom(createPlayback(view()), view(2, events, [racer('a', 4), racer('b', 2)]));
+  assert.equal(new Set(state.queue.map(beat => beat.chainId)).size, 1);
+  const chainId = state.queue[0]!.chainId;
+  state = completeBeat(state);
+  const next: GameEvent[] = [...events, { id: 5, type: 'turn', text: '轮到b', source: 'b' }, motion(6, ['b'], [2], [5])];
+  state = receiveRoom(state, view(3, next, [racer('a', 4), racer('b', 5)]));
+  assert.equal(state.queue[0]!.chainId, chainId);
+  assert.notEqual(state.queue.at(-1)!.chainId, chainId);
+});
+
+test('long chains and incoming AI turns have bounded playback without discarding confirmed events', () => {
+  const events: GameEvent[] = Array.from({ length: 40 }, (_, index) => motion(index + 1, ['a'], [index % 2 ? 8 : 0], [index % 2 ? 0 : 8]));
+  let state = receiveRoom(createPlayback(view()), view(2, events));
+  assert.equal(state.queue.length, 40);
+  assert.ok(state.queue.reduce((sum, beat) => sum + beat.durationMs, 0) <= 9000);
+  const activeDuration = state.queue[0]!.durationMs;
+  const allEvents: GameEvent[] = [...events, ...Array.from({ length: 60 }, (_, index) => index % 2 ? motion(index + 41, ['b'], [0], [6]) : { id: index + 41, type: 'turn', text: 'AI行动', source: 'b' })];
+  state = receiveRoom(state, view(3, allEvents));
+  assert.equal(state.queue[0]!.durationMs, activeDuration, 'arrival must never restart or retime a beat already playing');
+  assert.ok(state.queue.reduce((sum, beat) => sum + beat.durationMs, 0) <= 11000);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), allEvents.filter(event => event.type === 'move').map(event => event.id));
+  while (state.queue.length) state = completeBeat(state);
+  assert.deepEqual(state.racers, state.confirmed.racers);
+});
+
+test('my turn-start choice skips unrelated backlog and restores the complete confirmed board immediately', () => {
+  const initial = view();
+  const pending = { id: 'my-start', playerId: initial.selfId, racerId: 'a', kind: 'hypnotist', title: '选择召唤对象', optional: true, options: [{ id: 'b', label: '对手' }] };
+  const events: GameEvent[] = [{ id: 1, type: 'die', source: 'b', text: '对手掷出6' }, motion(2, ['b'], [0], [6]), { id: 3, type: 'turn', source: 'a', text: '轮到我' }];
+  const confirmed = { ...view(2, events, [racer('a', 2), { ...racer('b', 6), tripped: true }]), pending };
+  const state = receiveRoom(createPlayback(initial), confirmed);
+  assert.equal(state.queue.length, 0);
+  assert.deepEqual(state.racers, confirmed.racers);
+  assert.equal(state.confirmed.pending?.id, pending.id);
+  assert.deepEqual(confirmed.logs, events, 'prioritizing a prompt cannot change server events');
+});
+
+test('my own die settles before its resulting skill choice and later unrelated beats do not delay it', () => {
+  const initial = view();
+  const pending = { id: 'after-die', playerId: initial.selfId, racerId: 'a', kind: 'alchemist', title: '炼金加速？', optional: true, options: [{ id: 'use', label: '使用' }] };
+  const confirmed = { ...view(2, [die(1, 2), { id: 2, type: 'power', source: 'b', text: '其他人的技能' }]), pending };
+  let state = receiveRoom(createPlayback(initial), confirmed);
+  assert.equal(state.queue[0]?.kind, 'dice');
+  assert.equal(state.queue[0]?.durationMs, 2500);
+  state = completeBeat(state);
+  assert.equal(state.queue.length, 0);
+  assert.deepEqual(state.racers, confirmed.racers);
+  assert.equal(state.confirmed.pending?.id, pending.id);
+  const otherChoice = receiveRoom(createPlayback(initial), { ...confirmed, pending: { ...pending, playerId: 'pb', racerId: 'b' } });
+  assert.equal(otherChoice.queue[0]?.kind, 'dice', 'another player choice never steals my presentation camera');
+});

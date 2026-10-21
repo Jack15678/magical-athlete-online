@@ -1,6 +1,6 @@
 import { CHARACTERS } from '../shared/characters.js';
 import { TRACKS, RACE_POINTS } from '../shared/tracks.js';
-import type { GameState, GameAction, Player, Racer, Task, PendingChoice, RaceResult } from '../shared/types.js';
+import type { GameState, GameAction, GameMode, Player, Racer, Task, PendingChoice, RaceResult } from '../shared/types.js';
 
 // Every continuation is JSON data. No callback, socket, timer or future die lives
 // in the rules state, so the exact pending interaction survives a server restart.
@@ -74,20 +74,21 @@ function usePower(s: GameState, r: Racer, tasks: Work[], power = effectivePower(
   push(s,...tasks,{kind:'powerDone',racerId:r.id,power});
 }
 
-export function createGame(players: Player[], seed: number): GameState {
-  return { phase:'lobby', round:0, players:structuredClone(players), deck:[], discard:[], racers:[], turn:0, turnCount:0, queue:[], logs:[], results:[], rngState:(seed>>>0)||0x9e3779b9, randomLog:[], track:'mild', flags:{} };
+export function createGame(players: Player[], seed: number, mode: GameMode = 'multiplayer'): GameState {
+  return { mode, phase:'lobby', round:0, players:structuredClone(players), deck:[], discard:[], racers:[], turn:0, turnCount:0, queue:[], logs:[], results:[], rngState:(seed>>>0)||0x9e3779b9, randomLog:[], track:'mild', flags:{} };
 }
 function snake(s: GameState, first: string, twice = false) {
   const i=s.players.findIndex(p=>p.id===first); const ids=s.players.map((_,j)=>s.players[(i+j)%s.players.length]!.id);
   const once=[...ids,...ids.toReversed()]; return twice?[...once,...once]:once;
 }
 export function startGame(s: GameState): void {
-  if (s.phase!=='lobby' || s.players.length<2 || s.players.length>8) throw Error('需要2～8名玩家才能开始');
+  if (s.phase!=='lobby' || s.players.length<(s.mode==='practice'?1:2) || s.players.length>8 || (s.mode==='practice'&&s.players.length!==1)) throw Error('需要2～8名玩家才能开始；自己练习需要1名玩家');
   s.players.forEach(p=>{p.score=0;p.hand=[];p.used=[];p.selection=[];}); s.round=1;s.results=[];s.logs=[];s.racers=[];s.queue=[];s.pending=undefined;
   s.deck=shuffle(s,CHARACTERS.map(c=>c.id));s.discard=[];
   const first=rollOff(s,s.players.map(p=>p.id));s.flags.draftFirst=first;
   s.draft={market:s.deck.splice(0,s.players.length===2?8:s.players.length*2),order:snake(s,first,s.players.length===2),cursor:0,batch:0};s.phase='draft';
   log(s,'phase',s.players.length>6?'7～8人扩展选秀开始':'选秀开始');
+  if(s.mode==='practice')log(s,'house-rule','自己练习：每场单独出场；没有其他选手时，野兔正常移动以便练习。');
 }
 function beginSelection(s: GameState) {
   s.phase='selection';s.draft=undefined;s.pending=undefined;s.queue=[];s.players.forEach(p=>p.selection=[]);
@@ -247,7 +248,7 @@ function beforeRace(s:GameState,r:Racer) {
 function beginTurn(s:GameState,r:Racer) {
   if(!live(r)){advance(s,r);return;}s.currentRacerId=r.id;s.turn=s.racers.indexOf(r);s.turnCount++;s.flags.awaitRoll=false;s.flags.loopSeen=[];r.flags.turnStart=r.position;r.flags.turnPower=effectivePower(s,r);r.flags.rerolls={};r.flags.geniusGuess=undefined;r.flags.mainBonus=0;
   r.flags.turnsTaken=Number(r.flags.turnsTaken??0)+1;
-  const power=effectivePower(s,r);r.flags.skipMain=power==='hare'&&active(s).every(x=>x.id===r.id||x.position<r.position);r.flags.blimpBonus=r.position<TRACKS[s.track].secondCorner?3:-1;
+  const power=effectivePower(s,r);r.flags.skipMain=power==='hare'&&!(s.mode==='practice'&&active(s).length===1)&&active(s).every(x=>x.id===r.id||x.position<r.position);r.flags.blimpBonus=r.position<TRACKS[s.track].secondCorner?3:-1;
   log(s,'turn',`轮到${owner(s,r).name}的${name(r)}`,{source:r.id});
   push(s,{kind:'turnStartPower',racerId:r.id},...powers(s,'duelist').map(d=>({kind:'duelCheck',racerId:d.id})),{kind:'mainReady',racerId:r.id},{kind:'endTurn',racerId:r.id});
 }
@@ -463,9 +464,8 @@ export function applyGameAction(s:GameState,playerId:string,action:GameAction):v
     s.pending=undefined;processChoice(s,pending,action.optionId);resolveTasks(s);return;
   }
   if(action.type==='roll'){
-    if(s.flags.continuation&&!s.pending){resolveTasks(s);return;}
     const r=racer(s,s.currentRacerId!);if(!r||r.playerId!==playerId)throw Error('还没有轮到你的角色');if(s.pending)throw Error('请先完成待处理选择');
-    if(s.flags.needsBegin){s.flags.needsBegin=false;push(s,{kind:'beginTurn',racerId:r.id});resolveTasks(s);if(s.pending||!s.flags.awaitRoll)return;}
+    if(s.flags.needsBegin||s.flags.continuation)throw Error('回合开始事件正在由系统处理，请稍候');
     if(!s.flags.awaitRoll)throw Error('当前角色尚未进入掷骰阶段');s.flags.awaitRoll=false;push(s,{kind:'rollDie',racerId:r.id});resolveTasks(s);return;
   }
   throw Error('这个操作不适用于当前阶段');
@@ -477,7 +477,12 @@ export function automaticAction(s:GameState):{playerId:string;action:GameAction}
   if(s.phase==='results')return{playerId:s.players[0]!.id,action:{type:'next'}};
   if(s.phase!=='race')return;
   if(s.pending){const c=s.pending;const opt=c.options.find(o=>o.id==='skip')??c.options.find(o=>o.id==='keep')??c.options[0];if(opt)return{playerId:c.playerId,action:{type:'choose',choiceId:c.id,optionId:opt.id}};}
-  if(s.flags.continuation)return{playerId:s.players[0]!.id,action:{type:'next'}};
-  const r=racer(s,s.currentRacerId!);if(r&&(s.flags.awaitRoll||s.flags.needsBegin))return{playerId:r.playerId,action:{type:'roll'}};
+  const immediate=systemAction(s);if(immediate)return immediate;
+  const r=racer(s,s.currentRacerId!);if(r&&s.flags.awaitRoll)return{playerId:r.playerId,action:{type:'roll'}};
   return;
+}
+
+/** Turn setup is an authority-owned transition, independent of the die button. */
+export function systemAction(s:GameState):{playerId:string;action:GameAction}|undefined {
+  if(s.phase==='race'&&!s.pending&&(s.flags.continuation||s.flags.needsBegin))return{playerId:s.players[0]!.id,action:{type:'next'}};
 }

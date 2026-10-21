@@ -1,12 +1,12 @@
 import { DurableObject } from 'cloudflare:workers';
 import { PLAYER_COLORS, RULES_STATUS } from '../shared/constants.js';
-import type { ActionEnvelope, ActionReply, Identity, Phase, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameMode, Identity, Phase, RoomView } from '../shared/types.js';
 import type { RelayJoinReply, RelayMetadata, RelayServerMessage } from '../shared/relay.js';
 
 interface Env { ROOMS: DurableObjectNamespace<RoomRelay>; ASSETS: Fetcher }
-interface StoredMember { id:string; name:string; seat:number; tokenHash:string }
+interface StoredMember { isAI?:boolean; id:string; name:string; seat:number; tokenHash:string }
 interface RoomRecord {
-  code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number;
+  mode?:GameMode; code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number;
   phase:Phase; createdAt:number; expiresAt:number; members:StoredMember[];
   joiningLockId?:string;
   pendingClose?:{actorId:string;requestId:string;duplicateRequestIds?:string[];envelope:ActionEnvelope};
@@ -93,13 +93,16 @@ export default {
       if(url.pathname==='/api/browser/health'&&request.method==='GET')return json({ok:true,hosting:'browser',transport:'durable-object-websocket'});
       if(url.pathname==='/api/browser/rooms'&&request.method==='POST'){
         const input=await body(request);
-        if(!only(input,['name','maxPlayers','timeoutSeconds']))throw new HttpError(400,'请求包含未知字段。');
-        const nickname=name(input.name),maxPlayers=input.maxPlayers??8,timeoutSeconds=input.timeoutSeconds??120;
-        if(!Number.isInteger(maxPlayers)||(maxPlayers as number)<2||(maxPlayers as number)>8)throw new HttpError(400,'房间人数需为2～8人。');
+        if(!only(input,['name','maxPlayers','timeoutSeconds','mode','aiCount']))throw new HttpError(400,'请求包含未知字段。');
+        const nickname=name(input.name),mode=input.mode??'multiplayer',aiCount=input.aiCount??3,timeoutSeconds=input.timeoutSeconds??120;
+        if(typeof mode!=='string'||!['multiplayer','practice','ai'].includes(mode))throw new HttpError(400,'比赛模式无效。');
+        if(input.aiCount!==undefined&&(!Number.isInteger(aiCount)||(aiCount as number)<1||(aiCount as number)>7))throw new HttpError(400,'AI人数需为1～7。');
+        const maxPlayers=mode==='practice'?1:mode==='ai'?(aiCount as number)+1:input.maxPlayers??8;
+        if(!Number.isInteger(maxPlayers)||(maxPlayers as number)<(mode==='practice'?1:2)||(maxPlayers as number)>8)throw new HttpError(400,'房间人数需为2～8人。');
         if(!Number.isInteger(timeoutSeconds)||(timeoutSeconds!==0&&((timeoutSeconds as number)<30||(timeoutSeconds as number)>600)))throw new HttpError(400,'超时需为0或30～600秒。');
         for(let attempt=0;attempt<5;attempt++){
           const code=Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>codeAlphabet[b%codeAlphabet.length]).join('');
-          const response=await env.ROOMS.get(env.ROOMS.idFromName(code)).fetch('https://room.internal/create/'+code,{method:'POST',body:JSON.stringify({name:nickname,maxPlayers,timeoutSeconds})});
+          const response=await env.ROOMS.get(env.ROOMS.idFromName(code)).fetch('https://room.internal/create/'+code,{method:'POST',body:JSON.stringify({name:nickname,maxPlayers,timeoutSeconds,mode,aiCount})});
           if(response.status!==409)return response;
         }
         return json({error:'暂时无法分配房间码，请稍后再试。'},503);
@@ -159,11 +162,11 @@ export class RoomRelay extends DurableObject<Env> {
   private notify(message:RelayServerMessage):void {for(const socket of this.sockets())if(this.attachment(socket)?.playerId)this.send(socket,message);}
   private metadata():RelayMetadata {
     const room=this.record!;
-    return {code:room.code,authorityId:room.authorityId,adminHostId:room.adminHostId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,phase:room.phase,createdAt:room.createdAt,members:room.members.map(({id,name,seat})=>({id,name,seat,connected:this.online(id)}))};
+    return {mode:room.mode??'multiplayer',code:room.code,authorityId:room.authorityId,adminHostId:room.adminHostId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,phase:room.phase,createdAt:room.createdAt,members:room.members.map(({id,name,seat,isAI})=>({id,name,seat,...(isAI?{isAI:true}:{}),connected:!!isAI||this.online(id)}))};
   }
   private view(playerId:string):RoomView {
     const room=this.record!;
-    return {code:room.code,version:1,hostId:room.adminHostId,selfId:playerId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,deadline:null,phase:'lobby',round:0,track:'mild',players:this.metadata().members.map(p=>({...p,color:PLAYER_COLORS[p.seat]!,ready:false,score:0,used:[],handCount:0,selected:false,...(p.id===playerId?{hand:[],selection:[]}:{})})),racers:[],logs:[],results:[],rulesStatus:RULES_STATUS,hosting:'browser',authorityId:room.authorityId,authorityOnline:!!this.authority()};
+    return {mode:room.mode??'multiplayer',code:room.code,version:1,hostId:room.adminHostId,selfId:playerId,maxPlayers:room.maxPlayers,timeoutSeconds:room.timeoutSeconds,deadline:null,phase:'lobby',round:0,track:'mild',players:this.metadata().members.map(p=>({...p,color:PLAYER_COLORS[p.seat]!,ready:false,score:0,used:[],handCount:0,selected:false,...(p.id===playerId?{hand:[],selection:[]}:{})})),racers:[],logs:[],results:[],rulesStatus:RULES_STATUS,hosting:'browser',authorityId:room.authorityId,authorityOnline:!!this.authority()};
   }
   private decorate(room:RoomView):RoomView {return {...room,hosting:'browser',authorityId:this.record!.authorityId,authorityOnline:this.record!.closedAt===undefined&&!!this.authority()};}
   private closedNotice():RelayServerMessage {return {type:'room-closed',code:this.record!.code,closedAt:this.record!.closedAt!};}
@@ -205,7 +208,9 @@ export class RoomRelay extends DurableObject<Env> {
           if(this.record)await this.expire();
           const input=await body(request),nickname=name(input.name),now=Date.now(),secret=token();
           const player:StoredMember={id:crypto.randomUUID(),name:nickname,seat:0,tokenHash:await sha256(secret)};
-          const created:RoomRecord={code,authorityId:player.id,adminHostId:player.id,maxPlayers:input.maxPlayers as number,timeoutSeconds:input.timeoutSeconds as number,phase:'lobby',createdAt:now,expiresAt:now+ROOM_TTL_MS,members:[player]};
+          const mode=(input.mode??'multiplayer') as GameMode;
+          const bots:StoredMember[]=Array.from({length:mode==='ai'?(input.aiCount as number??3):0},(_,i)=>({id:crypto.randomUUID(),name:`电脑${i+1}`,seat:i+1,tokenHash:'',isAI:true}));
+          const created:RoomRecord={mode,code,authorityId:player.id,adminHostId:player.id,maxPlayers:input.maxPlayers as number,timeoutSeconds:input.timeoutSeconds as number,phase:'lobby',createdAt:now,expiresAt:now+ROOM_TTL_MS,members:[player,...bots]};
           await this.ctx.storage.transaction(async txn=>{await txn.put('room',created);await txn.setAlarm(created.expiresAt);});
           this.record=created;
           return json({identity:{roomCode:code,playerId:player.id,token:secret},room:this.view(player.id),meta:this.metadata()} satisfies RelayJoinReply,201);
@@ -213,6 +218,7 @@ export class RoomRelay extends DurableObject<Env> {
         if(operation==='ws'&&request.headers.get('Upgrade')?.toLowerCase()==='websocket'&&this.record?.code===code&&this.record.closedAt!==undefined&&this.record.expiresAt>Date.now())return this.closedUpgrade();
         const room=await this.valid();if(room.code!==code)throw new HttpError(404,'房间不存在。');
         if(operation==='join'&&request.method==='POST'){
+          if(room.mode==='practice'||room.mode==='ai')throw new HttpError(409,'此对局为自己练习或人机模式。');
           if(room.pendingClose)throw new HttpError(409,'房间正在解散，请等待确认。');
           if(room.phase!=='lobby'||room.joiningLockId)throw new HttpError(409,'比赛已经开始或正在开始，席位已锁定。原玩家请使用原浏览器重连。');
           if(!this.authority())throw new HttpError(409,'主持网页暂时离线，请等房主回到游戏后再加入。');

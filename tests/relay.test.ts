@@ -161,6 +161,7 @@ test('worker rejects cross-origin access and oversized or invalid room parameter
   assert.equal((await worker.default.fetch(post({name:'玩家'},'https://elsewhere.test'),env)).status,403);
   assert.equal((await worker.default.fetch(post({name:'玩家',maxPlayers:9}),env)).status,400);
   assert.equal((await worker.default.fetch(post({name:'玩家',timeoutSeconds:1}),env)).status,400);
+  for(const mode of [[],['ai'],['practice'],{},1,true,'AI'])assert.equal((await worker.default.fetch(post({name:'玩家',mode}),env)).status,400,JSON.stringify(mode));
   assert.equal((await worker.default.fetch(post({name:'a'.repeat(5000)}),env)).status,413);
   assert.equal((await worker.default.fetch(new Request('https://game.test/room/ABC234'),env)).status,200);
 });
@@ -290,4 +291,25 @@ test('relay close retransmission preserves the original confirmation and rejects
   stored=await env.ctx.storage.get<any>('room');assert.ok(stored.closedAt!==undefined);
   assert.deepEqual(host.sent.filter(m=>m.type==='ack').map(m=>m.requestId).sort(),['close-original','close-retry']);
   assert.ok(host.sent.filter(m=>m.type==='ack').every(m=>m.result.ok));assert.equal(host.closeCode,4410);
+});
+
+test('relay solo creation reserves AI seats without login identities and keeps AI presence online',async()=>{
+  for(const count of [1,2,8]){
+    const env=await instance();const response=await env.relay.fetch(new Request('https://room.internal/create/ABC234',{method:'POST',body:JSON.stringify({name:'自己',mode:count===1?'practice':'ai',aiCount:count-1,maxPlayers:count,timeoutSeconds:0})}));
+    assert.equal(response.status,201);const created=await response.json() as RelayJoinReply;
+    assert.equal(created.meta.mode,count===1?'practice':'ai');assert.equal(created.meta.members.length,count);
+    assert(created.meta.members.slice(1).every(p=>p.isAI&&p.connected));assert(!created.meta.members[0]!.isAI);
+    const stored=env.ctx.storage.values.get('room') as {members:{id:string;tokenHash:string;isAI?:boolean}[]};
+    assert(stored.members.slice(1).every(p=>p.isAI&&p.tokenHash===''));
+    const joined=await env.relay.fetch(new Request('https://room.internal/join/ABC234',{method:'POST',body:JSON.stringify({name:'访客'})}));assert.equal(joined.status,409);
+  }
+});
+
+test('worker mode accepts only exact strings and preserves the nullish multiplayer default',async()=>{
+  let forwarded:Record<string,unknown>|undefined;
+  const env={ASSETS:{fetch:()=>new Response('asset')},ROOMS:{idFromName:(code:string)=>code,get:()=>({fetch:async(_url:string,init:RequestInit)=>{forwarded=JSON.parse(String(init.body)) as Record<string,unknown>;return Response.json({ok:true},{status:201});}})}};
+  for(const mode of [undefined,null,'multiplayer','practice','ai']){
+    const request=new Request('https://game.test/api/browser/rooms',{method:'POST',body:JSON.stringify({name:'玩家',mode,aiCount:1})});
+    const response=await worker.default.fetch(request,env);assert.equal(response.status,201);assert.equal(forwarded?.mode,mode??'multiplayer');
+  }
 });

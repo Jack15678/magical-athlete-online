@@ -1,6 +1,6 @@
-import type { ActionEnvelope,ActionReply,Identity,Phase,RoomView } from './types.js';
-export interface RelayMember { id:string; name:string; seat:number; connected:boolean }
-export interface RelayMetadata { code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number; phase:Phase; createdAt:number; members:RelayMember[] }
+import type { ActionEnvelope,ActionReply,GameMode,Identity,Phase,RoomView } from './types.js';
+export interface RelayMember { isAI?:boolean; id:string; name:string; seat:number; connected:boolean }
+export interface RelayMetadata { mode?:GameMode; code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number; phase:Phase; createdAt:number; members:RelayMember[] }
 export interface RelayJoinReply { identity:Identity; room:RoomView; meta:RelayMetadata }
 export type RelayClientMessage =
  | {type:'auth';identity:Identity;authority?:boolean}

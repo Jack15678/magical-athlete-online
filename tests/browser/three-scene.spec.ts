@@ -112,7 +112,7 @@ async function recordBeats(page: Page, autoClickSkipOnMove = false) {
     (window as unknown as { __sceneSkipped: SkipRecord }).__sceneSkipped = skipped;
     const save = () => {
       const positions = Object.fromEntries(Array.from(board.querySelectorAll<HTMLElement>('[data-testid="scene-racer"]')).map(node => [node.dataset.racerId!, { position: node.dataset.position ?? '', target: node.dataset.targetPosition ?? '' }]));
-      const next = { phase: board.getAttribute('data-phase') ?? '', events: board.getAttribute('data-event-ids') ?? '', motions: board.getAttribute('data-motion-count') ?? '', upFace: board.querySelector('.dice-spotlight')?.getAttribute('data-up-face') ?? '', positions, rollDisabled: !!document.querySelector('.race-action button')?.hasAttribute('disabled'), choices: document.querySelectorAll('.choice-panel').length };
+      const next = { phase: board.getAttribute('data-phase') ?? '', events: board.getAttribute('data-event-ids') ?? '', motions: board.getAttribute('data-motion-count') ?? '', upFace: board.querySelector('.dice-spotlight')?.getAttribute('data-up-face') ?? '', positions, rollDisabled: !!document.querySelector('.floating-roll button')?.hasAttribute('disabled'), choices: document.querySelectorAll('.choice-panel').length };
       const previous = records.at(-1);
       if (JSON.stringify(next) !== JSON.stringify(previous && { ...previous, at: undefined })) records.push({ ...next, at: performance.now() });
       // Record the simultaneous pre-move positions before invoking the actual
@@ -168,7 +168,7 @@ test('3D dice settles on the authoritative face before movement; reconnect does 
     if (!process.env.CI) {
       await room.host.getByTestId('presentation-settings').click();
       await room.host.getByLabel('低画质', { exact: true }).uncheck();
-      await room.host.getByTestId('presentation-settings').click();
+      await room.host.getByRole('dialog', { name: '比赛菜单', exact: true }).getByRole('button', { name: '关闭', exact: true }).click();
     }
     await canvasDiagnostics(room.host);
     await captureBoard(room.host, 'scene-warmup-desktop');
@@ -306,6 +306,7 @@ test('3D simultaneous movement stays grouped on mobile; settings and skip preser
     await expect(room.host.getByLabel('减少动效')).toBeVisible();
     await room.host.getByLabel('减少动效').check();
     await room.host.getByLabel('动画速度').selectOption('4');
+    await room.host.getByRole('dialog', { name: '比赛菜单', exact: true }).getByRole('button', { name: '关闭', exact: true }).click();
     await room.host.getByRole('button', { name: '恢复默认视角', exact: true }).click();
     expect(await room.host.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await captureBoard(room.host, 'simultaneous-mobile');

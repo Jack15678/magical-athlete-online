@@ -66,6 +66,9 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
     while(true){
       const room=await saved(host,code),g=room.game;
       if(g.phase==='finished'||(smoke&&g.phase==='results'&&g.results.length>=1))break;
+      // Turn setup now belongs to the authority and may expose a skill instead
+      // of a die button. Wait for that committed transition before choosing UI.
+      if(g.phase==='race'&&!g.pending&&(g.flags.needsBegin||g.flags.continuation)){await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);continue;}
       mark('play',g.pending?`choose-${g.pending.kind}`:g.phase==='selection'?'select':g.phase==='results'?'next':'roll',room,++steps);
       if(g.round!==lastPrintedRound||steps%50===0){lastPrintedRound=g.round;progress();}
       if(steps>5000)throw Error(`Execution budget exceeded in ${g.phase}; game queue was not truncated.`);if(g.phase==='paused')throw Error('Engine diagnostic pause.');
