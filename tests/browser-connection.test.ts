@@ -102,3 +102,11 @@ test('another room closure does not terminate this room', () => {
   client.receive({ type: 'room-closed', code: 'DEF567', closedAt: 123 });
   assert.deepEqual(client.events, []);
 });
+
+test('expiration is terminal and reports the lifetime limit without offering reconnection', () => {
+  const client = closingTransport();
+  client.receive({ type: 'room-closed', code: 'ABC234', closedAt: 123, reason: 'expired' });
+  assert.equal(client.events.at(-1), 'expired');
+  assert.equal(client.connection.connected, false);
+  const events = [...client.events]; client.connection.connect(); assert.deepEqual(client.events, events);
+});

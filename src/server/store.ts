@@ -20,6 +20,14 @@ export class Store {
   addIdentity(room: Room, id: string, tokenHash: string): void {
     this.transaction(() => { this.save(room); this.db.prepare('INSERT INTO identities VALUES(?,?,?)').run(room.code, id, tokenHash); });
   }
+  removeIdentity(room: Room, id: string): void {
+    this.transaction(() => {
+      this.save(room);
+      this.db.prepare('DELETE FROM identities WHERE room_code=? AND player_id=?').run(room.code,id);
+      this.db.prepare('DELETE FROM receipts WHERE room_code=? AND player_id=?').run(room.code,id);
+    });
+  }
+  delete(code: string): void { this.db.prepare('DELETE FROM rooms WHERE code=?').run(code); }
   receipt(code: string, playerId: string, actionId: string): {request:string;result:ActionReply}|undefined {
     const row = this.db.prepare('SELECT request,result FROM receipts WHERE room_code=? AND player_id=? AND action_id=?').get(code, playerId, actionId) as {request:string;result:string}|undefined;
     return row && {request:row.request,result:JSON.parse(row.result) as ActionReply};
@@ -28,6 +36,5 @@ export class Store {
     this.transaction(() => { this.save(room); this.db.prepare('INSERT INTO receipts VALUES(?,?,?,?,?)').run(room.code,id,actionId,request,JSON.stringify(result)); });
   }
   transaction(fn: () => void): void { this.db.exec('BEGIN IMMEDIATE'); try { fn(); this.db.exec('COMMIT'); } catch(e) { this.db.exec('ROLLBACK'); throw e; } }
-  expire(before: number): void { this.db.prepare('DELETE FROM rooms WHERE updated_at < ?').run(before); }
   close(): void { this.db.close(); }
 }

@@ -1,7 +1,8 @@
-import type { ActionEnvelope,ActionReply,GameMode,Identity,Phase,PublicEventBatch,RoomView } from './types.js';
+import type { ActionEnvelope,ActionReply,GameMode,Identity,Phase,PublicEventBatch,RoomView,Spectator } from './types.js';
 export interface RelayMember { isAI?:boolean; id:string; name:string; seat:number; connected:boolean }
 export interface RelayMetadata { mode?:GameMode; code:string; authorityId:string; adminHostId:string; maxPlayers:number; timeoutSeconds:number; phase:Phase; createdAt:number; members:RelayMember[] }
 export interface RelayJoinReply { identity:Identity; room:RoomView; meta:RelayMetadata }
+export interface RelayMetadata { spectators?:Spectator[]; expiresAt?:number; }
 export type RelayClientMessage =
  | {type:'auth';identity:Identity;authority?:boolean}
  | {type:'action';requestId:string;envelope:ActionEnvelope}
@@ -17,6 +18,6 @@ export type RelayServerMessage =
  | {type:'host-status';online:boolean}
  | {type:'snapshot';room:RoomView;requestId?:string}
  | {type:'events';requestId:string;batch:PublicEventBatch}
- | {type:'room-closed';code:string;closedAt:number}
+ | {type:'room-closed';code:string;closedAt:number;reason?:'expired'}
  | {type:'ack';requestId:string;result:ActionReply}
  | {type:'error';message:string;requestId?:string};

@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { createApplication } from '../src/server/index.js';
 import type { Identity, RoomView, ActionEnvelope, ActionReply, GameAction } from '../src/shared/types.js';
 import { automaticAction,applyGameAction } from '../src/engine/index.js';
+import { ROOM_TTL_MS } from '../src/shared/constants.js';
 
 async function running(db=':memory:') {const a=createApplication(db);await new Promise<void>(r=>a.http.listen(0,'127.0.0.1',r));const addr=a.http.address();assert(addr&&typeof addr==='object');return {...a,url:`http://127.0.0.1:${addr.port}`};}
 async function post(url:string,path:string,data:unknown) {const r=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
@@ -85,7 +86,7 @@ test('Node关闭：仅当前房主可解散大厅，先确认再通知全部标�
     assert.equal(other.socket.connected,true);assert.equal(unrelatedNotices,0);assert.deepEqual(app.rooms.get(otherBefore.code),otherBefore);
     assert.equal(app.rooms.act(host.roomCode,guest.playerId,envelope).duplicate,true);
     const again=app.rooms.act(host.roomCode,guest.playerId,{actionId:randomUUID(),expectedVersion:sealed.version,action:{type:'ready',ready:true}});assert.equal(again.ok,false);assert.match(again.error??'',/房间已解散/);
-    app.rooms.presence(host.roomCode,guest.playerId,false);assert.deepEqual(app.rooms.tick(Date.now()+86_400_000),[]);assert.deepEqual(app.rooms.get(host.roomCode),sealed);
+    app.rooms.presence(host.roomCode,guest.playerId,false);assert.deepEqual(app.rooms.tick(Date.now()+60_000),[]);assert.deepEqual(app.rooms.get(host.roomCode),sealed);
     const late=await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'迟到者'});assert.equal(late.status,400);assert.match(late.body.error,/房间已解散/);
   } finally {for(const socket of sockets)socket.disconnect();await app.close();}
 });
@@ -104,14 +105,14 @@ test('Node关闭：比赛和排队结算立即封存，重启不能通过旧凭�
     racing.game.pending=undefined;racing.game.flags.continuation=true;racing.game.queue=[{kind:'gain',racerId:racing.game.racers[0]!.id,amount:99}];racing.deadline=Date.now()-1;
     const game=structuredClone(racing.game);const envelope:ActionEnvelope={actionId:randomUUID(),expectedVersion:racing.version,action:{type:'close'}};
     assert.equal(app.rooms.act(host.roomCode,host.playerId,envelope).ok,true);const sealed=structuredClone(app.rooms.get(host.roomCode));assert.deepEqual(sealed.game,game);assert.equal(sealed.deadline,null);
-    assert.deepEqual(app.rooms.tick(Date.now()+86_400_000),[]);app.rooms.presence(host.roomCode,host.playerId,false);assert.deepEqual(app.rooms.get(host.roomCode),sealed);
+    assert.deepEqual(app.rooms.tick(Date.now()+60_000),[]);app.rooms.presence(host.roomCode,host.playerId,false);assert.deepEqual(app.rooms.get(host.roomCode),sealed);
     await app.close();app=await running(path);await new Promise<void>(resolve=>setImmediate(resolve));
     assert.deepEqual(app.rooms.get(host.roomCode),JSON.parse(JSON.stringify(sealed)));
     for(const identity of [host,guest]){assert.throws(()=>app.rooms.authenticate(identity),/房间已解散/);assert.match(await rejectedConnection(app.url,identity),/房间已解散/);}
     const late=await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'回来的人'});assert.equal(late.status,400);assert.match(late.body.error,/房间已解散/);
     assert.equal(app.rooms.act(host.roomCode,host.playerId,envelope).duplicate,true);
     const denied=app.rooms.act(host.roomCode,host.playerId,{actionId:randomUUID(),expectedVersion:sealed.version,action:{type:'next'}});assert.equal(denied.ok,false);assert.match(denied.error??'',/房间已解散/);
-    assert.deepEqual(app.rooms.tick(Date.now()+86_400_000),[]);assert.deepEqual(app.rooms.get(host.roomCode),JSON.parse(JSON.stringify(sealed)));
+    assert.deepEqual(app.rooms.tick(Date.now()+60_000),[]);assert.deepEqual(app.rooms.get(host.roomCode),JSON.parse(JSON.stringify(sealed)));
   } finally {await app.close();rmSync(dir,{recursive:true,force:true});}
 });
 
@@ -147,4 +148,125 @@ test('Node public event backfill is authenticated, byte-bounded and independent 
     assert(Buffer.byteLength(JSON.stringify(reply.batch))<=96*1024);assert(!JSON.stringify(reply).match(/private-hand|private-context|rngState/));
     assert.equal((await read({afterId:0,playerId:'outsider'})).ok,false);assert.equal((await read({afterId:-1})).ok,false);
   }finally{socket?.disconnect();await app.close();}
+});
+
+test('Node room directory lists safe live metadata and lobby departures free the original seat',async()=>{
+  const app=await running();const sockets:Socket[]=[];
+  try {
+    const created=await post(app.url,'/api/rooms',{name:'房主',maxPlayers:3,timeoutSeconds:0});const host=created.body.identity as Identity;
+    const first=(await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'先加入'})).body.identity as Identity;
+    const second=(await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'后加入'})).body.identity as Identity;
+    for(const id of [host,first,second])sockets.push((await connect(app.url,id)).socket);
+    const disconnected=event(sockets[1]!,'disconnect');
+    assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,first)).body,{ok:true,retainIdentity:false});await disconnected;
+    assert.equal(app.store.identity(host.roomCode,first.playerId),undefined);assert.throws(()=>app.rooms.authenticate(first),/身份已失效/);
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,first)).status,401);
+    assert.equal(app.rooms.get(host.roomCode).game.players.find(p=>p.id===second.playerId)?.seat,2);
+    const replacement=(await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'补位'})).body.identity as Identity;
+    assert.equal(app.rooms.get(host.roomCode).game.players.find(p=>p.id===replacement.playerId)?.seat,1);
+    const listed=await (await fetch(app.url+'/api/rooms')).json();assert.equal(listed.rooms.length,1);
+    const summary=listed.rooms[0];assert.equal(summary.code,host.roomCode);assert.equal(summary.hostName,'房主');assert.equal(summary.playerCount,3);assert.equal(summary.spectatorCount,0);assert.equal(summary.expiresAt-summary.createdAt,ROOM_TTL_MS);
+    assert(!JSON.stringify(listed).match(/token|playerId|rngState|hand|deck/));
+    assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,host)).body,{ok:true,retainIdentity:false});
+    assert.equal(app.rooms.get(host.roomCode).hostId,second.playerId);assert.equal(sockets[2]!.connected,true);
+  } finally {for(const socket of sockets)socket.disconnect();await app.close();}
+});
+
+test('Node spectators can join a full running match, receive only public state, and leave without affecting players',async()=>{
+  const app=await running();const sockets:Socket[]=[];
+  try {
+    const created=await post(app.url,'/api/rooms',{name:'房主',maxPlayers:2,timeoutSeconds:0});const host=created.body.identity as Identity;
+    const guest=(await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'选手'})).body.identity as Identity;
+    for(const id of [host,guest])sockets.push((await connect(app.url,id)).socket);
+    const command=(id:string,action:GameAction)=>{const room=app.rooms.get(host.roomCode);assert.equal(app.rooms.act(room.code,id,{actionId:randomUUID(),expectedVersion:room.version,action}).ok,true);};
+    command(host.playerId,{type:'ready',ready:true});command(guest.playerId,{type:'ready',ready:true});command(host.playerId,{type:'start'});
+    while(app.rooms.get(host.roomCode).game.phase==='draft'){const room=app.rooms.get(host.roomCode),next=automaticAction(room.game);assert(next);command(next.playerId,next.action);}
+    const before=structuredClone(app.rooms.get(host.roomCode));assert.equal(before.game.phase,'selection');
+    const watched=await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'观众',role:'spectator'});assert.equal(watched.status,201);const identity=watched.body.identity as Identity;
+    assert.equal(identity.role,'spectator');assert.equal(watched.body.room.role,'spectator');assert.equal(watched.body.room.players.length,2);
+    const viewer=await connect(app.url,identity);sockets.push(viewer.socket);assert.equal(viewer.view.role,'spectator');assert(viewer.view.players.every(p=>p.hand===undefined&&p.selection===undefined));assert.equal(viewer.view.pending,undefined);
+    assert.equal(app.rooms.list().find(room=>room.code===host.roomCode)?.spectatorCount,1);
+    assert.equal(app.rooms.get(host.roomCode).hostId,before.hostId);assert.deepEqual(app.rooms.get(host.roomCode).game,before.game);
+    const game=app.rooms.get(host.roomCode).game;game.logs.push({id:(game.logs.at(-1)?.id??0)+1,type:'notice',text:'公开播报'});
+    const events=await new Promise<any>((resolve,reject)=>viewer.socket.timeout(4000).emit('events',{afterId:0},(error:Error|null,reply:unknown)=>error?reject(error):resolve(reply)));
+    assert.equal(events.ok,true);assert(events.batch.events.some((e:any)=>e.text==='公开播报'));assert(!JSON.stringify(events).match(/rngState|selection|hand/));
+    const version=app.rooms.get(host.roomCode).version;
+    for(const action of [{type:'ready',ready:true},{type:'close'},{type:'transfer',playerId:host.playerId}] as GameAction[]){const reply=await emit(viewer.socket,{actionId:randomUUID(),expectedVersion:version,action});assert.equal(reply.ok,false);}
+    assert.equal(app.rooms.get(host.roomCode).version,version);assert.throws(()=>app.rooms.authenticate({...identity,role:'player'}),/身份已失效/);
+    const disconnected=event(viewer.socket,'disconnect');assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,identity)).body,{ok:true,retainIdentity:false});await disconnected;
+    assert.equal(app.rooms.get(host.roomCode).spectators?.length,0);assert.equal(app.rooms.get(host.roomCode).game.players.length,2);assert.equal(app.store.identity(host.roomCode,identity.playerId),undefined);assert.throws(()=>app.rooms.authenticate(identity),/身份已失效/);
+    const beforeLeave=structuredClone(app.rooms.get(host.roomCode).game);
+    assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,guest)).body,{ok:true,retainIdentity:true});
+    assert.equal(app.rooms.get(host.roomCode).game.players.find(p=>p.id===guest.playerId)?.connected,false);
+    assert.equal(app.rooms.get(host.roomCode).game.players.find(p=>p.id===guest.playerId)?.hand.length,beforeLeave.players.find(p=>p.id===guest.playerId)?.hand.length);
+    const resumed=await connect(app.url,guest);sockets.push(resumed.socket);assert.equal(resumed.view.selfId,guest.playerId);assert(resumed.view.players.find(p=>p.id===guest.playerId)?.hand?.length);
+  } finally {for(const socket of sockets)socket.disconnect();await app.close();}
+});
+
+test('Node solo matches accept spectators but never give them a participant seat or control',async()=>{
+  const app=await running();
+  try {
+    for(const mode of ['practice','ai']) {
+      const created=await post(app.url,'/api/rooms',{name:'练习者',mode,aiCount:1,timeoutSeconds:0});const host=created.body.identity as Identity;
+      const watched=await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'观众',role:'spectator'});assert.equal(watched.status,201);assert.equal(watched.body.room.role,'spectator');
+      assert.equal(watched.body.room.players.length,mode==='practice'?1:2);assert.equal(app.rooms.get(host.roomCode).hostId,host.playerId);
+      assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,watched.body.identity)).body.retainIdentity,false);
+    }
+  } finally {await app.close();}
+});
+
+test('Node rooms expire exactly three hours after creation, purge credentials, and notify connected spectators and players',async()=>{
+  const app=await running();const sockets:Socket[]=[];
+  try {
+    const created=await post(app.url,'/api/rooms',{name:'房主',maxPlayers:2,timeoutSeconds:0});const host=created.body.identity as Identity;
+    const spectator=(await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'观众',role:'spectator'})).body.identity as Identity;
+    for(const id of [host,spectator])sockets.push((await connect(app.url,id)).socket);
+    const room=app.rooms.get(host.roomCode),expiresAt=room.createdAt+ROOM_TTL_MS;room.updatedAt=expiresAt-1;app.store.save(room);
+    assert.equal(app.rooms.list(expiresAt-1).length,1);
+    const notices=sockets.map(socket=>event(socket,'room-closed'));const disconnections=sockets.map(socket=>event(socket,'disconnect'));
+    assert.deepEqual(app.rooms.tick(expiresAt),[]);
+    assert.deepEqual(await Promise.all(notices),sockets.map(()=>({code:host.roomCode,closedAt:expiresAt,reason:'expired'})));await Promise.all(disconnections);
+    assert.equal(app.rooms.rooms.has(host.roomCode),false);assert.deepEqual(app.store.load(),[]);for(const id of [host,spectator])assert.equal(app.store.identity(host.roomCode,id.playerId),undefined);
+    assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.length,0);assert.throws(()=>app.rooms.authenticate(host),/过期/);
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/join`,{name:'迟到'})).status,400);
+  } finally {for(const socket of sockets)socket.disconnect();await app.close();}
+});
+
+test('Node startup and get purge expired rooms even when their last update was recent',async()=>{
+  const dir=mkdtempSync(join(tmpdir(),'athlete-expiry-'));const path=join(dir,'rooms.sqlite');let app=await running(path);
+  try {
+    const old=app.rooms.create('旧房间',2,0),fresh=app.rooms.create('新房间',2,0);
+    const room=app.rooms.get(old.identity.roomCode);room.createdAt=Date.now()-ROOM_TTL_MS;room.updatedAt=Date.now();app.store.save(room);
+    await app.close();app=await running(path);assert.equal(app.rooms.rooms.has(old.identity.roomCode),false);assert.equal(app.store.identity(old.identity.roomCode,old.identity.playerId),undefined);assert.equal(app.store.load().length,1);
+    const loaded=app.rooms.get(fresh.identity.roomCode);loaded.createdAt=Date.now()-ROOM_TTL_MS;assert.throws(()=>app.rooms.get(loaded.code),/过期/);assert.deepEqual(app.store.load(),[]);
+  } finally {await app.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test('Node lobby departure only disconnects clients after the identity removal transaction commits',async()=>{
+  const app=await running();const sockets:Socket[]=[];
+  try {
+    const host=app.rooms.create('房主',2,0).identity,guest=app.rooms.join(host.roomCode,'朋友').identity;
+    for(const id of [host,guest])sockets.push((await connect(app.url,id)).socket);
+    const before=structuredClone(app.rooms.get(host.roomCode));const save=app.store.save.bind(app.store);
+    app.store.save=room=>{save(room);throw Error('模拟退出提交失败');};
+    try {const failed=await post(app.url,`/api/rooms/${host.roomCode}/leave`,guest);assert.equal(failed.status,400);assert.match(failed.body.error,/模拟退出提交失败/);} finally {app.store.save=save;}
+    assert.deepEqual(app.rooms.get(host.roomCode),before);assert.deepEqual(app.store.load()[0],JSON.parse(JSON.stringify(before)));assert(app.store.identity(host.roomCode,guest.playerId));assert(sockets.every(socket=>socket.connected));
+  } finally {for(const socket of sockets)socket.disconnect();await app.close();}
+});
+
+test('Node leave distinguishes stale credentials, expired or closed rooms, and input errors so local exit can recover',async()=>{
+  const app=await running();
+  try {
+    const host=app.rooms.create('房主',2,0).identity,spectator=app.rooms.join(host.roomCode,'观众','spectator').identity;
+    assert.equal(app.rooms.list()[0]?.spectatorCount,0);
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,{...spectator,token:'x'.repeat(43)})).status,401);
+    assert.deepEqual((await post(app.url,`/api/rooms/${host.roomCode}/leave`,spectator)).body,{ok:true,retainIdentity:false});
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,spectator)).status,401);
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,{...host,extra:true})).status,400);
+    const closed=app.rooms.create('解散房主',2,0).identity;const room=app.rooms.get(closed.roomCode);
+    assert.equal(app.rooms.act(room.code,closed.playerId,{actionId:randomUUID(),expectedVersion:room.version,action:{type:'close'}}).ok,true);
+    assert.equal((await post(app.url,`/api/rooms/${closed.roomCode}/leave`,closed)).status,410);
+    app.rooms.get(host.roomCode).createdAt=Date.now()-ROOM_TTL_MS;
+    assert.equal((await post(app.url,`/api/rooms/${host.roomCode}/leave`,host)).status,404);
+  } finally {await app.close();}
 });

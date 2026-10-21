@@ -22,7 +22,7 @@ export function actionFocus(beat: PresentationBeat, racers: Racer[], queue: Pres
 }
 
 export function ownFocus(room: RoomView, racers: Racer[]): CameraFocus {
-  const mine = racers.filter(racer => racer.playerId === room.selfId);
+  const mine = room.role === 'spectator' ? racers : racers.filter(racer => racer.playerId === room.selfId);
   const racer = mine.find(value => value.id === room.currentRacerId) ?? mine.find(value => !value.finished && !value.eliminated) ?? mine[0];
   return { state: 'self', ids: racer ? [racer.id] : [], positions: racer ? [racer.position] : [0] };
 }

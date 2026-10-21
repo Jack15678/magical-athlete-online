@@ -1,21 +1,42 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import type { ActionEnvelope, ActionReply, GameAction, GameMode, Identity, Player, Room, RoomView } from '../shared/types.js';
+import type { ActionEnvelope, ActionReply, GameMode, Identity, Player, Room, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
 import { immediateRoomAction } from '../shared/automation.js';
 import { projectRoom, reduceRoomAction, setRoomDeadline } from '../shared/room-core.js';
 import { createGame, startGame, automaticAction } from '../engine/index.js';
 import { Store } from './store.js';
+import { MAX_SPECTATORS, ROOM_TTL_MS } from '../shared/constants.js';
 
 export const PLAYER_COLORS = ['#df3c32','#175bd1','#159269','#b34fa6','#eb8a19','#6d57c7','#008eaa','#77503c'];
+export { ROOM_TTL_MS } from '../shared/constants.js';
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 export class Rooms {
   readonly rooms = new Map<string, Room>();
-  constructor(readonly store: Store, readonly defaultTimeout = 120, readonly ttlDays = 30) {
-    store.expire(Date.now() - ttlDays * 86400000);
-    for(const room of store.load()) { if(room.closedAt===undefined){room.game.players.forEach(p => p.connected = !!p.isAI); store.save(room);} this.rooms.set(room.code, room); }
+  onExpired?: (code:string, expiresAt:number) => void;
+  constructor(readonly store: Store, readonly defaultTimeout = 120) {
+    const now=Date.now();
+    for(const room of store.load()) {
+      if(room.createdAt+ROOM_TTL_MS<=now){store.delete(room.code);continue;}
+      if(room.closedAt===undefined){room.game.players.forEach(p => p.connected = !!p.isAI);room.spectators?.forEach(p=>p.connected=false);store.save(room);}
+      this.rooms.set(room.code, room);
+    }
   }
-  get(code: string): Room { const room = this.rooms.get(code.toUpperCase()); if(!room) throw Error('房间不存在或已过期，请检查房间码。'); return room; }
+  expire(code:string,now=Date.now()):boolean {
+    const room=this.rooms.get(code);
+    if(!room||room.createdAt+ROOM_TTL_MS>now)return false;
+    this.store.delete(code);this.rooms.delete(code);this.onExpired?.(code,room.createdAt+ROOM_TTL_MS);return true;
+  }
+  get(code: string): Room { code=code.toUpperCase();this.expire(code);const room = this.rooms.get(code); if(!room) throw Error('房间不存在或已过期，请检查房间码。'); return room; }
+  list(now=Date.now()):RoomSummary[] {
+    for(const code of this.rooms.keys())this.expire(code,now);
+    return [...this.rooms.values()].filter(room=>room.closedAt===undefined).sort((a,b)=>b.createdAt-a.createdAt).map(room=>({
+      code:room.code,hostName:room.game.players.find(p=>p.id===room.hostId)?.name??'房主',phase:room.game.phase,
+      playerCount:room.game.players.length,maxPlayers:room.maxPlayers,spectatorCount:room.spectators?.filter(p=>p.connected).length??0,
+      createdAt:room.createdAt,expiresAt:room.createdAt+ROOM_TTL_MS,authorityOnline:true,mode:room.mode??'multiplayer',
+    }));
+  }
   player(name: string, seat: number): Player { return {id:randomUUID(),name,seat,color:PLAYER_COLORS[seat]!,ready:false,connected:false,score:0,hand:[],used:[],selection:[]}; }
   create(name: string, maxPlayers: number, timeoutSeconds?: number, mode:GameMode='multiplayer', aiCount=3): {identity:Identity;room:RoomView} {
+    for(const code of this.rooms.keys())this.expire(code);
     if(this.rooms.size >= 500) throw Error('当前房间较多，请稍后重试。');
     let code: string; do { code = Array.from(randomBytes(6), b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 31]).join(''); } while(this.rooms.has(code));
     if(!['multiplayer','practice','ai'].includes(mode))throw Error('比赛模式无效。');
@@ -26,30 +47,59 @@ export class Rooms {
     const room:Room = {mode,code,hostId:p.id,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,randomBytes(4).readUInt32LE(),mode)};
     if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);this.deadline(room);}
     const token = randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(code,room);
-    return {identity:{roomCode:code,playerId:p.id,token},room:this.view(room,p.id)};
+    return {identity:{roomCode:code,playerId:p.id,token,role:'player'},room:this.view(room,p.id)};
   }
-  join(code: string, name: string): {identity:Identity;room:RoomView} {
+  join(code: string, name: string,role:RoomRole='player'): {identity:Identity;room:RoomView} {
     const original=this.get(code); if(original.closedAt!==undefined) throw Error('房间已解散。请创建或加入其他房间。');
+    if(role==='spectator') {
+      if((original.spectators?.length??0)>=MAX_SPECTATORS)throw Error('观战人数已满，请稍后再试。');
+      const room=structuredClone(original),spectator={id:randomUUID(),name,connected:false};
+      room.spectators=[...(room.spectators??[]),spectator];room.version++;room.updatedAt=Date.now();
+      const token=randomBytes(32).toString('base64url');this.store.addIdentity(room,spectator.id,hash(token));this.rooms.set(room.code,room);
+      return{identity:{roomCode:room.code,playerId:spectator.id,token,role},room:this.view(room,spectator.id)};
+    }
+    if(role!=='player')throw Error('加入身份无效。');
     if(original.mode==='practice'||original.mode==='ai')throw Error('此对局为自己练习或人机模式。');
     if(original.game.phase!=='lobby') throw Error('比赛已经开始，席位已锁定。原玩家请使用原浏览器重连。');
     if(original.game.players.length >= original.maxPlayers) throw Error('房间已满。');
-    const room=structuredClone(original); const p=this.player(name,room.game.players.length); room.game.players.push(p); room.version++; room.updatedAt=Date.now();
+    const room=structuredClone(original);let seat=0;while(room.game.players.some(p=>p.seat===seat))seat++;
+    const p=this.player(name,seat); room.game.players.push(p);room.game.players.sort((a,b)=>a.seat-b.seat);room.version++; room.updatedAt=Date.now();
     const token=randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(room.code,room);
-    return {identity:{roomCode:room.code,playerId:p.id,token},room:this.view(room,p.id)};
+    return {identity:{roomCode:room.code,playerId:p.id,token,role},room:this.view(room,p.id)};
   }
   authenticate(identity: Identity): Room {
     const room=this.get(identity.roomCode); if(room.closedAt!==undefined) throw Error('房间已解散。请创建或加入其他房间。');
     const expected=this.store.identity(room.code,identity.playerId);
-    if(!expected || !room.game.players.some(p=>p.id===identity.playerId)) throw Error('身份已失效。请使用原浏览器和邀请链接恢复。');
+    const role=room.game.players.some(p=>p.id===identity.playerId)?'player':room.spectators?.some(p=>p.id===identity.playerId)?'spectator':undefined;
+    if(!expected || !role || (identity.role!==undefined&&identity.role!==role)) throw Error('身份已失效。请使用原浏览器和邀请链接恢复。');
     const actual=hash(identity.token); if(!timingSafeEqual(Buffer.from(expected),Buffer.from(actual))) throw Error('重连凭据无效。请使用原浏览器。'); return room;
   }
   presence(code: string, id: string, connected: boolean): void {
-    const original=this.get(code); if(original.closedAt!==undefined || original.game.players.find(p=>p.id===id)?.connected===connected) return;
-    const room=structuredClone(original); room.game.players.find(p=>p.id===id)!.connected=connected;
-    if(!room.game.players.some(p=>p.id===room.hostId && p.connected)) {
+    if(this.expire(code))return;
+    const original=this.rooms.get(code);if(!original||original.closedAt!==undefined)return;
+    const member=original.game.players.find(p=>p.id===id)??original.spectators?.find(p=>p.id===id);
+    if(!member||member.connected===connected)return;
+    const room=structuredClone(original);(room.game.players.find(p=>p.id===id)??room.spectators!.find(p=>p.id===id)!).connected=connected;
+    if(original.game.players.some(p=>p.id===id)&&!room.game.players.some(p=>p.id===room.hostId && p.connected)) {
       const next=room.game.players.find(p=>p.connected&&!p.isAI); if(next) room.hostId=next.id;
     }
-    room.version++; this.store.save(room); this.rooms.set(code,room);
+    room.version++;room.updatedAt=Date.now(); this.store.save(room); this.rooms.set(code,room);
+  }
+  leave(identity:Identity):{ok:true;retainIdentity:boolean} {
+    const original=this.authenticate(identity),room=structuredClone(original),id=identity.playerId;
+    const spectator=room.spectators?.some(p=>p.id===id)??false;
+    const retainIdentity=!spectator&&room.game.phase!=='lobby';
+    if(spectator)room.spectators=room.spectators!.filter(p=>p.id!==id);
+    else if(retainIdentity)room.game.players.find(p=>p.id===id)!.connected=false;
+    else room.game.players=room.game.players.filter(p=>p.id!==id);
+    if(!spectator&&!room.game.players.some(p=>p.id===room.hostId&&p.connected)) {
+      const next=room.game.players.find(p=>p.connected&&!p.isAI)??room.game.players.find(p=>!p.isAI);
+      if(next)room.hostId=next.id;
+      else if(!retainIdentity){room.closedAt=Date.now();room.deadline=null;}
+    }
+    room.version++;room.updatedAt=Date.now();
+    if(retainIdentity)this.store.transaction(()=>this.store.save(room));else this.store.removeIdentity(room,id);
+    this.rooms.set(room.code,room);return{ok:true,retainIdentity};
   }
   act(code: string, id: string, envelope: ActionEnvelope, automatic=false): ActionReply {
     const original=this.get(code); const request=JSON.stringify(envelope.action);
@@ -66,6 +116,7 @@ export class Rooms {
   tick(now=Date.now()): string[] {
     const updated:string[]=[];
     for(const original of this.rooms.values()){
+      if(this.expire(original.code,now))continue;
       if(original.closedAt!==undefined)continue;
       // Local server bots pause when the human leaves; no unattended match
       // consumes their remaining turns while they are disconnected.

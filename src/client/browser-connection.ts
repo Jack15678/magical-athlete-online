@@ -28,6 +28,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private disposed = false;
   private blocked = false;
   private roomClosed = false;
+  private roomExpired = false;
   private authenticated = false;
   private synchronized = false;
   private syncRequestId: string | null = null;
@@ -162,7 +163,8 @@ export class BrowserRelayConnection implements RoomConnection {
     ws.addEventListener('error', () => { if (generation === this.generation && !this.disposed) this.onStatus('offline', '与联机中继的连接暂时中断，正在重连。'); });
     ws.addEventListener('close', event => {
       if (generation !== this.generation || this.disposed) return;
-      if (event.code === 4410 || this.roomClosed) { this.finishClosed(); return; }
+      if (event.code === 4404 && /过期|3小时/.test(event.reason)) this.roomExpired = true;
+      if (event.code === 4410 || this.roomClosed || this.roomExpired) { this.finishClosed(); return; }
       this.authenticated = false; this.synchronized = false; this.authorityRole = false; this.rejectReplies('连接已中断。');
       if ([4401, 4404, 4409, 4429].includes(event.code)) {
         this.blocked = true; this.releaseLock?.();
@@ -178,7 +180,7 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private receive(message: RelayServerMessage) {
     if (message.type === 'room-closed') {
-      if (message.code === this.identity.roomCode) this.finishClosed();
+      if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.finishClosed(); }
     } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
@@ -256,6 +258,7 @@ export class BrowserRelayConnection implements RoomConnection {
   private broadcast() {
     if (!this.metadata) return;
     for (const member of this.metadata.members) if (member.connected&&!member.isAI) this.deliver(member.id);
+    for (const spectator of this.metadata.spectators ?? []) if (spectator.connected) this.deliver(spectator.id);
   }
   private async tryAuthority() {
     const meta = this.metadata;
@@ -288,7 +291,7 @@ export class BrowserRelayConnection implements RoomConnection {
     for (const pending of this.replies.values()) { clearTimeout(pending.timer); if (pending.closing) pending.resolve({ ok: true, version: this.latestRoom?.version }); else pending.reject(Error(ROOM_CLOSED)); }
     this.replies.clear();
     this.disconnect();
-    this.onStatus('closed', ROOM_CLOSED);
+    this.onStatus(this.roomExpired ? 'expired' : 'closed', this.roomExpired ? '房间已达到3小时上限，请重新创建。' : ROOM_CLOSED);
   }
   private fail(message: string) { this.blocked = true; this.authenticated = false; this.authorityRole = false; this.onStatus('error', message); this.ws?.close(1011, 'authority unavailable'); this.releaseLock?.(); this.rejectReplies(message); }
 }

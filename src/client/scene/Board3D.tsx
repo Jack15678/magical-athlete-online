@@ -46,6 +46,7 @@ class SceneBoundary extends Component<{ children: ReactNode; resetKey: number; r
 }
 
 export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQuality, reducedMotion, muted, onDetail }: Props) {
+  const spectator = room.role === 'spectator';
   const [compact, setCompact] = useState(() => matchMedia('(max-width: 650px)').matches);
   const [resetKey, setResetKey] = useState(0);
   const [cameraReset, setCameraReset] = useState(0);
@@ -73,13 +74,14 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const action = beatFocus && heldFocus && heldFocus.chainId === beatFocus.chainId ? { ...beatFocus, ids: [...new Set([...heldFocus.ids, ...beatFocus.ids])], positions: [...new Set([...heldFocus.positions, ...beatFocus.positions])] } : beatFocus ?? heldFocus;
   const myAction = action?.ids.some(id => racers.some(racer => racer.id === id && racer.playerId === room.selfId));
   const choosing = !beat && !(queue?.length) ? choiceFocus(room, racers) : undefined;
-  const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : ownFocus(room, racers));
+  const idleFocus = ownFocus(room, racers);
+  const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : idleFocus);
   const returnSelf = () => { setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId); setCameraReset(value => value + 1); };
   return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
     <div className="scene-camera-toolbar">
-      <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} onClick={returnSelf}>自己</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
-      <button className="camera-home" onClick={returnSelf} aria-label="恢复默认视角" title="回到自己的棋子">⌖ <span>回到自己</span></button>
-      <details className="camera-options"><summary aria-label="镜头设置">镜头</summary><label><input type="checkbox" aria-label="自动观看他人行动" checked={autoWatch} onChange={event => { setAutoWatch(event.target.checked); try { localStorage.setItem('magical-athlete:auto-watch', String(event.target.checked)); } catch { /* Preferences are optional. */ } }} />自动观看他人行动</label><small>拖动平移 · 双指或滚轮缩放</small></details>
+      <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} aria-label={spectator ? '跟随当前选手' : undefined} onClick={returnSelf}>{spectator ? '跟随' : '自己'}</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
+      <button className="camera-home" onClick={returnSelf} aria-label="恢复默认视角" title={spectator ? '跟随当前选手' : '回到自己的棋子'}>⌖ <span>{spectator ? '跟随选手' : '回到自己'}</span></button>
+      <details className="camera-options"><summary aria-label="镜头设置">镜头</summary><label><input type="checkbox" aria-label={spectator ? '自动跟随赛场行动' : '自动观看他人行动'} checked={autoWatch} onChange={event => { setAutoWatch(event.target.checked); try { localStorage.setItem('magical-athlete:auto-watch', String(event.target.checked)); } catch { /* Preferences are optional. */ } }} />{spectator ? '自动跟随赛场行动' : '自动观看他人行动'}</label><small>拖动平移 · 双指或滚轮缩放</small></details>
       {manualCamera && cameraMode === 'self' && !choosing && <span className="camera-paused" role="status">跟拍已暂停</span>}
     </div>
     <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} />
@@ -162,7 +164,7 @@ function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: 
   const ownMarker = (racer: Racer) => ownRacers.length > 1 ? String.fromCharCode(65 + ownRacers.findIndex(value => value.id === racer.id)) : '你';
   const positionText = (racer: Racer) => racer.eliminated ? '已出局' : `第${Math.round(currentPosition(racer))}格`;
   return <aside className="board-minimap" data-testid="board-minimap" aria-label="赛道小地图">
-    <div className="minimap-heading"><span>赛道小地图</span><span><i />你的位置</span></div>
+    <div className="minimap-heading"><span>赛道小地图</span><span><i />{room.role === 'spectator' ? '选手位置' : '你的位置'}</span></div>
     <svg className="minimap-track" viewBox="0 0 220 104" aria-hidden="true">
       <polyline points={Array.from({ length: 31 }, (_, index) => { const point = mapPoint(index); return `${point.x},${point.y}`; }).join(' ')} fill="none" stroke="#d9e5da" strokeWidth="15" strokeLinejoin="round" />
       <polyline points={Array.from({ length: 31 }, (_, index) => { const point = mapPoint(index); return `${point.x},${point.y}`; }).join(' ')} fill="none" stroke="#62877b" strokeWidth="8" strokeLinejoin="round" />

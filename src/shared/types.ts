@@ -1,4 +1,7 @@
 export type GameMode = 'multiplayer' | 'practice' | 'ai';
+export type RoomRole = 'player' | 'spectator';
+export interface Spectator { id: string; name: string; connected: boolean; }
+export interface RoomSummary { code: string; hostName: string; phase: Phase; playerCount: number; maxPlayers: number; spectatorCount: number; createdAt: number; expiresAt: number; authorityOnline: boolean; mode?: GameMode; }
 export type Phase = 'lobby' | 'draft' | 'selection' | 'race' | 'results' | 'finished' | 'paused';
 export interface Player { isAI?: boolean; id: string; name: string; seat: number; color: string; ready: boolean; connected: boolean; score: number; hand: string[]; used: string[]; selection: string[]; }
 export interface Racer { id: string; playerId: string; characterId: string; position: number; tripped: boolean; finished: boolean; eliminated: boolean; rank?: number; flags: Record<string, unknown>; }
@@ -16,6 +19,8 @@ export interface PlayerView extends Omit<Player, 'hand' | 'selection'> { handCou
 export interface PublicEventBatch { afterId: number; latestId: number; events: GameEvent[]; }
 export interface PublicEventReply { ok: boolean; batch?: PublicEventBatch; error?: string; }
 export interface RoomView { presentationEvents?: GameEvent[]; mode?: GameMode; turnStage?: 'starting' | 'choice' | 'roll' | 'resolving'; code: string; version: number; hostId: string; selfId: string; maxPlayers: number; timeoutSeconds: number; deadline: number | null; phase: Phase; round: number; track: 'mild' | 'wild'; players: PlayerView[]; draft?: Draft; racers: Racer[]; currentRacerId?: string; pending?: Omit<PendingChoice, 'context'>; waitingFor?: string; logs: GameEvent[]; results: RaceResult[]; lastRoll?: GameState['lastRoll']; rulesStatus: string; }
-export interface Identity { roomCode: string; playerId: string; token: string; }
+export interface Identity { roomCode: string; playerId: string; token: string; role?: RoomRole; }
 export interface ActionReply { ok: boolean; error?: string; version?: number; duplicate?: boolean; }
 export interface RoomView { hosting?: 'browser' | 'local'; authorityId?: string; authorityOnline?: boolean; closedAt?: number; }
+export interface Room { spectators?: Spectator[]; }
+export interface RoomView { role?: RoomRole; spectators?: Spectator[]; createdAt?: number; expiresAt?: number; }
