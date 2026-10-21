@@ -6,12 +6,12 @@
   "firstVersion": "329ab155-6bd6-43f3-82c7-3763f7e022ab",
   "deployedAt": "2026-10-21",
   "planVerification": "User confirmed Workers Free in dashboard",
-  "verifiedDeploymentVersion": "0f9af3c5-0fc9-4651-bf49-c6be2787ff87",
+  "verifiedDeploymentVersion": "6a7818d0-e70d-4e06-9b13-7f73d537693c",
   "publicGameVerifiedVersion": "55fa9883-e669-437b-b471-8f6acbbecf0a",
   "githubAutoDeploy": true,
-  "verifiedCommit": "be822c422d15e75699ac028ad148329d7c56b1d2",
-  "runtimeCommit": "be822c422d15e75699ac028ad148329d7c56b1d2",
-  "browserBundle": "/assets/index-B3lVTEqk.js",
+  "verifiedCommit": "081aa637dbd374b3456a0568723976553a5a2e4e",
+  "runtimeCommit": "081aa637dbd374b3456a0568723976553a5a2e4e",
+  "browserBundle": "/assets/index-BEuy5r4Z.js",
   "publicMultiplayer": [
     8
   ],
@@ -26,7 +26,7 @@
   ],
   "modelBytes": 465736,
   "modelSha256": "02f6391d21c87fa43fe80849462adc9a175a203f6422646845b9fbbaabba15ac",
-  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39552190668",
+  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39556007154",
   "ciConclusion": "success",
   "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race",
   "ciCaseTimeoutMinutes": 15,
@@ -50,7 +50,7 @@
     "localMultiplayerSmoke": {
       "players": 8,
       "races": 1,
-      "elapsedSeconds": 44.0,
+      "elapsedSeconds": 44,
       "recovery": true,
       "privacy": true
     },
@@ -91,5 +91,85 @@
     "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race",
     "ciConclusion": "success",
     "ciBrowserElapsedMinutes": 4.5
+  },
+  "mapReadabilityUpdate": {
+    "date": "2026-10-21",
+    "buildId": "e0c9fcfe-7724-4ef4-ba31-0c0a728f5eb8",
+    "deploymentId": "526cc53e-4955-4f13-be75-825c67632d40",
+    "deploymentPercent": 100,
+    "desktopMapWidth": 252,
+    "mobileMapWidth": 148,
+    "mobileViewports": [
+      [
+        390,
+        844
+      ],
+      [
+        320,
+        667
+      ]
+    ],
+    "ownPosition": "avatar, racer name, explicit cell, A/B for two racers, gold outline",
+    "skillDurationMs": 1100,
+    "queuedSkillMinimumMs": 900,
+    "queuedMoveMinimumMs": 700,
+    "fixedChainBudgetRemoved": true,
+    "reducedMotionKeepsReadableLabels": true,
+    "rulesEngineChanged": false,
+    "trippedRuleTests": 15,
+    "postRollTrippedBoundary": "existing web ruling, publisher special-case clarification not yet available",
+    "unitChecks": 209,
+    "unitConclusion": "success",
+    "localBrowserChecks": 8,
+    "localBrowserPageErrors": 0,
+    "measuredSkillMs": [
+      1104,
+      1106
+    ],
+    "ciRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39556007154",
+    "boardBundle": "/assets/Board3D-idlMot1S.js",
+    "publicPractice": {
+      "elapsedSeconds": 7.2,
+      "pageErrors": 0,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    "publicMinimap": {
+      "checkedAt": "2026-10-21T06:42:20.658Z",
+      "width": 148,
+      "ownPositionLabel": "你，决斗家，第6格",
+      "viewport": [
+        390,
+        844
+      ],
+      "document": [
+        390,
+        844
+      ],
+      "scroll": [
+        0,
+        0
+      ],
+      "captureState": {
+        "phase": "idle",
+        "cameraState": "self",
+        "cameraTarget": "3.07,3.06",
+        "rollEnabled": true,
+        "stableForMs": 1200
+      },
+      "rules": {
+        "tripKeepsAbilities": true,
+        "noMainDieOnRecovery": true,
+        "duelStillAllowed": true,
+        "publicPostRollRuling": true,
+        "hareException": true
+      },
+      "pageErrors": 0
+    },
+    "ciConclusion": "success",
+    "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race with host/guest recovery, privacy and layout",
+    "ciBrowserElapsedMinutes": 7.2
   }
 }

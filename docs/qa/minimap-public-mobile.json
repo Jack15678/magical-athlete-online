@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-21T06:42:20.658Z",
+  "url": "https://magical-athlete.qiuh23.workers.dev",
+  "roomUrl": "https://magical-athlete.qiuh23.workers.dev/room/GUPWYH",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "minimap": {
+    "x": 230,
+    "y": 14,
+    "width": 148,
+    "height": 135.25,
+    "top": 14,
+    "right": 378,
+    "bottom": 149.25,
+    "left": 230
+  },
+  "ownPosition": "你 · 第6格\n决斗家",
+  "ownPositionLabel": "你，决斗家，第6格",
+  "ownCell": 6,
+  "board": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 844,
+    "top": 0,
+    "right": 390,
+    "bottom": 844,
+    "left": 0
+  },
+  "page": {
+    "scrollWidth": 390,
+    "scrollHeight": 844,
+    "scrollX": 0,
+    "scrollY": 0
+  },
+  "script": [
+    "https://magical-athlete.qiuh23.workers.dev/assets/index-BEuy5r4Z.js"
+  ],
+  "rules": {
+    "tripKeepsAbilities": true,
+    "noMainDieOnRecovery": true,
+    "duelStillAllowed": true,
+    "publicPostRollRuling": true,
+    "hareException": true
+  },
+  "errors": [],
+  "captureState": {
+    "phase": "idle",
+    "cameraState": "self",
+    "cameraTarget": "3.07,3.06",
+    "rollEnabled": true,
+    "stableForMs": 1200
+  },
+  "captureErrors": []
+}

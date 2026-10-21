@@ -6,6 +6,10 @@
 
 后续小地图放大、可读连锁节奏与绊倒规则核验，已通过209项自动检查和8项真实浏览器专项；本次未修改引擎规则。尺寸、计时证据、官方规则来源与一个明确列出的未决边界，见[本次核验报告](map-and-tripped-review.md)。
 
+提交 `081aa63` 已由 Cloudflare 自动发布成功，版本 `6a7818d0-e70d-4e06-9b13-7f73d537693c` 100%上线，公开入口为 `/assets/index-BEuy5r4Z.js`。正式站390×844手机视口练习复验通过（7.2秒，0页面脚本错误）；小地图实测宽148px，稳定回到自己的视角、掷骰按钮可用时，明确显示“你 · 第6格”和角色名，棋盘与文档均390×844、双向无滚动。公开帮助页核验倒地技能、起身不投主骰、决斗独立骰、野兔例外及骰后连锁的网页裁定均已显示。证据：[手机小地图](qa/minimap-public-mobile.png)、[手机规则](qa/minimap-public-rules-mobile.png)、[实际测量](qa/minimap-public-mobile.json)。
+
+该提交的[远端CI](https://github.com/qiuh23/magical-athlete-online/actions/runs/39556007154)也已成功：类型检查、两种构建、Worker预演及一场八人联机，浏览器部分约7.2分钟，含房主与客人恢复、快照隐私及布局。209项单元检查和8项表现专项为本地实际执行结果，未把默认CI跳过的额外检查计作远端执行。
+
 本次升级的实际检查、电脑与手机尺寸、连续技能镜头、手动操作、回合开始选择、完整人机四场，以及可观看的20秒演示，集中记录在[沉浸式与人机验收](immersive-practice.md)。下方保留此前3D与2D版本的历史证据。
 
 最终集成类型检查、两种生产构建、Worker打包预演和189项自动检查全部通过。[本次远端CI](https://github.com/qiuh23/magical-athlete-online/actions/runs/39552190668)已成功完成类型、两种构建、Worker预演和一场八人联机，浏览器部分约4.5分钟。正式站已通过私有仓库推送自动发布提交 `be822c4`，Cloudflare版本 `0f9af3c5-0fc9-4651-bf49-c6be2787ff87` 已100%上线；公开bundle为 `/assets/index-B3lVTEqk.js`。正式站390×844手机尺寸练习从首页选秀、出场至多次掷骰移动通过（7.9秒，0页面错误），[实际截图](qa/immersive-public-practice-mobile.png)。[20秒公开演示](https://magical-athlete.qiuh23.workers.dev/demo/immersive.webm) 实际GET为817,526字节，与本地SHA256一致；细节和验证边界见[部署记录](deployment.json)。
