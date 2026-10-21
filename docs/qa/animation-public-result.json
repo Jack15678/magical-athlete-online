@@ -1,0 +1,1100 @@
+{
+  "url": "https://magical-athlete.qiuh23.workers.dev",
+  "entries": [
+    "https://magical-athlete.qiuh23.workers.dev/assets/index-D53Mwf5E.js"
+  ],
+  "elapsedMs": 49697,
+  "humanRolls": 2,
+  "players": 4,
+  "phase": "race",
+  "round": 1,
+  "finalPlaybackPhase": "idle",
+  "wsOpened": 2,
+  "wsClosed": 1,
+  "raceSocketCount": 2,
+  "raceReopens": 0,
+  "raceCloses": 0,
+  "messageCounts": {
+    "auth-ok": 2,
+    "roster": 5,
+    "host-status": 2,
+    "request": 9,
+    "snapshot": 58,
+    "ack": 7
+  },
+  "snapshotCount": 58,
+  "snapshots": [
+    {
+      "version": 2,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 2
+    },
+    {
+      "version": 2,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 2
+    },
+    {
+      "version": 2,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 2
+    },
+    {
+      "version": 2,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 2
+    },
+    {
+      "version": 2,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 2
+    },
+    {
+      "version": 3,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 3
+    },
+    {
+      "version": 3,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 3
+    },
+    {
+      "version": 4,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 4
+    },
+    {
+      "version": 5,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 5
+    },
+    {
+      "version": 6,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 6
+    },
+    {
+      "version": 7,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 7
+    },
+    {
+      "version": 8,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 8
+    },
+    {
+      "version": 9,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 9
+    },
+    {
+      "version": 10,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 10
+    },
+    {
+      "version": 10,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 10
+    },
+    {
+      "version": 11,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 11
+    },
+    {
+      "version": 12,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 12
+    },
+    {
+      "version": 13,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 13
+    },
+    {
+      "version": 14,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 14
+    },
+    {
+      "version": 14,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 14
+    },
+    {
+      "version": 15,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 15
+    },
+    {
+      "version": 15,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 15
+    },
+    {
+      "version": 16,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 16
+    },
+    {
+      "version": 17,
+      "phase": "draft",
+      "round": 1,
+      "latestId": 17
+    },
+    {
+      "version": 18,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 18,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 19,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 19,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 20,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 21,
+      "phase": "selection",
+      "round": 1,
+      "latestId": 19
+    },
+    {
+      "version": 22,
+      "phase": "race",
+      "round": 1,
+      "latestId": 22
+    },
+    {
+      "version": 22,
+      "phase": "race",
+      "round": 1,
+      "latestId": 22
+    },
+    {
+      "version": 23,
+      "phase": "race",
+      "round": 1,
+      "latestId": 24
+    },
+    {
+      "version": 24,
+      "phase": "race",
+      "round": 1,
+      "latestId": 25
+    },
+    {
+      "version": 25,
+      "phase": "race",
+      "round": 1,
+      "latestId": 28
+    },
+    {
+      "version": 26,
+      "phase": "race",
+      "round": 1,
+      "latestId": 29
+    },
+    {
+      "version": 27,
+      "phase": "race",
+      "round": 1,
+      "latestId": 32
+    },
+    {
+      "version": 28,
+      "phase": "race",
+      "round": 1,
+      "latestId": 33
+    },
+    {
+      "version": 29,
+      "phase": "race",
+      "round": 1,
+      "latestId": 36
+    },
+    {
+      "version": 30,
+      "phase": "race",
+      "round": 1,
+      "latestId": 39
+    },
+    {
+      "version": 31,
+      "phase": "race",
+      "round": 1,
+      "latestId": 42
+    },
+    {
+      "version": 31,
+      "phase": "race",
+      "round": 1,
+      "latestId": 42
+    },
+    {
+      "version": 32,
+      "phase": "race",
+      "round": 1,
+      "latestId": 44
+    },
+    {
+      "version": 33,
+      "phase": "race",
+      "round": 1,
+      "latestId": 45
+    },
+    {
+      "version": 34,
+      "phase": "race",
+      "round": 1,
+      "latestId": 48
+    },
+    {
+      "version": 35,
+      "phase": "race",
+      "round": 1,
+      "latestId": 49
+    },
+    {
+      "version": 36,
+      "phase": "race",
+      "round": 1,
+      "latestId": 52
+    },
+    {
+      "version": 37,
+      "phase": "race",
+      "round": 1,
+      "latestId": 55
+    },
+    {
+      "version": 38,
+      "phase": "race",
+      "round": 1,
+      "latestId": 58
+    },
+    {
+      "version": 38,
+      "phase": "race",
+      "round": 1,
+      "latestId": 58
+    },
+    {
+      "version": 39,
+      "phase": "race",
+      "round": 1,
+      "latestId": 59
+    },
+    {
+      "version": 40,
+      "phase": "race",
+      "round": 1,
+      "latestId": 61
+    },
+    {
+      "version": 41,
+      "phase": "race",
+      "round": 1,
+      "latestId": 62
+    },
+    {
+      "version": 42,
+      "phase": "race",
+      "round": 1,
+      "latestId": 63
+    },
+    {
+      "version": 43,
+      "phase": "race",
+      "round": 1,
+      "latestId": 66
+    },
+    {
+      "version": 44,
+      "phase": "race",
+      "round": 1,
+      "latestId": 67
+    },
+    {
+      "version": 45,
+      "phase": "race",
+      "round": 1,
+      "latestId": 70
+    },
+    {
+      "version": 46,
+      "phase": "race",
+      "round": 1,
+      "latestId": 73
+    }
+  ],
+  "expectedEventIds": [
+    23,
+    25,
+    26,
+    27,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    39,
+    40,
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    55,
+    56,
+    58,
+    60,
+    62,
+    64,
+    66,
+    68,
+    70,
+    72,
+    73
+  ],
+  "actualEventIds": [
+    23,
+    25,
+    26,
+    27,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    39,
+    40,
+    42,
+    44,
+    46,
+    48,
+    50,
+    52,
+    54,
+    55,
+    56,
+    58,
+    60,
+    62,
+    64,
+    66,
+    68,
+    70,
+    72,
+    73
+  ],
+  "missing": [],
+  "publicEvents": [
+    {
+      "id": 1,
+      "type": "roll-off",
+      "text": "发布验收：5，电脑1：4，电脑2：2，电脑3：4"
+    },
+    {
+      "id": 2,
+      "type": "phase",
+      "text": "选秀开始"
+    },
+    {
+      "id": 3,
+      "type": "draft",
+      "text": "发布验收选择可爱的倒霉蛋",
+      "cause": "lovable-loser"
+    },
+    {
+      "id": 4,
+      "type": "draft",
+      "text": "电脑1选择啦啦队长",
+      "cause": "cheerleader"
+    },
+    {
+      "id": 5,
+      "type": "draft",
+      "text": "电脑2选择催眠师",
+      "cause": "hypnotist"
+    },
+    {
+      "id": 6,
+      "type": "draft",
+      "text": "电脑3选择芭芭雅嘎",
+      "cause": "baba-yaga"
+    },
+    {
+      "id": 7,
+      "type": "draft",
+      "text": "电脑3选择香蕉",
+      "cause": "banana"
+    },
+    {
+      "id": 8,
+      "type": "draft",
+      "text": "电脑2选择黏液怪",
+      "cause": "gunk"
+    },
+    {
+      "id": 9,
+      "type": "draft",
+      "text": "电脑1选择巨婴",
+      "cause": "huge-baby"
+    },
+    {
+      "id": 10,
+      "type": "draft",
+      "text": "发布验收选择船长",
+      "cause": "skipper"
+    },
+    {
+      "id": 11,
+      "type": "draft",
+      "text": "电脑1选择火箭科学家",
+      "cause": "rocket-scientist"
+    },
+    {
+      "id": 12,
+      "type": "draft",
+      "text": "电脑2选择教练",
+      "cause": "coach"
+    },
+    {
+      "id": 13,
+      "type": "draft",
+      "text": "电脑3选择吸盘鱼",
+      "cause": "suckerfish"
+    },
+    {
+      "id": 14,
+      "type": "draft",
+      "text": "发布验收选择蹭蹭怪",
+      "cause": "scoocher"
+    },
+    {
+      "id": 15,
+      "type": "draft",
+      "text": "发布验收选择跳跳蟾蜍",
+      "cause": "leaptoad"
+    },
+    {
+      "id": 16,
+      "type": "draft",
+      "text": "电脑3选择起哄者",
+      "cause": "heckler"
+    },
+    {
+      "id": 17,
+      "type": "draft",
+      "text": "电脑2选择尺蠖",
+      "cause": "inchworm"
+    },
+    {
+      "id": 18,
+      "type": "draft",
+      "text": "电脑1选择跟班",
+      "cause": "lackey"
+    },
+    {
+      "id": 19,
+      "type": "phase",
+      "text": "第1场：温和一英里，请暗选1名角色"
+    },
+    {
+      "id": 20,
+      "type": "roll-off",
+      "text": "发布验收：1，电脑1：5，电脑2：3，电脑3：3"
+    },
+    {
+      "id": 21,
+      "type": "reveal",
+      "text": "发布验收：可爱的倒霉蛋，电脑1：火箭科学家，电脑2：教练，电脑3：吸盘鱼"
+    },
+    {
+      "id": 22,
+      "type": "turn",
+      "text": "轮到电脑1的火箭科学家",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 23,
+      "type": "die",
+      "text": "火箭科学家掷出4",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 24,
+      "type": "roll",
+      "text": "火箭科学家最终骰面为4",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 25,
+      "type": "power",
+      "text": "火箭科学家发动「火箭科学家」",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0",
+      "cause": "rocket-scientist"
+    },
+    {
+      "id": 26,
+      "type": "power",
+      "text": "吸盘鱼选择随行",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0",
+      "cause": "suckerfish"
+    },
+    {
+      "id": 27,
+      "type": "move",
+      "text": "火箭科学家 0 → 9，吸盘鱼 0 → 9",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0",
+      "targets": [
+        "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0",
+        "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+      ],
+      "before": [
+        0,
+        0
+      ],
+      "after": [
+        9,
+        9
+      ],
+      "group": "g1",
+      "cause": "main"
+    },
+    {
+      "id": 28,
+      "type": "trip",
+      "text": "火箭科学家绊倒",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0",
+      "targets": [
+        "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+      ]
+    },
+    {
+      "id": 29,
+      "type": "turn",
+      "text": "轮到电脑2的教练",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 30,
+      "type": "die",
+      "text": "教练掷出1",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 31,
+      "type": "roll",
+      "text": "教练最终骰面为1",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 32,
+      "type": "move",
+      "text": "教练 0 → 2",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0",
+      "targets": [
+        "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+      ],
+      "before": [
+        0
+      ],
+      "after": [
+        2
+      ],
+      "group": "g2",
+      "cause": "main"
+    },
+    {
+      "id": 33,
+      "type": "turn",
+      "text": "轮到电脑3的吸盘鱼",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 34,
+      "type": "die",
+      "text": "吸盘鱼掷出5",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 35,
+      "type": "roll",
+      "text": "吸盘鱼最终骰面为5",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 36,
+      "type": "move",
+      "text": "吸盘鱼 9 → 14",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0",
+      "targets": [
+        "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+      ],
+      "before": [
+        9
+      ],
+      "after": [
+        14
+      ],
+      "group": "g3",
+      "cause": "main"
+    },
+    {
+      "id": 37,
+      "type": "turn",
+      "text": "轮到发布验收的可爱的倒霉蛋",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 38,
+      "type": "power",
+      "text": "可爱的倒霉蛋发动「可爱的倒霉蛋」",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0",
+      "cause": "lovable-loser"
+    },
+    {
+      "id": 39,
+      "type": "score",
+      "text": "发布验收 +1分（可爱的倒霉蛋）",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 40,
+      "type": "die",
+      "text": "可爱的倒霉蛋掷出5",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 41,
+      "type": "roll",
+      "text": "可爱的倒霉蛋最终骰面为5",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 42,
+      "type": "move",
+      "text": "可爱的倒霉蛋 0 → 5",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0",
+      "targets": [
+        "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+      ],
+      "before": [
+        0
+      ],
+      "after": [
+        5
+      ],
+      "group": "g4",
+      "cause": "main"
+    },
+    {
+      "id": 43,
+      "type": "turn",
+      "text": "轮到电脑1的火箭科学家",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 44,
+      "type": "recover",
+      "text": "火箭科学家起身，代替主移动",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 45,
+      "type": "turn",
+      "text": "轮到电脑2的教练",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 46,
+      "type": "die",
+      "text": "教练掷出5",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 47,
+      "type": "roll",
+      "text": "教练最终骰面为5",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 48,
+      "type": "move",
+      "text": "教练 2 → 8",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0",
+      "targets": [
+        "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+      ],
+      "before": [
+        2
+      ],
+      "after": [
+        8
+      ],
+      "group": "g5",
+      "cause": "main"
+    },
+    {
+      "id": 49,
+      "type": "turn",
+      "text": "轮到电脑3的吸盘鱼",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 50,
+      "type": "die",
+      "text": "吸盘鱼掷出3",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 51,
+      "type": "roll",
+      "text": "吸盘鱼最终骰面为3",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 52,
+      "type": "move",
+      "text": "吸盘鱼 14 → 17",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0",
+      "targets": [
+        "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+      ],
+      "before": [
+        14
+      ],
+      "after": [
+        17
+      ],
+      "group": "g6",
+      "cause": "main"
+    },
+    {
+      "id": 53,
+      "type": "turn",
+      "text": "轮到发布验收的可爱的倒霉蛋",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 54,
+      "type": "power",
+      "text": "可爱的倒霉蛋发动「可爱的倒霉蛋」",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0",
+      "cause": "lovable-loser"
+    },
+    {
+      "id": 55,
+      "type": "score",
+      "text": "发布验收 +1分（可爱的倒霉蛋）",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 56,
+      "type": "die",
+      "text": "可爱的倒霉蛋掷出2",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 57,
+      "type": "roll",
+      "text": "可爱的倒霉蛋最终骰面为2",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 58,
+      "type": "move",
+      "text": "可爱的倒霉蛋 5 → 7",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0",
+      "targets": [
+        "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+      ],
+      "before": [
+        5
+      ],
+      "after": [
+        7
+      ],
+      "group": "g7",
+      "cause": "main"
+    },
+    {
+      "id": 59,
+      "type": "turn",
+      "text": "轮到电脑1的火箭科学家",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 60,
+      "type": "die",
+      "text": "火箭科学家掷出1",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 61,
+      "type": "roll",
+      "text": "火箭科学家最终骰面为1",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+    },
+    {
+      "id": 62,
+      "type": "move",
+      "text": "火箭科学家 9 → 10",
+      "source": "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0",
+      "targets": [
+        "f65d0a0e-ba7a-46ff-a175-db52cb179f07:1:0"
+      ],
+      "before": [
+        9
+      ],
+      "after": [
+        10
+      ],
+      "group": "g8",
+      "cause": "main"
+    },
+    {
+      "id": 63,
+      "type": "turn",
+      "text": "轮到电脑2的教练",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 64,
+      "type": "die",
+      "text": "教练掷出2",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 65,
+      "type": "roll",
+      "text": "教练最终骰面为2",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+    },
+    {
+      "id": 66,
+      "type": "move",
+      "text": "教练 8 → 11",
+      "source": "e43f3d56-93be-4531-aead-b61a977582df:1:0",
+      "targets": [
+        "e43f3d56-93be-4531-aead-b61a977582df:1:0"
+      ],
+      "before": [
+        8
+      ],
+      "after": [
+        11
+      ],
+      "group": "g9",
+      "cause": "main"
+    },
+    {
+      "id": 67,
+      "type": "turn",
+      "text": "轮到电脑3的吸盘鱼",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 68,
+      "type": "die",
+      "text": "吸盘鱼掷出2",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 69,
+      "type": "roll",
+      "text": "吸盘鱼最终骰面为2",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+    },
+    {
+      "id": 70,
+      "type": "move",
+      "text": "吸盘鱼 17 → 19",
+      "source": "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0",
+      "targets": [
+        "91b13717-1664-4b81-9a73-6469c91ee5d5:1:0"
+      ],
+      "before": [
+        17
+      ],
+      "after": [
+        19
+      ],
+      "group": "g10",
+      "cause": "main"
+    },
+    {
+      "id": 71,
+      "type": "turn",
+      "text": "轮到发布验收的可爱的倒霉蛋",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    },
+    {
+      "id": 72,
+      "type": "power",
+      "text": "可爱的倒霉蛋发动「可爱的倒霉蛋」",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0",
+      "cause": "lovable-loser"
+    },
+    {
+      "id": 73,
+      "type": "score",
+      "text": "发布验收 +1分（可爱的倒霉蛋）",
+      "source": "1af195f3-7840-43bc-9ab9-b56d5a315976:1:0"
+    }
+  ],
+  "phases": [
+    "idle",
+    "dice",
+    "idle",
+    "skill",
+    "move",
+    "trip",
+    "dice",
+    "move",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "skill",
+    "score",
+    "idle",
+    "dice",
+    "move",
+    "recover",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "skill",
+    "score",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "dice",
+    "idle",
+    "move",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "dice",
+    "move",
+    "idle",
+    "skill",
+    "score",
+    "idle"
+  ],
+  "skillDurations": [
+    {
+      "key": "skill:25",
+      "durationMs": 1501
+    },
+    {
+      "key": "skill:26",
+      "durationMs": 1500.1000001430511
+    },
+    {
+      "key": "skill:38",
+      "durationMs": 1501
+    },
+    {
+      "key": "skill:54",
+      "durationMs": 1503.1000001430511
+    },
+    {
+      "key": "skill:72",
+      "durationMs": 1503
+    }
+  ],
+  "animationSkipClicks": 0,
+  "errors": [],
+  "consoleErrors": [],
+  "desktop": {
+    "width": 1440,
+    "height": 1000,
+    "scrollWidth": 1440,
+    "scrollHeight": 1000,
+    "board": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1000,
+      "top": 0,
+      "right": 1440,
+      "bottom": 1000,
+      "left": 0
+    }
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "scrollWidth": 390,
+    "scrollHeight": 844,
+    "board": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844,
+      "top": 0,
+      "right": 390,
+      "bottom": 844,
+      "left": 0
+    }
+  }
+}

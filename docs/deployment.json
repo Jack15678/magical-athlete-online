@@ -6,12 +6,12 @@
   "firstVersion": "329ab155-6bd6-43f3-82c7-3763f7e022ab",
   "deployedAt": "2026-10-21",
   "planVerification": "User confirmed Workers Free in dashboard",
-  "verifiedDeploymentVersion": "6a7818d0-e70d-4e06-9b13-7f73d537693c",
+  "verifiedDeploymentVersion": "0083c706-7f71-43d9-b7f6-cb4f333227e5",
   "publicGameVerifiedVersion": "55fa9883-e669-437b-b471-8f6acbbecf0a",
   "githubAutoDeploy": true,
-  "verifiedCommit": "081aa637dbd374b3456a0568723976553a5a2e4e",
-  "runtimeCommit": "081aa637dbd374b3456a0568723976553a5a2e4e",
-  "browserBundle": "/assets/index-BEuy5r4Z.js",
+  "verifiedCommit": "52021a1c532da9f1db30b3d1eaf651912a9a1b5f",
+  "runtimeCommit": "52021a1c532da9f1db30b3d1eaf651912a9a1b5f",
+  "browserBundle": "/assets/index-D53Mwf5E.js",
   "publicMultiplayer": [
     8
   ],
@@ -26,7 +26,7 @@
   ],
   "modelBytes": 465736,
   "modelSha256": "02f6391d21c87fa43fe80849462adc9a175a203f6422646845b9fbbaabba15ac",
-  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39556007154",
+  "verifiedCiRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39563582048",
   "ciConclusion": "success",
   "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race",
   "ciCaseTimeoutMinutes": 15,
@@ -171,5 +171,111 @@
     "ciConclusion": "success",
     "ciScope": "typecheck, both builds, worker dry run and one eight-player relay race with host/guest recovery, privacy and layout",
     "ciBrowserElapsedMinutes": 7.2
+  },
+  "animationSequenceUpdate": {
+    "date": "2026-10-21",
+    "sourceCommit": "52021a1c532da9f1db30b3d1eaf651912a9a1b5f",
+    "unitChecks": 233,
+    "unitConclusion": "success",
+    "localBrowserChecks": 16,
+    "defaultSkillMs": 1800,
+    "minimumSkillMs": 1500,
+    "skillMinimumAppliesAtFastAndReducedMotion": true,
+    "defaultDieMs": 2500,
+    "defaultDuelDiceMs": 3000,
+    "duelResultReadingMs": 1500,
+    "pendingAndRoundChangesKeepQueue": true,
+    "publicEventPagesBytes": 98304,
+    "ownPredictionPersistent": true,
+    "duelClicksPerHuman": 1,
+    "aiRepeatingOptionalFollowFixed": true,
+    "aiSeedMatches": 20,
+    "aiSeedRaces": 80,
+    "aiSeedActions": 6544,
+    "aiSeedMaximumActions": 467,
+    "localAIFullMatch": {
+      "humanPlayers": 1,
+      "aiPlayers": 3,
+      "races": 4,
+      "elapsedSeconds": 277.324,
+      "aiAdvances": 231,
+      "aiChoices": 55,
+      "animationSkipClicks": 0,
+      "pageErrors": 0,
+      "finalPlaybackPhase": "idle",
+      "observedBeatEventIds": 404,
+      "observedPhaseChanges": 525,
+      "wholeRunAuthoritativeEventDiffChecked": false
+    },
+    "skillMeasurementsMs": {
+      "default": [
+        1805.8,
+        1803.6
+      ],
+      "fastReduced": [
+        1502.4,
+        1506.1
+      ]
+    },
+    "repeatedFollowArchiveReplay": {
+      "results": 4,
+      "steps": 56,
+      "declines": 16,
+      "newPublicEvents": 318
+    },
+    "ciRun": "https://github.com/qiuh23/magical-athlete-online/actions/runs/39563582048",
+    "demo": {
+      "url": "https://magical-athlete.qiuh23.workers.dev/demo/duel.webm",
+      "bytes": 1406583,
+      "sha256": "310b98b540bb028dab153e013e3ce418907675c7e22f904e20c604337011db15"
+    },
+    "buildId": "8dcfdebc-8d2a-41c7-ba30-d66484dfdde0",
+    "deploymentId": "1724760e-7c78-4b2b-bf43-8d2744956633",
+    "version": "0083c706-7f71-43d9-b7f6-cb4f333227e5",
+    "deploymentPercent": 100,
+    "browserBundle": "/assets/index-D53Mwf5E.js",
+    "boardBundle": "/assets/Board3D-DjsweZ1n.js",
+    "publicDemoVerified": true,
+    "publicAI": {
+      "elapsedSeconds": 49.697,
+      "players": 4,
+      "humanRolls": 2,
+      "snapshots": 58,
+      "expectedAnimatedEvents": 30,
+      "shownAnimatedEvents": 30,
+      "missingAnimatedEvents": 0,
+      "pageErrors": 0,
+      "consoleErrors": 0,
+      "raceSocketReopens": 0,
+      "raceSocketCloses": 0,
+      "animationSkipClicks": 0,
+      "finalPlaybackPhase": "idle",
+      "skillReadingMs": [
+        1501,
+        1500.1000001430511,
+        1501,
+        1503.1000001430511,
+        1503
+      ],
+      "desktop": [
+        1440,
+        1000
+      ],
+      "desktopDocument": [
+        1440,
+        1000
+      ],
+      "mobile": [
+        390,
+        844
+      ],
+      "mobileDocument": [
+        390,
+        844
+      ]
+    },
+    "ciConclusion": "success",
+    "ciBrowserElapsedMinutes": 7.6,
+    "ciScope": "typecheck, both builds, Worker dry run and one eight-player relay race with host/guest recovery, privacy and desktop/mobile layout"
   }
 }
