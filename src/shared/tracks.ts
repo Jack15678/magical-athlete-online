@@ -1,7 +1,7 @@
 export interface TrackSpace { kind: 'star' | 'trip' | 'arrow'; move?: number }
-export interface TrackDefinition { id: 'mild' | 'wild'; name: string; length: number; finish: number; secondCorner: number; specials: Record<number, TrackSpace>; verified: boolean; source: string }
+export interface TrackDefinition { id: 'mild' | 'wild'; name: string; length: number; finish: number; firstCorner: number; secondCorner: number; specials: Record<number, TrackSpace>; verified: boolean; source: string }
 export const TRACKS: Record<'mild' | 'wild', TrackDefinition> = {
-  mild: { id: 'mild', name: '温和一英里', length: 30, finish: 30, secondCorner: 15, specials: {}, verified: true, source: 'https://www.cmyk.games/cdn/shop/files/MA_29069_wide_1024x1024.jpg?v=1758033995' },
+  mild: { id: 'mild', name: '温和一英里', length: 30, finish: 30, firstCorner: 12, secondCorner: 15, specials: {}, verified: true, source: 'https://www.cmyk.games/cdn/shop/files/MA_29069_wide_1024x1024.jpg?v=1758033995' },
   // Numbered from Start=0: upper straight left-to-right, far bend 12..15,
   // lower straight right-to-left, then Finish=30 in the inner loop.
   // Independently read and cross-reviewed 2026-10-21 from IELLO shop photos
@@ -10,7 +10,7 @@ export const TRACKS: Record<'mild' | 'wild', TrackDefinition> = {
   // physical direction. In particular a right arrow on the lower straight
   // is backwards; its printed positive number is NOT forward distance.
   wild: {
-    id: 'wild', name: '狂野荒野', length: 30, finish: 30, secondCorner: 15,
+    id: 'wild', name: '狂野荒野', length: 30, finish: 30, firstCorner: 12, secondCorner: 15,
     specials: {
       1: { kind: 'star' },
       5: { kind: 'trip' },

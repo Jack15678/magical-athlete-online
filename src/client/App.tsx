@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { GameAction, Identity, PlayerView, Racer, RoomView } from '../shared/types.js';
 import { CHARACTERS } from '../shared/characters.js';
-import { TRACKS } from '../shared/tracks.js';
 import { Avatar } from './avatars.js';
 import { RulesContent } from './RulesContent.js';
 import { BROWSER_HOST_MODE, connectRoom, enterRoom, forgetIdentity, readIdentity, sendAction, type ConnectionState, type RoomConnection } from './network.js';
+import { usePresentation, type UsePresentationResult } from './usePresentation.js';
+const Board3D = lazy(() => import('./scene/Board3D.js').then(module => ({ default: module.Board3D })));
 
 const characters = CHARACTERS;
 const findCharacter = (id: string) => characters.find((character) => character.id === id);
@@ -12,11 +13,6 @@ const characterName = (id: string) => findCharacter(id)?.nameZh ?? id;
 const phaseLabels = { lobby: '赛前集合', draft: '组建你的队伍', selection: '秘密选择运动员', race: '比赛进行中', results: '单场成绩', finished: '总成绩', paused: '比赛已暂停' };
 function currentCode() { return /^\/room\/([a-z0-9-]+)/i.exec(location.pathname)?.[1]?.toUpperCase() ?? ''; }
 const setting = (key: string, fallback: boolean) => { try { const value = localStorage.getItem(`magical-athlete:${key}`); return value === null ? fallback : value === 'true'; } catch { return fallback; } };
-function useSmallScreen() {
-  const [small, setSmall] = useState(() => matchMedia('(max-width: 650px)').matches);
-  useEffect(() => { const media = matchMedia('(max-width: 650px)'); const update = () => setSmall(media.matches); media.addEventListener('change', update); return () => media.removeEventListener('change', update); }, []);
-  return small;
-}
 function Icon({ kind, size = 22 }: { kind: 'dice' | 'flag' | 'copy' | 'sound' | 'mute' | 'arrow' | 'trophy'; size?: number }) {
   const paths: Record<string, ReactNode> = {
     dice: <><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8" cy="8" r="1" /><circle cx="16" cy="8" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="8" cy="16" r="1" /><circle cx="16" cy="16" r="1" /></>,
@@ -51,6 +47,9 @@ export function App() {
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [muted, setMuted] = useState(() => setting('muted', true));
   const [reduceMotion, setReduceMotion] = useState(() => setting('reduced-motion', matchMedia('(prefers-reduced-motion: reduce)').matches));
+  const [lowQuality, setLowQuality] = useState(() => setting('low-quality', false));
+  const [animationSpeed, setAnimationSpeed] = useState(() => { try { return [1, 2, 4].includes(Number(localStorage.getItem('magical-athlete:animation-speed'))) ? Number(localStorage.getItem('magical-athlete:animation-speed')) : 1; } catch { return 1; } });
+  useEffect(() => { try { localStorage.setItem('magical-athlete:low-quality', String(lowQuality)); localStorage.setItem('magical-athlete:animation-speed', String(animationSpeed)); } catch { /* Optional local preferences. */ } }, [lowQuality, animationSpeed]);
   const soundRef = useRef<AudioContext | null>(null);
   const sound = useCallback(() => {
     if (muted) return;
@@ -88,6 +87,8 @@ export function App() {
   const copy = async (value: string, label: string) => { try { await navigator.clipboard.writeText(value); setNotice(`${label}已复制`); } catch { setCopyFallback(value); } };
   const home = () => { history.pushState({}, '', '/'); setCode(''); setIdentity(null); setRoom(null); setError(''); setEndRoom(false); setConnection('connecting'); setConnectionError(''); };
   const online = connection === 'online' && room?.authorityOnline !== false;
+  const presentation = usePresentation(room, { speed: animationSpeed, reducedMotion: reduceMotion, reconnect: !online });
+  const visibleRoom = presentation.displayRoom ?? room;
   const closed = connection === 'closed' || !!room?.closedAt;
   return <>
     <header className="site-header"><button className="wordmark" onClick={home} aria-label="胡闹运动会首页"><span className="logo-dice"><Icon kind="dice" size={28} /></span><span>胡闹运动会<small>Magical Athlete · 好友联机</small></span></button><nav><button className="header-link" onClick={() => setRules(true)}>怎么玩</button><button className="sound-toggle" onClick={() => setMuted(!muted)} aria-label={muted ? '开启提示音' : '关闭提示音'} aria-pressed={!muted}><Icon kind={muted ? 'mute' : 'sound'} /></button></nav></header>
@@ -95,19 +96,18 @@ export function App() {
       <div className="room-bar"><div className="room-label">房间 <button onClick={() => void copy(room.code, '房间码')} title="复制房间码">{room.code}<Icon kind="copy" size={15} /></button><span className={`connection ${online ? 'is-online' : ''}`}><i />{online ? '已连接' : connection === 'connecting' ? '连接中' : '重连中'}</span></div><div className="room-actions"><button className="invite-button" onClick={() => void copy(`${location.origin}/room/${room.code}`, '邀请链接')}><Icon kind="copy" size={17} />邀请朋友</button>{room.hostId === room.selfId && <button className="end-room-button" disabled={busy || !online} onClick={() => setEndRoom(true)}>结束房间</button>}</div></div>
       {!online && <div className="connection-banner" role="status">{connectionError || '连接暂时中断，恢复后会自动同步。'}<button onClick={() => { socket.current?.connect(); socket.current?.emit('sync'); }}>立即重连</button></div>}
       {error && !endRoom && <div className="error-banner" role="alert"><span>{error}</span><button onClick={() => setError('')} aria-label="关闭错误提示">×</button></div>}
-      <main className={`game-shell phase-${room.phase}`} data-room-version={room.version}>
+      <main className={`game-shell phase-${visibleRoom?.phase ?? room.phase}`} data-room-version={room.version}>
         {room.hosting === 'browser' && <div className="authority-notice"><strong>计算房主：{room.players.find(player => player.id === room.authorityId)?.name ?? '创建者'}</strong><span>{room.authorityId === room.selfId ? '请保持负责计算的原浏览器标签页打开。对局存档保存在这个浏览器中。' : '计算房主页面在线时对局继续；关闭后等待其用原浏览器返回。'}</span></div>}
-        <div className="stage-heading"><div><p className="stage-kicker">{room.phase === 'lobby' ? '朋友到齐，就开跑' : room.phase === 'draft' ? `第 ${(room.draft?.batch ?? 0) + 1} 次选秀` : `第 ${Math.max(1, room.round)} / 4 场 · ${room.track === 'mild' ? '轻松赛道' : '狂野赛道'}`}</p><h1>{phaseLabels[room.phase]}</h1></div><span className="mode-tag">{room.players.length >= 7 ? '7～8 人扩展规则' : room.players.length === 2 ? '两人双角色模式' : '标准模式'}</span></div>
+        <div className="stage-heading"><div><p className="stage-kicker">{room.phase === 'lobby' ? '朋友到齐，就开跑' : room.phase === 'draft' ? `第 ${(room.draft?.batch ?? 0) + 1} 次选秀` : `第 ${Math.max(1, room.round)} / 4 场 · ${room.track === 'mild' ? '轻松赛道' : '狂野赛道'}`}</p><h1>{phaseLabels[visibleRoom?.phase ?? room.phase]}</h1></div><span className="mode-tag">{room.players.length >= 7 ? '7～8 人扩展规则' : room.players.length === 2 ? '两人双角色模式' : '标准模式'}</span></div>
         {room.phase === 'lobby' ? <Lobby room={room} busy={busy || !online} act={act} copy={copy} /> : <>
           {room.phase === 'draft' && <Draft room={room} busy={busy || !online} act={act} onDetail={setDetail} />}
           {room.phase === 'selection' && <Selection room={room} busy={busy || !online} act={act} onDetail={setDetail} />}
-          {room.phase === 'race' && <Race room={room} busy={busy || !online} act={act} onDetail={setDetail} />}
-          {(room.phase === 'results' || room.phase === 'finished') && <Results room={room} busy={busy || !online} act={act} onDetail={setDetail} />}
+          {['race', 'results', 'finished'].includes(room.phase) && <Race room={room} busy={busy || !online} act={act} onDetail={setDetail} presentation={presentation} lowQuality={lowQuality} setLowQuality={setLowQuality} reduceMotion={reduceMotion} setReduceMotion={setReduceMotion} muted={muted} setMuted={setMuted} animationSpeed={animationSpeed} setAnimationSpeed={setAnimationSpeed} />}
           {room.phase === 'paused' && <div className="paper-panel"><h2>比赛已保存</h2><p>需要处理规则状态后继续，当前对局与所有分数均已保留。</p><p>{room.rulesStatus}</p><Button secondary onClick={() => socket.current?.emit('sync')}>重新同步</Button></div>}
           <div className="below-game"><Scoreboard room={room} /><EventLog room={room} /></div>
           <MyTeam room={room} onDetail={setDetail} />
         </>}
-        <details className="room-details"><summary>房间设置与扩展说明</summary><p>最多 {room.maxPlayers} 人 · 操作时限 {room.timeoutSeconds === 0 ? '不限时' : `${room.timeoutSeconds} 秒`}。系统仅在合法选项中执行公开默认选择；可选技能默认放弃。</p><p>7～8 人为本项目扩展模式：每人四张独立角色，两次蛇形选秀各展示 2N 张候选牌，奖分沿用基础赛程；尚未声称与官方人数具有相同平衡性。牌堆不足等裁定可在规则说明中查看。</p><p className="rules-status">{room.rulesStatus}</p><button className="text-button" onClick={() => setRules(true)}>查看规则与操作说明</button><label className="check-row"><input type="checkbox" checked={reduceMotion} onChange={event => setReduceMotion(event.target.checked)} />减少动效</label></details>
+        <details className="room-details"><summary>房间设置与扩展说明</summary><p>最多 {room.maxPlayers} 人 · 操作时限 {room.timeoutSeconds === 0 ? '不限时' : `${room.timeoutSeconds} 秒`}。系统仅在合法选项中执行公开默认选择；可选技能默认放弃。</p><p>7～8 人为本项目扩展模式：每人四张独立角色，两次蛇形选秀各展示 2N 张候选牌，奖分沿用基础赛程；尚未声称与官方人数具有相同平衡性。牌堆不足等裁定可在规则说明中查看。</p><p className="rules-status">{room.rulesStatus}</p><button className="text-button" onClick={() => setRules(true)}>查看规则与操作说明</button></details>
       </main>
     </>}
     <Footer />
@@ -173,30 +173,28 @@ function Selection({ room, busy, act, onDetail }: { room: RoomView; busy: boolea
   return <><div className="turn-notice"><span className="secret-icon">?</span><span>{self.selected ? '你已锁定，等大家选好就揭示' : `秘密选择 ${count} 位未上场的运动员`}<small>其他玩家只能看到你是否选好，揭示前看不到角色。</small></span><Countdown deadline={room.deadline} /></div><div className="selection-progress">{room.players.map(player => <span key={player.id} className={player.selected ? 'locked' : ''}><i style={{ background: player.color }} />{player.name}<strong>{player.selected ? '已锁定 ✓' : '思考中…'}</strong></span>)}</div><div className="character-grid hand-selection">{self.hand?.map(id => <CharacterCard key={id} id={id} used={self.used.includes(id)} selected={self.selected ? self.selection?.includes(id) : picked.includes(id)} disabled={busy || self.selected} onChoose={() => toggle(id)} onDetail={onDetail} />)}</div>{!self.selected && <div className="sticky-action"><span>已选 {picked.length} / {count} 位 · 确认后统一揭示</span><Button disabled={busy || picked.length !== count} onClick={() => act({ type: 'select', characterIds: picked })}>锁定上场角色</Button></div>}</>;
 }
 
-function Race({ room, busy, act, onDetail }: { room: RoomView; busy: boolean; act: (action: GameAction) => void; onDetail: (id: string) => void }) {
+function Race({ room, busy, act, onDetail, presentation, lowQuality, setLowQuality, reduceMotion, setReduceMotion, muted, setMuted, animationSpeed, setAnimationSpeed }: { room: RoomView; busy: boolean; act: (action: GameAction) => void; onDetail: (id: string) => void; presentation: UsePresentationResult; lowQuality: boolean; setLowQuality: (value: boolean) => void; reduceMotion: boolean; setReduceMotion: (value: boolean) => void; muted: boolean; setMuted: (value: boolean) => void; animationSpeed: number; setAnimationSpeed: (value: number) => void }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const active = room.racers.find(racer => racer.id === room.currentRacerId);
   const player = room.players.find(p => p.id === active?.playerId);
   const mine = player?.id === room.selfId;
   const roll = room.lastRoll;
-  return <><div className={`race-turn turn-notice ${mine && !room.pending && !room.waitingFor ? 'your-turn' : ''}`}><span className="turn-avatar">{active && <Avatar id={active.characterId} />}</span><span>{room.pending ? '技能发动！请做出选择' : room.waitingFor ? `等待 ${room.players.find(p => p.id === room.waitingFor)?.name ?? '其他玩家'} 响应技能` : mine ? '轮到你掷骰了' : `轮到 ${player?.name ?? '运动员'} 行动`}<small>{active ? `${characterName(active.characterId)}${active.tripped ? ' · 目前绊倒' : ''}` : '正在处理赛前能力'}</small></span><Countdown deadline={room.deadline} /></div><Track room={room} onDetail={onDetail} /><div className="racer-strip">{room.racers.map(racer => <RacerSummary key={racer.id} racer={racer} room={room} onDetail={onDetail} />)}</div>{room.pending ? <div className="choice-panel" role="region" aria-label="待处理技能"><div><span className="burst">✦</span><h2>{room.pending.title}</h2><p>{room.pending.optional ? '这是可选技能，可选择放弃。' : '选择一个合法选项，比赛会在确认后继续。'}</p></div><div className="choice-options">{room.pending.options.map(option => <Button key={option.id} secondary={option.id === 'skip' || option.id === 'pass' || option.id === 'decline'} disabled={busy || room.pending?.playerId !== room.selfId} onClick={() => act({ type: 'choose', choiceId: room.pending!.id, optionId: option.id })}>{option.label}</Button>)}</div></div> : <div className="race-action sticky-action"><div className="last-dice"><Dice face={roll?.face} /><span>{roll ? <>{characterName(room.racers.find(r => r.id === roll.racerId)?.characterId ?? '')}<small>骰面 {roll.face} · 移动 {roll.distance} 格</small></> : <>准备好了吗？<small>骰子由服务器统一掷出</small></>}</span></div><Button disabled={busy || !mine || !!room.waitingFor} onClick={() => act({ type: 'roll' })}><Icon kind="dice" size={26} />{busy ? '正在处理…' : mine ? '掷骰子' : '等待其他玩家'}</Button></div>}</>;
+  const { beat, playing } = presentation;
+  const showing = presentation.displayRoom ?? room;
+  const playbackRacer = presentation.racers.find(r => r.id === beat?.source);
+  const playbackLabel = beat?.kind === 'dice' ? '正在掷骰 · 停稳后出发' : beat?.kind === 'move' ? beat.motions.some(m => m.to < m.from) ? '后退移动' : beat.motions.length > 1 ? '同时移动' : '逐格前进' : beat?.kind === 'swap' ? '交换位置' : beat?.kind === 'warp' ? '传送中' : beat?.kind === 'trip' ? '绊倒了！' : beat?.kind === 'score' ? '获得分数' : beat?.kind === 'finish' ? '冲过终点！' : '技能连锁';
+  return <>
+    <div className="presentation-toolbar"><span>玩具赛场 · {room.racers.length} 位运动员</span><button data-testid="presentation-settings" aria-expanded={settingsOpen} aria-controls="presentation-settings-panel" onClick={() => setSettingsOpen(!settingsOpen)}>⚙ 画面与动画</button></div>
+    {settingsOpen && <div className="presentation-settings" id="presentation-settings-panel"><label><input type="checkbox" checked={lowQuality} onChange={event => setLowQuality(event.target.checked)} />低画质</label><label><input type="checkbox" checked={muted} onChange={event => setMuted(event.target.checked)} />静音</label><label><input type="checkbox" checked={reduceMotion} onChange={event => setReduceMotion(event.target.checked)} />减少动效</label><label>动画速度<select aria-label="动画速度" value={animationSpeed} onChange={event => setAnimationSpeed(Number(event.target.value))}><option value={1}>1× · 完整演出</option><option value={2}>2× · 快速</option><option value={4}>4× · 极速</option></select></label></div>}
+    {playing ? <div className="race-turn turn-notice playback-notice" role="status" data-testid="animation-phase"><span className="turn-avatar">{playbackRacer && <Avatar id={playbackRacer.characterId} />}</span><span>{playbackLabel}<small>{beat?.events.map(event => event.text).join(' · ')}</small></span><button className="skip-animation" data-testid="skip-animation" onClick={presentation.skip}>跳过动画 »</button></div> : room.phase === 'race' && <div className={`race-turn turn-notice ${mine && !room.pending && !room.waitingFor ? 'your-turn' : ''}`} data-testid="animation-phase"><span className="turn-avatar">{active && <Avatar id={active.characterId} />}</span><span>{room.pending ? '技能发动！请做出选择' : room.waitingFor ? `等待 ${room.players.find(p => p.id === room.waitingFor)?.name ?? '其他玩家'} 响应技能` : mine ? '轮到你掷骰了' : `轮到 ${player?.name ?? '运动员'} 行动`}<small>{active ? `${characterName(active.characterId)}${active.tripped ? ' · 目前绊倒' : ''}` : '正在处理赛前能力'}</small></span><Countdown deadline={room.deadline} /></div>}
+    <Suspense fallback={<div className="restore-screen" style={{ minHeight: 400 }}>立体赛场正在就位…</div>}><Board3D room={room} racers={presentation.racers} beat={beat} startedAt={presentation.startedAt} durationMs={presentation.durationMs} lowQuality={lowQuality} reducedMotion={reduceMotion} muted={muted} onDetail={onDetail} /></Suspense>
+    <details className="race-roster"><summary>运动员与位置 · {room.racers.length} 位 / 点击查看能力</summary><div className="racer-strip">{showing.racers.map(racer => <RacerSummary key={racer.id} racer={racer} room={showing} onDetail={onDetail} />)}</div></details>
+    {!playing && room.phase !== 'race' ? <Results room={room} busy={busy} act={act} onDetail={onDetail} /> : !playing && room.pending ? <div className="choice-panel" role="region" aria-label="待处理技能"><div><span className="burst">✦</span><h2>{room.pending.title}</h2><p>{room.pending.optional ? '这是可选技能，可选择放弃。' : '选择一个合法选项，比赛会在确认后继续。'}</p></div><div className="choice-options">{room.pending.options.map(option => <Button key={option.id} secondary={['skip', 'pass', 'decline'].includes(option.id)} disabled={busy || room.pending?.playerId !== room.selfId} onClick={() => act({ type: 'choose', choiceId: room.pending!.id, optionId: option.id })}>{option.label}</Button>)}</div></div> : <div className="race-action sticky-action"><div className="last-dice"><Dice face={playing ? undefined : roll?.face} /><span data-testid={beat?.kind === 'dice' ? undefined : 'dice-value'}>{playing ? <>{playbackLabel}<small>演出完成后继续 · 可跳过</small></> : roll ? <>{characterName(room.racers.find(r => r.id === roll.racerId)?.characterId ?? '')}<small>骰面 {roll.face} · 移动 {roll.distance} 格</small></> : <>准备好了吗？<small>点数由房间统一确认</small></>}</span></div><Button disabled={busy || playing || !mine || !!room.waitingFor} onClick={() => act({ type: 'roll' })}><Icon kind="dice" size={26} />{playing ? '正在演出…' : busy ? '正在处理…' : mine ? '掷骰子' : '等待其他玩家'}</Button></div>}
+  </>;
 }
 function Dice({ face }: { face?: number }) {
   const spots: Record<number, [number, number][]> = { 1: [[25, 25]], 2: [[13, 13], [37, 37]], 3: [[13, 13], [25, 25], [37, 37]], 4: [[13, 13], [37, 13], [13, 37], [37, 37]], 5: [[13, 13], [37, 13], [25, 25], [13, 37], [37, 37]], 6: [[13, 12], [37, 12], [13, 25], [37, 25], [13, 38], [37, 38]] };
   return <svg className="dice" viewBox="0 0 50 50" role="img" aria-label={face ? `骰子 ${face} 点` : '等待掷骰'}><rect x="2" y="2" width="46" height="46" rx="9" fill="var(--paper)" stroke="var(--ink)" strokeWidth="3" />{face ? spots[face]?.map(([x, y], index) => <circle cx={x} cy={y} r="3.4" fill="var(--ink)" key={index} />) : <text x="25" y="35" textAnchor="middle" fontSize="30" fontWeight="bold">?</text>}</svg>;
-}
-function Track({ room, onDetail }: { room: RoomView; onDetail: (id: string) => void }) {
-  const small = useSmallScreen(); const columns = small ? 4 : 8; const track = TRACKS[room.track];
-  return <section className={`track-section ${room.track}`} aria-label={`${room.track === 'mild' ? '轻松' : '狂野'}赛道`}><div className="track-heading"><strong>{track.name}</strong><span>从 0 起点到 {track.finish} 终点 · 蛇形前进</span></div><div className="track-board" style={{ '--columns': columns } as CSSProperties}>{Array.from({ length: track.finish + 1 }, (_, position) => {
-    const row = Math.floor(position / columns); const offset = position % columns; const column = row % 2 ? columns - offset : offset + 1; const special = track.specials[position];
-    const occupants = room.racers.filter(racer => Math.min(track.finish, Math.max(0, racer.position)) === position && !racer.eliminated);
-    const end = position === track.finish; const start = position === 0; const rowEnd = offset === columns - 1;
-    return <div className={`track-cell ${start ? 'start-cell' : ''} ${end ? 'finish-cell' : ''} ${occupants.length ? 'occupied' : ''} ${occupants.length > 3 ? 'crowded-cell' : ''} ${special ? `special-${special.kind}` : ''}`} key={position} style={{ gridColumn: column, gridRow: row + 1 }}>
-      <div className="cell-label"><span>{start ? '起点' : end ? '终点' : position}</span>{!end && <span className="cell-arrow" aria-hidden="true">{rowEnd ? '↓' : row % 2 ? '←' : '→'}</span>}</div>
-      {special && <span className="special-label">{special.kind === 'star' ? '★ ＋1分' : special.kind === 'trip' ? '绊倒' : `${(special.move ?? 0) > 0 ? '＋' : ''}${special.move ?? 0}格`}</span>}
-      {end && <div className="finish-checkers" aria-hidden="true" />}
-      <div className={`cell-tokens count-${occupants.length}`}>{occupants.map(racer => { const owner = room.players.find(p => p.id === racer.playerId); return <button key={racer.id} onClick={() => onDetail(racer.characterId)} className={`track-token ${racer.id === room.currentRacerId ? 'current-token' : ''} ${racer.tripped ? 'tripped' : ''}`} style={{ '--player-color': owner?.color } as CSSProperties} aria-label={`${owner?.name}的${characterName(racer.characterId)}，第${position}格${racer.tripped ? '，绊倒' : ''}`} title={`${owner?.name} · ${characterName(racer.characterId)}`}><Avatar id={racer.characterId} /><b>{(owner?.seat ?? 0) + 1}</b>{racer.tripped && <i>倒</i>}</button>; })}</div>
-    </div>;
-  })}</div><div className="track-legend"><span><i className="legend-ring" />数字为玩家座位</span><span>倒 = 绊倒</span><span>点击棋子看能力</span></div>{!track.verified && <p className="track-warning">狂野赛道特殊格尚未完整核验，请查看房规说明。</p>}</section>;
 }
 function RacerSummary({ racer, room, onDetail }: { racer: Racer; room: RoomView; onDetail: (id: string) => void }) {
   const player = room.players.find(p => p.id === racer.playerId);

@@ -4,6 +4,7 @@ import type { GameAction } from '../../src/shared/types.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 let app:ReturnType<typeof createApplication>,url:string;
+async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 test.beforeAll(async()=>{app=createApplication(':memory:');await new Promise<void>(r=>app.http.listen(0,'127.0.0.1',r));const addr=app.http.address();if(!addr||typeof addr==='string')throw Error('no server');url=`http://127.0.0.1:${addr.port}`;mkdirSync('test-results/screenshots',{recursive:true});});
 test.afterAll(async()=>{await app.close();});
 for(const n of [2,6,8])test(`${n}独立BrowserContext完整四场、刷新断线恢复与原房间再来`,async({browser})=>{
@@ -12,7 +13,7 @@ for(const n of [2,6,8])test(`${n}独立BrowserContext完整四场、刷新断线
   if(n===8)test.setTimeout(300_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[];const failures:string[]=[];
   try{
-    for(let i=0;i<n;i++){const c=await browser.newContext({viewport:i===n-1?{width:390,height:844}:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(c);const p=await c.newPage();pages.push(p);p.on('pageerror',e=>failures.push(e.message));}
+    for(let i=0;i<n;i++){const c=await browser.newContext({viewport:i===n-1?{width:390,height:844}:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(c);await c.addInitScript(()=>{localStorage.setItem('magical-athlete:animation-speed','4');localStorage.setItem('magical-athlete:reduced-motion','true');localStorage.setItem('magical-athlete:low-quality','true');});const p=await c.newPage();pages.push(p);p.on('pageerror',e=>failures.push(e.message));}
     const host=pages[0]!;await host.goto(url);await host.getByLabel('你的昵称').fill('房主同学');await host.getByLabel('房间人数上限').selectOption(String(n));await host.getByLabel('每次操作时限').selectOption('0');await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;
     for(let i=1;i<n;i++){await pages[i]!.goto(`${url}/room/${code}`);await pages[i]!.getByLabel('你的昵称').fill(`同学${i}`);await pages[i]!.getByRole('button',{name:'加入这场胡闹'}).click();await expect(pages[i]!.getByRole('button',{name:'我准备好了',exact:true})).toBeVisible();}
     for(const p of pages){await p.getByRole('button',{name:'我准备好了',exact:true}).click();await expect(p.getByRole('button',{name:'取消准备',exact:true})).toBeVisible();}
@@ -40,7 +41,7 @@ for(const n of [2,6,8])test(`${n}独立BrowserContext完整四场、刷新断线
       }
       if(!refreshed&&g.phase==='race'){const saved=ids.at(-1)!;await pages.at(-1)!.reload();await expect(pages.at(-1)!.getByText('已连接',{exact:true})).toBeVisible();expect(await pages.at(-1)!.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)).toBe(saved);refreshed=true;continue;}
       if(refreshed&&!offline&&g.phase==='race'){await contexts.at(-1)!.setOffline(true);await expect(pages.at(-1)!.getByText('连接暂时中断，恢复后会自动同步。',{exact:false})).toBeVisible({timeout:45000});await contexts.at(-1)!.setOffline(false);await expect(pages.at(-1)!.getByText('已连接',{exact:true})).toBeVisible();offline=true;continue;}
-      if(!raceShot&&g.phase==='race'){await host.screenshot({path:`test-results/screenshots/race-${n}.png`,fullPage:true});await pages.at(-1)!.screenshot({path:`test-results/screenshots/race-mobile-${n}.png`,fullPage:true});raceShot=true;}
+      if(!raceShot&&g.phase==='race'){for(const scene of [host,pages.at(-1)!]){await expect(scene.getByTestId('board-3d').locator('canvas')).toBeVisible();await expect(scene.getByTestId('scene-racer')).toHaveCount(n===2?4:n);}await captureRace(host,`test-results/screenshots/race-${n}.png`);await captureRace(pages.at(-1)!,`test-results/screenshots/race-mobile-${n}.png`);raceShot=true;}
       let playerId:string,action:GameAction;
       if(g.pending){playerId=g.pending.playerId;const option=g.pending.options.find(o=>['skip','pass','decline'].includes(o.id))??g.pending.options[0]!;action={type:'choose',choiceId:g.pending.id,optionId:option.id};}
       else if(g.phase==='results'){playerId=room.hostId;action={type:'next'};}

@@ -3,6 +3,7 @@ import type { GameAction, Room } from '../../src/shared/types.js';
 import { mkdirSync } from 'node:fs';
 
 const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
+async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function saved(page:Page,code:string):Promise<Room>{
   // Transfer the game's documented JSON format rather than Playwright's deeply
   // nested evaluation-value encoding (which can reject large event histories).
@@ -30,6 +31,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
     mkdirSync('test-results/browser-authority',{recursive:true});
     for(let i=0;i<n;i++){
       const context=await browser.newContext({viewport:i===n-1?{width:390,height:844}:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(context);
+      await context.addInitScript(()=>{localStorage.setItem('magical-athlete:animation-speed','4');localStorage.setItem('magical-athlete:reduced-motion','true');localStorage.setItem('magical-athlete:low-quality','true');});
       const page=await context.newPage();pages.push(page);observe(page);
     }
     const host=pages[0]!;
@@ -70,7 +72,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: four ra
         const p=pages.at(-1)!;await contexts.at(-1)!.setOffline(true);await p.reload().catch(()=>{});await contexts.at(-1)!.setOffline(false);await p.goto(`${url}/room/${code}`);await expect(p.getByText('已连接',{exact:true})).toBeVisible();
         expect(await p.evaluate(code=>JSON.parse(localStorage.getItem(`magical-athlete:identity:${code}`)!).playerId,code)).toBe(ids.at(-1));guestRecovered=true;continue;
       }
-      if(!raceShot&&g.phase==='race'){await host.screenshot({path:`test-results/browser-authority/race-${n}.png`,fullPage:true});await pages.at(-1)!.screenshot({path:`test-results/browser-authority/race-mobile-${n}.png`,fullPage:true});raceShot=true;}
+      if(!raceShot&&g.phase==='race'){for(const scene of [host,pages.at(-1)!]){await expect(scene.getByTestId('board-3d').locator('canvas')).toBeVisible();await expect(scene.getByTestId('scene-racer')).toHaveCount(n===2?4:n);}await captureRace(host,`test-results/browser-authority/race-${n}.png`);await captureRace(pages.at(-1)!,`test-results/browser-authority/race-mobile-${n}.png`);raceShot=true;}
       let playerId:string,action:GameAction;
       if(g.pending){playerId=g.pending.playerId;const option=g.pending.options.find(o=>['skip','pass','decline'].includes(o.id))??g.pending.options[0]!;action={type:'choose',choiceId:g.pending.id,optionId:option.id};}
       else if(g.phase==='results'){playerId=room.hostId;action={type:'next'};}
