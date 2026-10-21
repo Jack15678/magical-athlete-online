@@ -1,17 +1,21 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, RoundedBox } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import type { OrbitControls as OrbitControlsImpl } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Racer, RoomView } from '../../shared/types.js';
 import { TRACKS } from '../../shared/tracks.js';
 import { CHARACTERS } from '../../shared/characters.js';
 import type { PresentationBeat } from '../presentation.js';
 import { Avatar } from '../avatars.js';
 import { ToyCharacter } from './ToyCharacter.js';
+import { DioramaStadium } from './DioramaStadium.js';
+import { CameraRig } from './CameraRig.js';
+import { StudioLighting, AdaptiveQuality, PawnContact } from './StudioLighting.js';
+import { RaceEffects } from './RaceEffects.js';
+import { useRaceIntro } from './useRaceIntro.js';
 import { boardPoint, diceTopRotation, TILE } from './math.js';
-import { specialTileTexture } from './tile-art.js';
-import { ACTION_HOLD_MS, actionFocus, cameraFrame, choiceFocus, ownFocus, pawnOccupancy, type CameraFocus, type CameraMode } from './camera.js';
+
+import { ACTION_HOLD_MS, actionFocus, choiceFocus, ownFocus, pawnOccupancy, pawnWorldPoint, type CameraFocus, type CameraMode } from './camera.js';
 import './scene.css';
 
 export interface ScenePlayback {
@@ -46,6 +50,8 @@ class SceneBoundary extends Component<{ children: ReactNode; resetKey: number; r
 }
 
 export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQuality, reducedMotion, muted, onDetail }: Props) {
+  const [automaticLow, setAutomaticLow] = useState(false);
+  lowQuality = lowQuality || automaticLow;
   const spectator = room.role === 'spectator';
   const [compact, setCompact] = useState(() => matchMedia('(max-width: 650px)').matches);
   const [resetKey, setResetKey] = useState(0);
@@ -74,27 +80,32 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const action = beatFocus && heldFocus && heldFocus.chainId === beatFocus.chainId ? { ...beatFocus, ids: [...new Set([...heldFocus.ids, ...beatFocus.ids])], positions: [...new Set([...heldFocus.positions, ...beatFocus.positions])] } : beatFocus ?? heldFocus;
   const myAction = action?.ids.some(id => racers.some(racer => racer.id === id && racer.playerId === room.selfId));
   const choosing = !beat && !(queue?.length) ? choiceFocus(room, racers) : undefined;
+  const intro = useRaceIntro(room, racers, reducedMotion, !!beat || !!queue?.length || !!choosing);
   const idleFocus = ownFocus(room, racers);
-  const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : idleFocus);
-  const returnSelf = () => { setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId); setCameraReset(value => value + 1); };
+  const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : intro.focus ?? (action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : idleFocus));
+  const returnSelf = () => { intro.skip(); setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId); setCameraReset(value => value + 1); };
   return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
     <div className="scene-camera-toolbar">
-      <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} aria-label={spectator ? '跟随当前选手' : undefined} onClick={returnSelf}>{spectator ? '跟随' : '自己'}</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
+      <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} aria-label={spectator ? '跟随当前选手' : undefined} onClick={returnSelf}>{spectator ? '跟随' : '自己'}</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { intro.skip(); setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
       <button className="camera-home" onClick={returnSelf} aria-label="恢复默认视角" title={spectator ? '跟随当前选手' : '回到自己的棋子'}>⌖ <span>{spectator ? '跟随选手' : '回到自己'}</span></button>
       <details className="camera-options"><summary aria-label="镜头设置">镜头</summary><label><input type="checkbox" aria-label={spectator ? '自动跟随赛场行动' : '自动观看他人行动'} checked={autoWatch} onChange={event => { setAutoWatch(event.target.checked); try { localStorage.setItem('magical-athlete:auto-watch', String(event.target.checked)); } catch { /* Preferences are optional. */ } }} />{spectator ? '自动跟随赛场行动' : '自动观看他人行动'}</label><small>拖动平移 · 双指或滚轮缩放</small></details>
       {manualCamera && cameraMode === 'self' && !choosing && <span className="camera-paused" role="status">跟拍已暂停</span>}
     </div>
+    {intro.focus && <div className="race-intro" data-testid="race-intro" data-intro-index={intro.index} role="status">
+      {intro.racer && <span className="race-intro-avatar"><Avatar id={intro.racer.characterId} /></span>}
+      <div><small>{intro.reducedMotion ? '全体选手就位' : `选手亮相 · ${intro.index + 1} / ${intro.total}`}</small><strong>{intro.racer ? characterName(intro.racer.characterId) : '准备开赛！'}</strong></div>
+      <button onClick={returnSelf} aria-label="跳过选手介绍">跳过 ›</button>
+    </div>}
     <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} />
     <PredictionHud room={room} racers={racers} choosing={!!choosing} />
     <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}>
-      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, 1.65]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c4e4d7'); gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
-        <ambientLight intensity={1.2} />
-        <hemisphereLight args={['#fff8e7', '#6a9e8f', 1.5]} />
-        <directionalLight position={[-7, 16, 8]} intensity={3.1} castShadow={!lowQuality} shadow-mapSize={lowQuality ? [512, 512] : [1024, 1024]} shadow-camera-left={-18} shadow-camera-right={18} shadow-camera-top={18} shadow-camera-bottom={-18} shadow-normalBias={.025} shadow-bias={-.0001} />
-        <CameraRig compact={compact} reset={cameraReset} focus={focus} reducedMotion={reducedMotion} onManual={() => setManualCamera(true)} root={root} />
-        <Stadium compact={compact} track={room.track} lowQuality={lowQuality} beat={beat} racers={racers} />
+      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, compact ? 1.25 : 1.5]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c7dfd3'); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.1; gl.shadowMap.type = THREE.PCFShadowMap; gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
+        <StudioLighting compact={compact} lowQuality={lowQuality} />
+        <AdaptiveQuality lowQuality={lowQuality} onSlow={() => setAutomaticLow(true)} root={root} />
+        <CameraRig racers={racers} compact={compact} reset={cameraReset} focus={focus} reducedMotion={reducedMotion} onManual={() => { intro.skip(); setManualCamera(true); }} root={root} />
+        <DioramaStadium compact={compact} track={room.track} lowQuality={lowQuality} beat={beat} racers={racers} />
         <Suspense fallback={null}>{racers.filter(r => !r.eliminated || beat?.kind === 'eliminate' && beat.targets.includes(r.id)).map(racer => <Pawn key={racer.id} racer={racer} racers={racers} room={room} compact={compact} beat={beat} startedAt={startedAt} durationMs={durationMs} lowQuality={lowQuality} reducedMotion={reducedMotion} active={active === racer.id} onDetail={onDetail} labels={labels} />)}</Suspense>
-        <SkillEffect {...{ beat, racers, compact, startedAt, durationMs, reducedMotion }} />
+        <RaceEffects {...{ beat, racers, compact, startedAt, durationMs, reducedMotion, lowQuality }} />
         <ScoreProjector beat={beat} racers={racers} compact={compact} label={scoreLabel} />
         <PerformanceProbe root={root} />
       </Canvas>
@@ -108,39 +119,17 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
 }
 
 function PerformanceProbe({ root }: { root: React.RefObject<HTMLElement | null> }) {
-  const gl = useThree(s => s.gl); const last = useRef(0);
-  useFrame(({ clock }) => { if (root.current && gl.info.render.triangles > 0 && (!root.current.dataset.triangles || clock.elapsedTime - last.current > 1)) { last.current = clock.elapsedTime; root.current.dataset.drawCalls = String(gl.info.render.calls); root.current.dataset.triangles = String(gl.info.render.triangles); } }); return null;
-}
-function CameraRig({ compact, reset, focus, reducedMotion, onManual, root }: { compact: boolean; reset: number; focus: CameraFocus; reducedMotion: boolean; onManual: () => void; root: React.RefObject<HTMLElement | null> }) {
-  const { camera, size, invalidate } = useThree();
-  const controls = useRef<OrbitControlsImpl>(null);
-  const userDrag = useRef(false);
-  const target = useMemo(() => new THREE.Vector3(), []);
-  const shift = useMemo(() => new THREE.Vector3(), []);
-  const frame = cameraFrame(focus.positions, compact, size.width, size.height, focus.state === 'overview');
+  const { gl, scene } = useThree();
   useEffect(() => {
-    const first = cameraFrame(focus.positions, compact, size.width, size.height, focus.state === 'overview');
-    camera.position.set(first.x, 19, first.z + 16); camera.up.set(0, 1, 0); camera.lookAt(first.x, 0, first.z);
-    if (camera instanceof THREE.OrthographicCamera) { camera.zoom = first.zoom; camera.updateProjectionMatrix(); }
-    controls.current?.target.set(first.x, 0, first.z); controls.current?.update(); userDrag.current = false; invalidate();
-  }, [camera, compact]);
-  useEffect(() => { userDrag.current = false; invalidate(); }, [reset]);
-  useEffect(() => { if (focus.state === 'choice') userDrag.current = false; invalidate(); }, [focus.state, focus.ids.join(','), frame.x, frame.z, frame.zoom]);
-  useFrame((_, delta) => {
-    if (!controls.current || !(camera instanceof THREE.OrthographicCamera)) return;
-    if (root.current) { root.current.dataset.cameraX = controls.current.target.x.toFixed(2); root.current.dataset.cameraZ = controls.current.target.z.toFixed(2); root.current.dataset.cameraTarget = `${controls.current.target.x.toFixed(2)},${controls.current.target.z.toFixed(2)}`; root.current.dataset.cameraZoom = camera.zoom.toFixed(2); root.current.dataset.cameraPolar = controls.current.getPolarAngle().toFixed(4); }
-    if (userDrag.current || focus.state === 'manual') return;
-    target.set(frame.x, 0, frame.z);
-    const amount = reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, .05) * 4.8);
-    const moving = controls.current.target.distanceTo(target) > .003 || Math.abs(camera.zoom - frame.zoom) > .003;
-    if (moving) {
-      shift.copy(controls.current.target); controls.current.target.lerp(target, amount); shift.subVectors(controls.current.target, shift); camera.position.add(shift);
-      camera.zoom = THREE.MathUtils.lerp(camera.zoom, frame.zoom, amount); camera.updateProjectionMatrix(); controls.current.update(); invalidate();
-    }
-  });
-  return <OrbitControls ref={controls} makeDefault enablePan enableRotate={false} screenSpacePanning={false} enableDamping dampingFactor={.12} minZoom={3} maxZoom={140} mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }} touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }} onStart={() => { userDrag.current = true; onManual(); }} onChange={() => invalidate()} />;
+    const previous = scene.onAfterRender;
+    scene.onAfterRender = function (...args) {
+      previous.apply(this, args);
+      if (root.current) { root.current.dataset.drawCalls = String(gl.info.render.calls); root.current.dataset.triangles = String(gl.info.render.triangles); }
+    };
+    return () => { scene.onAfterRender = previous; };
+  }, [gl, scene, root]);
+  return null;
 }
-
 function Minimap({ room, racers, active, beat, startedAt, durationMs }: { room: RoomView; racers: Racer[]; active?: string; beat?: PresentationBeat; startedAt: number; durationMs: number }) {
   const [tick, setTick] = useState(1);
   useEffect(() => {
@@ -220,58 +209,6 @@ function ActionBanner({ beat, racers }: { beat?: PresentationBeat; racers: Racer
   return <div key={beat.key} className={`scene-action-banner banner-${beat.kind}`} data-testid="skill-banner" role="status">{actor && <span className="skill-banner-avatar"><Avatar id={actor.characterId} /></span>}<div><small>{caption}</small><strong>{title}</strong><span>{detail}</span></div><b aria-hidden="true">✦</b></div>;
 }
 
-function labelTexture(text: string, color: string) {
-  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128;
-  const ctx = canvas.getContext('2d')!; ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '900 58px "Microsoft YaHei", sans-serif'; ctx.fillText(text, 128, 66);
-  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4; return texture;
-}
-function Tile({ index, compact, track, triggered }: { index: number; compact: boolean; track: RoomView['track']; triggered: boolean }) {
-  const material = useRef<THREE.MeshStandardMaterial>(null);
-  const position = boardPoint(index, compact); const special = TRACKS[track].specials[index];
-  const next = boardPoint(Math.min(30, index + 1), compact);
-  const arrowAngle = Math.atan2(-(next[0] - position[0]), -(next[2] - position[2]));
-  const color = index === 0 ? '#365bea' : index === 30 ? '#f5c646' : special?.kind === 'trip' ? '#ef715e' : special?.kind === 'arrow' ? (special.move ?? 0) > 0 ? '#65cfbe' : '#bd91eb' : special?.kind === 'star' ? '#ffd34e' : index % 2 ? '#fff6e1' : '#f0e6cd';
-  const caption = index === 0 ? 'START' : index === 30 ? 'FINISH' : `${index} ${special?.kind === 'star' ? '★ +1' : special?.kind === 'trip' ? '!' : special?.kind === 'arrow' ? ((special.move ?? 0) > 0 ? '+' : '') + special.move : index === TRACKS[track].firstCorner ? '↱' : index === TRACKS[track].secondCorner ? '↰' : ''}`;
-  const texture = useMemo(() => labelTexture(caption, index === 0 ? '#ffffff' : '#3a4e51'), [caption, index]);
-  useEffect(() => () => texture.dispose(), [texture]);
-  useFrame(({ clock }) => { if (material.current) material.current.emissiveIntensity = triggered ? .35 + (1 + Math.sin(clock.elapsedTime * 11)) * .2 : 0; });
-  return <group position={position}>
-    <RoundedBox args={[1.91, .28, 1.91]} radius={.12} smoothness={2} position={[0, -.14, 0]} receiveShadow castShadow><meshStandardMaterial ref={material} color={color} roughness={.7} emissive={color} emissiveIntensity={0} /></RoundedBox>
-    {!special && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .012, -.65]}><planeGeometry args={[1.42, .7]} /><meshBasicMaterial map={texture} transparent depthWrite={false} /></mesh>}
-    {!special && index < 30 && <mesh position={[0, .018, .8]} rotation={[-Math.PI / 2, 0, arrowAngle]}><coneGeometry args={[.08, .19, 3]} /><meshBasicMaterial color={index === 0 ? '#ffffff' : '#a6aaa1'} /></mesh>}
-    {special && <SpecialMarker kind={special.kind} move={special.move} index={index} compact={compact} triggered={triggered} />}
-  </group>;
-}
-function SpecialMarker({ kind, move, index, compact, triggered }: { kind: 'star' | 'trip' | 'arrow'; move?: number; index: number; compact: boolean; triggered: boolean }) {
-  const glow = useRef<THREE.MeshBasicMaterial>(null);
-  const base = boardPoint(index, compact), next = boardPoint(index + Math.sign(move ?? 1), compact);
-  const angle = Math.atan2(-(next[0] - base[0]), -(next[2] - base[2]));
-  const texture = useMemo(() => specialTileTexture(kind, move, index, angle), [kind, move, index, angle]);
-  useEffect(() => () => texture.dispose(), [texture]);
-  useFrame(({ clock }) => { if (glow.current) glow.current.opacity = triggered ? .08 + (1 + Math.sin(clock.elapsedTime * 11)) * .09 : 0; });
-  return <group>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .012, 0]}><planeGeometry args={[1.86, 1.86]} /><meshBasicMaterial map={texture} depthWrite={false} toneMapped={false} /></mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .016, 0]}><planeGeometry args={[1.88, 1.88]} /><meshBasicMaterial ref={glow} color="#fffad6" transparent opacity={0} depthWrite={false} toneMapped={false} /></mesh>
-  </group>;
-}
-function Stadium({ compact, track, lowQuality, beat, racers }: { compact: boolean; track: RoomView['track']; lowQuality: boolean; beat?: PresentationBeat; racers: Racer[] }) {
-  const width = (compact ? 4 : 16) * TILE + .65, depth = (compact ? 16 : 4) * TILE + .65;
-  const triggered = new Set(beat?.motions.map(motion => motion.to) ?? []);
-  if (beat && ['score', 'trip'].includes(beat.kind)) for (const racer of racers) if (beat.targets.includes(racer.id) || beat.source === racer.id) triggered.add(racer.position);
-  return <group>
-    <RoundedBox args={[width + .45, .5, depth + .45]} radius={.32} smoothness={3} position={[0, -.38, 0]} castShadow receiveShadow><meshStandardMaterial color="#4a8c78" roughness={.6} /></RoundedBox>
-    <RoundedBox args={[width, .28, depth]} radius={.2} smoothness={3} position={[0, -.1, 0]} receiveShadow><meshStandardMaterial color="#79bda0" roughness={.85} /></RoundedBox>
-    {Array.from({ length: 31 }, (_, i) => <Tile key={i} index={i} compact={compact} track={track} triggered={triggered.has(i)} />)}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.67, 0]} receiveShadow><planeGeometry args={[200, 200]} /><meshStandardMaterial color="#c4e4d7" roughness={1} /></mesh>
-    {!lowQuality && [-1, 1].flatMap(side => Array.from({ length: compact ? 6 : 12 }, (_, i) => <group key={`${side}-${i}`} position={compact ? [side * (width / 2 + .65), -.12, (i / 5 - .5) * depth * .92] : [(i / 11 - .5) * width * .92, -.12, side * (depth / 2 + .65)]}><mesh castShadow position={[0, .4, 0]}><cylinderGeometry args={[.035, .05, .95, 6]} /><meshStandardMaterial color="#fff6e1" /></mesh><mesh position={[.17, .7, 0]}><boxGeometry args={[.35, .26, .045]} /><meshStandardMaterial color={i % 2 ? '#f16b51' : '#f5cd51'} /></mesh></group>))}
-    <FinishGate compact={compact} />
-  </group>;
-}
-function FinishGate({ compact }: { compact: boolean }) {
-  const p = boardPoint(30, compact);
-  return <group position={[p[0] + (compact ? 0 : .7), .22, p[2] + (compact ? .7 : 0)]} rotation={[0, compact ? 0 : Math.PI / 2, 0]}>{[-.76, .76].map(x => <mesh key={x} position={[x, .7, 0]} castShadow><cylinderGeometry args={[.035, .045, 1.4, 8]} /><meshStandardMaterial color="#3d6265" /></mesh>)}<mesh position={[0, 1.3, 0]}><boxGeometry args={[1.55, .18, .06]} /><meshStandardMaterial color="#fff8e8" /></mesh>{Array.from({ length: 12 }, (_, i) => <mesh key={i} position={[(i % 6 - 2.5) * .24, 1.3 + (Math.floor(i / 6) ? .045 : -.045), .035]}><planeGeometry args={[.24, .09]} /><meshBasicMaterial color={(i + Math.floor(i / 6)) % 2 ? '#334b50' : '#fff8e8'} /></mesh>)}</group>;
-}
-
 function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQuality, reducedMotion, active, onDetail, labels }: { racer: Racer; racers: Racer[]; room: RoomView; compact: boolean; beat?: PresentationBeat; startedAt: number; durationMs: number; lowQuality: boolean; reducedMotion: boolean; active: boolean; onDetail: (id: string) => void; labels: React.RefObject<Map<string, HTMLSpanElement>> }) {
   const root = useRef<THREE.Group>(null), body = useRef<THREE.Group>(null);
   const { camera, size } = useThree(); const projection = useMemo(() => new THREE.Vector3(), []);
@@ -279,14 +216,14 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
   const color = owner?.color ?? '#ffcf50';
   const motion = beat?.motions.find(m => m.racerId === racer.id);
   const from = boardPoint(motion?.from ?? racer.position, compact);
-  const offset = occupancy(racer, racers, motion?.from ?? racer.position);
+  const offset = occupancy(racer, racers, motion?.from ?? racer.position, compact);
   const destinations = motion ? racers.map(r => ({ ...r, position: beat?.motions.find(m => m.racerId === r.id)?.to ?? r.position })) : racers;
-  const endOffset = occupancy(racer, destinations, motion?.to ?? racer.position);
+  const endOffset = occupancy(racer, destinations, motion?.to ?? racer.position, compact);
   const affected = beat?.targets.includes(racer.id) || beat?.source === racer.id;
   useFrame(() => {
     if (!root.current || !body.current) return;
     const t = beat ? progress(startedAt, durationMs) : 1;
-    let x = from[0] + offset.x, z = from[2] + offset.z, y = .24, scale = offset.scale, tilt = racer.tripped ? -Math.PI / 2 : 0, swing = 0;
+    let x = from[0] + offset.x, z = from[2] + offset.z, y = .225, scale = offset.scale, tilt = racer.tripped ? -Math.PI / 2 : 0, swing = 0;
     if (motion) {
       const target = boardPoint(motion.to, compact);
       if (beat?.kind === 'swap' && !reducedMotion) {
@@ -300,7 +237,7 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
       } else {
         const count = Math.max(1, motion.path.length - 1), walk = ease(clamp((t - .06) / .88, 0, 1)) * count, segment = Math.min(count - 1, Math.floor(walk)), local = walk - segment;
         const a = boardPoint(motion.path[segment] ?? motion.from, compact), b = boardPoint(motion.path[segment + 1] ?? motion.to, compact);
-        x = THREE.MathUtils.lerp(a[0], b[0], local) + THREE.MathUtils.lerp(offset.x, endOffset.x, ease(t)); z = THREE.MathUtils.lerp(a[2], b[2], local) + THREE.MathUtils.lerp(offset.z, endOffset.z, ease(t));
+        x = THREE.MathUtils.lerp(a[0] + (segment === 0 ? offset.x : 0), b[0] + (segment === count - 1 ? endOffset.x : 0), local); z = THREE.MathUtils.lerp(a[2] + (segment === 0 ? offset.z : 0), b[2] + (segment === count - 1 ? endOffset.z : 0), local);
         const backwards = motion.to < motion.from;
         y += reducedMotion ? 0 : Math.sin(local * Math.PI) * (backwards ? .17 : .28); swing = reducedMotion ? 0 : Math.sin(walk * Math.PI * 2) * (backwards ? -.18 : .12); scale = THREE.MathUtils.lerp(offset.scale, endOffset.scale, ease(t));
       }
@@ -313,35 +250,17 @@ function Pawn({ racer, racers, room, compact, beat, startedAt, durationMs, lowQu
     const label = labels.current.get(racer.id);
     if (label) { root.current.updateWorldMatrix(true, false); projection.set(0, .19, .34).applyMatrix4(root.current.matrixWorld).project(camera); label.style.transform = `translate(${(projection.x + 1) * size.width / 2}px,${(1 - projection.y) * size.height / 2}px) translate(-50%,-50%)`; label.style.visibility = projection.z < -1 || projection.z > 1 ? 'hidden' : 'visible'; }
   });
-  return <group ref={root} position={[from[0] + offset.x, .24, from[2] + offset.z]} scale={offset.scale} onClick={e => { e.stopPropagation(); onDetail(racer.characterId); }}>
+  return <group ref={root} position={[from[0] + offset.x, .225, from[2] + offset.z]} scale={offset.scale} onClick={e => { e.stopPropagation(); if (e.delta <= 5) onDetail(racer.characterId); }}>
+    <PawnContact />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .018, 0]}><ringGeometry args={[.31, active ? .43 : .38, 24]} /><meshBasicMaterial color={active ? '#ffda27' : color} side={THREE.DoubleSide} /></mesh>
-    <mesh castShadow={!lowQuality} receiveShadow position={[0, .06, 0]}><cylinderGeometry args={[.32, .36, .12, 20]} /><meshStandardMaterial color={color} roughness={.5} /></mesh>
-    <group ref={body} position={[0, .12, 0]}><ToyCharacter characterId={racer.characterId} color={color} lowQuality={lowQuality} /></group>
+    <group ref={body} position={[0, 0, 0]}><ToyCharacter characterId={racer.characterId} color={color} lowQuality={lowQuality} /></group>
     {active && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .023, 0]}><ringGeometry args={[.46, .49, 32]} /><meshBasicMaterial color="#fff8da" side={THREE.DoubleSide} /></mesh>}
   </group>;
 }
 
-function SkillEffect({ beat, racers, compact, startedAt, durationMs, reducedMotion }: { beat?: PresentationBeat; racers: Racer[]; compact: boolean; startedAt: number; durationMs: number; reducedMotion: boolean }) {
-  const group = useRef<THREE.Group>(null);
-  useFrame(() => { if (!group.current) return; const t = progress(startedAt, durationMs); group.current.scale.setScalar(reducedMotion ? 1 : .6 + t * .8); group.current.rotation.y = reducedMotion ? 0 : t * Math.PI; });
-  if (!beat || beat.kind === 'dice' || beat.kind === 'duel-dice') return null;
-  const affected = [...new Set([beat.source, ...beat.targets].filter((id): id is string => !!id))];
-  const warp = beat.kind === 'warp' || beat.kind === 'swap';
-  const impact = beat.kind === 'trip' || beat.cause === 'huge-baby' || beat.cause === 'centaur';
-  const color = beat.kind === 'swap' ? '#f197c4' : warp ? '#af78ff' : impact ? '#ff7057' : beat.kind === 'score' || beat.kind === 'finish' ? '#ffd648' : beat.motions.some(m => m.to < m.from) ? '#eca44c' : '#6adae5';
-  return <group>{affected.map(id => { const r = racers.find(x => x.id === id); if (!r) return null; const motion = beat.motions.find(m => m.racerId === id); const positions = warp && motion ? [motion.from, motion.to] : [r.position]; return positions.map((position, index) => {
-    const point = boardPoint(position, compact);
-    return <group key={`${id}-${index}`} position={[point[0], .25, point[2]]}>
-      {['skill', 'warp', 'swap', 'trip', 'recover', 'finish', 'score'].includes(beat.kind) && <group ref={affected[0] === id && index === 0 ? group : undefined}><mesh rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[.48, .54, lowSegments(reducedMotion)]} /><meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={.75} /></mesh>{warp && <mesh position={[0, .4, 0]}><cylinderGeometry args={[.55, .55, .8, 20, 1, true]} /><meshBasicMaterial color={color} transparent opacity={.18} side={THREE.DoubleSide} depthWrite={false} /></mesh>}</group>}
-      {motion && beat.kind === 'move' && !reducedMotion && <group>{motion.path.slice(1).map((step, i) => { const p = boardPoint(step, compact); return <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[p[0] - point[0], .025, p[2] - point[2]]}><ringGeometry args={[.12, .18, 12]} /><meshBasicMaterial color={color} transparent opacity={.45} side={THREE.DoubleSide} /></mesh>; })}</group>}
-    </group>;
-  }); })}</group>;
-}
-const lowSegments = (reduced: boolean) => reduced ? 16 : 32;
-
 function ScoreProjector({ beat, racers, compact, label }: { beat?: PresentationBeat; racers: Racer[]; compact: boolean; label: React.RefObject<HTMLSpanElement | null> }) {
   const { camera, size } = useThree(); const projected = useMemo(() => new THREE.Vector3(), []);
-  useFrame(() => { const racer = racers.find(r => r.id === beat?.source); if (!label.current || !racer || !beat || !['score', 'finish'].includes(beat.kind)) return; const point = boardPoint(racer.position, compact); projected.set(point[0], 1.8, point[2]).project(camera); label.current.style.transform = `translate(${(projected.x + 1) * size.width / 2}px,${(1 - projected.y) * size.height / 2}px) translate(-50%,-50%)`; });
+  useFrame(() => { const racer = racers.find(r => r.id === beat?.source); if (!label.current || !racer || !beat || !['score', 'finish'].includes(beat.kind)) return; const point = pawnWorldPoint(racer, racers, racer.position, compact); projected.set(point[0], 2.5, point[2]).project(camera); label.current.style.transform = `translate(${(projected.x + 1) * size.width / 2}px,${(1 - projected.y) * size.height / 2}px) translate(-50%,-50%)`; });
   return null;
 }
 
