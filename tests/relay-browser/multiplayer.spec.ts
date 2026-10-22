@@ -26,33 +26,76 @@ function publicRoom(room:Room){
 // Read only the actual authenticated snapshots received by each player. The
 // server's deck, random state and private pending context never enter this test.
 const snapshots=new Map<string,Map<string,RoomView>>();
-function completeViews(known:Map<string,RoomView>|undefined):{latest:RoomView;views:RoomView[]}|undefined{
-  if(!known?.size)return;
-  const views=[...known.values()],latest=views.reduce((a,b)=>a.version>b.version?a:b);
-  // Frames for one broadcast arrive on independent browser sockets. Select one
-  // immutable version only after all private views for that version have arrived.
-  if(!latest.players.every(player=>known.get(player.id)?.version===latest.version))return;
-  if(latest.waitingFor){const acting=known.get(latest.waitingFor);if(!acting?.pending||acting.pending.playerId!==latest.waitingFor)return;}
-  if(latest.turnStage==='choice'&&!latest.waitingFor)return;
-  return{latest,views};
+type VersionedViews=Map<number,Map<string,RoomView>>;
+const snapshotVersions=new Map<string,VersionedViews>();
+const snapshotWaits=new Map<string,ReturnType<typeof snapshotWait>>();
+function rememberSnapshot(known:Map<string,RoomView>,versions:VersionedViews,view:RoomView):void{
+  if((known.get(view.selfId)?.version??0)<=view.version)known.set(view.selfId,view);
+  const peers=versions.get(view.version)??new Map<string,RoomView>();peers.set(view.selfId,view);versions.set(view.version,peers);
+  // An actor may already have received a later frame when its earlier choice is
+  // selected. Keep a bounded history so that exact authorized version survives.
+  if(versions.size>64)versions.delete(Math.min(...versions.keys()));
+}
+function latestView(known:Map<string,RoomView>|undefined):RoomView|undefined{
+  return known?.size?[...known.values()].reduce((a,b)=>a.version>b.version?a:b):undefined;
+}
+function completeViews(candidate:RoomView|undefined,versions:VersionedViews|undefined):{latest:RoomView;views:RoomView[]}|undefined{
+  if(!candidate)return;
+  const peers=new Map(versions?.get(candidate.version));peers.set(candidate.selfId,candidate);
+  const views=[...peers.values()].filter(view=>view.version===candidate.version);
+  // Public state needs no other browser. Only a private choice needs its actor's
+  // exact authorized view; unrelated slow peers must not block the rule driver.
+  if(candidate.waitingFor){
+    const acting=views.find(view=>view.selfId===candidate.waitingFor),pending=acting?.pending;
+    if(!pending||pending.playerId!==candidate.waitingFor)return;
+    if(candidate.waitingPrompt&&(pending.kind!==candidate.waitingPrompt.kind||pending.racerId!==candidate.waitingPrompt.racerId))return;
+  }
+  if(candidate.turnStage==='choice'&&!candidate.waitingFor)return;
+  return{latest:candidate,views};
+}
+function snapshotWait(candidate:RoomView,known:Map<string,RoomView>|undefined,versions:VersionedViews|undefined){
+  const peers=versions?.get(candidate.version),actor=candidate.waitingFor?known?.get(candidate.waitingFor):undefined;
+  return{candidateVersion:candidate.version,latestObservedVersion:latestView(known)?.version,candidatePhase:candidate.phase,candidateTurnStage:candidate.turnStage,
+    waitingActor:candidate.waitingFor,waitingKind:candidate.waitingPrompt?.kind,actorLatestVersion:actor?.version,
+    actorCandidateVersion:candidate.waitingFor?peers?.get(candidate.waitingFor)?.version:undefined,
+    requiredActorMissing:!!candidate.waitingFor&&!completeViews(candidate,versions),
+    peers:candidate.players.map(player=>({id:player.id,seat:player.seat+1,latestVersion:known?.get(player.id)?.version,candidateAvailable:peers?.has(player.id)??false}))};
 }
 async function saved(_page:Page,code:string):Promise<Room>{
+  await expect.poll(()=>!!latestView(snapshots.get(code))).toBe(true);
+  // Pin once per read. Following a moving latest version while waiting for a
+  // private actor can starve even though that candidate's own frame has arrived.
+  const candidate=latestView(snapshots.get(code))!;
   let coherent:ReturnType<typeof completeViews>;
-  await expect.poll(()=>{coherent=completeViews(snapshots.get(code));return!!coherent;},{message:'all required private snapshots must describe one complete room version'}).toBe(true);
+  await expect.poll(()=>{
+    coherent=completeViews(candidate,snapshotVersions.get(code));snapshotWaits.set(code,snapshotWait(candidate,snapshots.get(code),snapshotVersions.get(code)));
+    return!!coherent;
+  },{message:`authorized actor snapshot for fixed room version ${candidate.version} must arrive`}).toBe(true);
   const {latest,views}=coherent!;
   const pending=latest.waitingFor?views.find(view=>view.selfId===latest.waitingFor)!.pending:undefined;
   const players=latest.players.map(player=>{const own=views.find(view=>view.selfId===player.id)?.players.find(p=>p.id===player.id);return {...player,hand:player.handCount===0?[]:own?.hand??[],selection:player.selected?(own?.selection?.length?own.selection:Array.from({length:latest.players.length===2?2:1},()=> 'locked')):[]};});
   return {code,hostId:latest.hostId,ownerId:latest.ownerId,version:latest.version,mode:latest.mode,createdAt:latest.createdAt??0,updatedAt:0,maxPlayers:latest.maxPlayers,timeoutSeconds:latest.timeoutSeconds,deadline:latest.deadline,game:{mode:latest.mode,phase:latest.phase,round:latest.round,players,deck:[],discard:[],draft:latest.draft,racers:latest.racers,baseTurnOrder:latest.baseTurnOrder,turn:0,turnCount:0,currentRacerId:latest.currentRacerId,pending,queue:[],logs:latest.logs,results:latest.results,rngState:0,randomLog:[],lastRoll:latest.lastRoll,track:latest.track,flags:{needsBegin:latest.turnStage==='starting',continuation:latest.turnStage==='resolving',awaitRoll:latest.turnStage==='roll'}}} as Room;
 }
 
-test('snapshot aggregation waits for the new private actor instead of combining independent versions',()=>{
-  const players=[{id:'a'},{id:'b'}] as RoomView['players'];
+test('snapshot aggregation waits only for its fixed private actor and never combines independent versions',()=>{
+  const players=[{id:'a',seat:0},{id:'b',seat:1},{id:'slow',seat:2}] as RoomView['players'];
   const view=(selfId:string,version:number,actor:string):RoomView=>({selfId,version,players,turnStage:'choice',waitingFor:actor,...(selfId===actor?{pending:{id:'choice-'+version,playerId:actor,kind:'alchemist',options:[]}}:{})}) as RoomView;
-  const known=new Map([['a',view('a',1,'a')],['b',view('b',1,'a')]]);expect(completeViews(known)?.latest.version).toBe(1);
-  known.set('a',view('a',2,'b'));expect(completeViews(known)).toBeUndefined();
-  known.set('b',view('b',2,'b'));expect(completeViews(known)?.views.find(v=>v.selfId==='b')?.pending?.id).toBe('choice-2');
-  known.set('b',view('b',3,'a'));expect(completeViews(known)).toBeUndefined();
-  known.set('a',view('a',3,'a'));expect(completeViews(known)?.views.find(v=>v.selfId==='a')?.pending?.id).toBe('choice-3');
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();
+  for(const id of ['a','b','slow'])rememberSnapshot(known,versions,view(id,1,'a'));
+  expect(completeViews(latestView(known),versions)?.latest.version).toBe(1);
+  rememberSnapshot(known,versions,view('a',2,'b'));const fixed=latestView(known)!;expect(completeViews(fixed,versions)).toBeUndefined();
+  rememberSnapshot(known,versions,view('a',3,'a'));expect(completeViews(fixed,versions)).toBeUndefined();
+  rememberSnapshot(known,versions,view('b',2,'b'));
+  const complete=completeViews(fixed,versions)!;expect(complete.latest.version).toBe(2);expect(complete.views.find(v=>v.selfId==='b')?.pending?.id).toBe('choice-2');
+  expect(known.get('slow')?.version).toBe(1);expect(snapshotWait(fixed,known,versions).requiredActorMissing).toBe(false);
+  rememberSnapshot(known,versions,view('b',4,'b'));expect(completeViews(fixed,versions)?.latest.version).toBe(2);
+});
+
+test('snapshot aggregation uses public progress immediately and keeps private history bounded',()=>{
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();
+  for(let version=1;version<=70;version++)rememberSnapshot(known,versions,{selfId:'public-reader',version,players:[{id:'slow',seat:0}],phase:'race',turnStage:'roll'} as RoomView);
+  const latest=latestView(known)!;expect(versions.size).toBe(64);expect(completeViews(latest,versions)?.latest.version).toBe(70);
+  expect(snapshotWait(latest,known,versions).peers[0]?.latestVersion).toBeUndefined();
 });
 
 for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
@@ -62,8 +105,9 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
   let latestPublicRoom:ReturnType<typeof publicRoom>|undefined;
   const uiSnapshots:unknown[]=[];
-  type UIAction={sequence:number;requestId:string;type:GameAction['type'];expectedVersion:number;result?:{ok:boolean;version?:number;error?:string}};
+  type UIAction={sequence:number;requestId:string;type:GameAction['type'];expectedVersion:number;acknowledgedAt?:number;result?:{ok:boolean;version?:number;error?:string}};
   const uiActions=new Map<Page,UIAction[]>();
+  let activeCode:string|undefined;
   const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
   let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};
   const mark=(stage:string,action:string,room?:Room,step=checkpoint.step)=>{checkpoint={stage,action,phase:room?.game.phase??checkpoint.phase,round:room?.game.round??checkpoint.round,step,version:room?.version??checkpoint.version,logId:room?.game.logs.at(-1)?.id??checkpoint.logId,elapsedMs:Date.now()-startedAt};};
@@ -91,7 +135,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
       expect(ws.url()).not.toMatch(/token=|playerId=/);
       ws.on('framesent',frame=>{try{const message=JSON.parse(String(frame.payload));if(message.type==='action'&&message.requestId&&message.envelope){actions.push({sequence:++sequence,requestId:message.requestId,type:message.envelope.action.type,expectedVersion:message.envelope.expectedVersion});if(actions.length>40)actions.shift();}}catch{/* Raw heartbeat frames are not actions. */}});
       ws.on('framereceived',frame=>{
-        try{const message=JSON.parse(String(frame.payload));if(message.type==='ack'){const action=actions.find(action=>action.requestId===message.requestId);if(action)action.result={ok:!!message.result.ok,version:message.result.version,error:message.result.error};return;}if(message.type!=='snapshot')return;const view=message.room as RoomView;const known=snapshots.get(view.code)??new Map<string,RoomView>();if((known.get(view.selfId)?.version??0)<=view.version)known.set(view.selfId,view);snapshots.set(view.code,known);
+        try{const message=JSON.parse(String(frame.payload));if(message.type==='ack'){const action=actions.find(action=>action.requestId===message.requestId);if(action){action.acknowledgedAt=Date.now();action.result={ok:!!message.result.ok,version:message.result.version,error:message.result.error};}return;}if(message.type!=='snapshot')return;const view=message.room as RoomView;const known=snapshots.get(view.code)??new Map<string,RoomView>(),versions=snapshotVersions.get(view.code)??new Map<number,Map<string,RoomView>>();rememberSnapshot(known,versions,view);snapshots.set(view.code,known);snapshotVersions.set(view.code,versions);
           for(const p of message.room.players)if(p.id!==message.room.selfId){if(p.hand!==undefined||p.selection!==undefined)errors.push('Other player private hand or selection leaked.');}
         }catch{/* Protocol errors are separately surfaced by the actual UI. */}
       });
@@ -107,7 +151,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
     const host=pages[0]!;
     mark('setup','create-room');
     await host.goto(url);await host.getByLabel('你的昵称').fill('浏览器计算房主');await host.getByLabel('房间人数上限').selectOption(String(n));await host.getByLabel('每次操作时限').selectOption('0');
-    await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;
+    await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;activeCode=code;
     await expect(host.getByText('已连接',{exact:true})).toBeVisible();
     for(let i=1;i<n;i++){
       mark('setup',`join-${i}`);
@@ -191,10 +235,15 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
     for(const p of pages)expect(await boundedRead(p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'layout-width read')).toBe(true);
   }catch(error){
     bodyFailed=true;
+    const observed=activeCode?latestView(snapshots.get(activeCode)):undefined;
     if(n===8)writeFileSync('test-results/browser-authority/diagnostics8.json',JSON.stringify({
       capturedAt:new Date().toISOString(),checkpoint:{...checkpoint,elapsedMs:Date.now()-startedAt},
       failure:{name:error instanceof Error?error.name:'Error',message:error instanceof Error?error.message.split('\n')[0]:String(error).split('\n')[0]},
-      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,uiActions:pages.map((page,seat)=>({seat:seat+1,actions:uiActions.get(page)?.slice(-6)})),
+      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,
+      snapshotWait:activeCode?snapshotWaits.get(activeCode):undefined,
+      observedSnapshots:observed?snapshotWait(observed,snapshots.get(observed.code),snapshotVersions.get(observed.code)):undefined,
+      lastAcknowledgement:[...uiActions.values()].flat().filter(action=>action.acknowledgedAt!==undefined).sort((a,b)=>a.acknowledgedAt!-b.acknowledgedAt!).at(-1),
+      uiActions:pages.map((page,seat)=>({seat:seat+1,actions:uiActions.get(page)?.slice(-6)})),
       limitations:'UI snapshots are cached before actions with a 2s read limit; failure capture does not query potentially frozen browser pages. No tokens, deck, RNG or private hands are included.',
     },null,2));
     console.error(`[relay-${n}] original-error ${error instanceof Error?error.stack??error.message:String(error)}\n[relay-${n}] last-checkpoint ${JSON.stringify({...checkpoint,elapsedMs:Date.now()-startedAt})}`);
