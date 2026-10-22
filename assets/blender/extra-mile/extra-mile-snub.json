@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-snub",
+  "node": "toy_extra-mile-snub",
+  "url": "/models/extra-mile/extra-mile-snub.glb",
+  "bytes": 47864,
+  "triangles": 3200,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.84,
+    0.40182
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-snub.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "pink elephant, large ears, short curled trunk and red striped shorts",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-snub.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

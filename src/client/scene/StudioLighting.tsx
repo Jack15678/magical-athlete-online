@@ -33,13 +33,13 @@ export function StudioLighting({ compact, lowQuality }: { compact: boolean; lowQ
     return () => { scene.environment = previous; scene.environmentIntensity = previousIntensity; environment.dispose(); };
   }, [gl, scene, invalidate, lowQuality]);
   return <>
-    <ambientLight intensity={.35} />
-    <hemisphereLight args={['#fff7e7', '#80a89a', .8]} />
-    <directionalLight color="#fff3de" position={[-9, 18, 10]} intensity={3.15} castShadow={!lowQuality}
+    <ambientLight intensity={.16} />
+    <hemisphereLight args={['#fff7e7', '#80a89a', .48]} />
+    <directionalLight color="#fff0d4" position={[-9, 18, 10]} intensity={2.8} castShadow={!lowQuality}
       shadow-mapSize={compact ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-21} shadow-camera-right={21}
       shadow-camera-top={21} shadow-camera-bottom={-21} shadow-camera-near={.5} shadow-camera-far={65}
       shadow-normalBias={.018} shadow-bias={-.00012} shadow-radius={2.5} shadow-intensity={.72} />
-    <directionalLight color="#d8f1ed" position={[8, 8, -7]} intensity={.55} />
+    <directionalLight color="#d8f1ed" position={[8, 8, -7]} intensity={.65} />
   </>;
 }
 

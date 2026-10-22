@@ -1,0 +1,30 @@
+{
+  "id": "leaf-triangle-man",
+  "node": "toy_leaf-triangle-man",
+  "url": "/models/leaf/leaf-triangle-man.glb",
+  "bytes": 27896,
+  "triangles": 1160,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.78,
+    0.22286
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/leaf/leaf-triangle-man.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / triangle-man",
+  "referenceDate": "2026-10-22",
+  "recognition": "solid yellow triangular prism with green sides, pink bow tie, short legs and black shoes",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts."
+}

@@ -1,7 +1,9 @@
-import { CHARACTERS, characterPool } from '../shared/characters.js';
+import { SECOND_WIND_CHARACTERS } from '../shared/second-wind.js';
+import { ORIGINAL_CHARACTERS, characterPool } from '../shared/characters.js';
 import { TRACKS, RACE_POINTS } from '../shared/tracks.js';
 import type { GameState, GameAction, GameMode, CharacterPool, Player, Racer, Task, PendingChoice, RaceResult } from '../shared/types.js';
 
+const CHARACTERS=[...ORIGINAL_CHARACTERS,...SECOND_WIND_CHARACTERS];
 // Every continuation is JSON data. No callback, socket, timer or future die lives
 // in the rules state, so the exact pending interaction survives a server restart.
 type Work = Task & Record<string, any>;

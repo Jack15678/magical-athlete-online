@@ -1,0 +1,5000 @@
+[
+  {
+    "id": "alchemist",
+    "mouth": "GEO-alchemist-09",
+    "mouthCentre": [
+      0.0,
+      0.36541,
+      0.16526
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.36968,
+          0.16325
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.36105,
+          0.16788
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.36968,
+          0.16325
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "baba-yaga",
+    "mouth": "GEO-baba-yaga-11",
+    "mouthCentre": [
+      0.0,
+      0.49427,
+      0.16911
+    ],
+    "width": 0.09741,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04144,
+          0.49879,
+          0.16699
+        ],
+        "skin": "GEO-baba-yaga-04",
+        "skinDepth": 0.1536,
+        "floatingGap": 0.01339,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.48968,
+          0.17187
+        ],
+        "skin": "GEO-baba-yaga-04",
+        "skinDepth": 0.1536,
+        "floatingGap": 0.01827,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04144,
+          0.49879,
+          0.16699
+        ],
+        "skin": "GEO-baba-yaga-04",
+        "skinDepth": 0.1536,
+        "floatingGap": 0.01339,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "banana",
+    "mouth": "GEO-banana-09",
+    "mouthCentre": [
+      0.08588,
+      0.4373,
+      0.07789
+    ],
+    "width": 0.07041,
+    "eyeMidX": 0.08588,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.05726,
+          0.44059,
+          0.0769
+        ],
+        "skin": "GEO-banana-02",
+        "skinDepth": 0.04783,
+        "floatingGap": 0.02907,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.08588,
+          0.4344,
+          0.08037
+        ],
+        "skin": "GEO-banana-02",
+        "skinDepth": 0.06143,
+        "floatingGap": 0.01894,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.1145,
+          0.44059,
+          0.0769
+        ],
+        "skin": "GEO-banana-02",
+        "skinDepth": 0.07227,
+        "floatingGap": 0.00463,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "blimp",
+    "mouth": "GEO-blimp-10",
+    "mouthCentre": [
+      0.08259,
+      0.40422,
+      0.15217
+    ],
+    "width": 0.06969,
+    "eyeMidX": 0.08259,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.05391,
+          0.40703,
+          0.15134
+        ],
+        "skin": "GEO-blimp-03",
+        "skinDepth": 0.15393,
+        "floatingGap": -0.0026,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.08259,
+          0.40153,
+          0.15446
+        ],
+        "skin": "GEO-blimp-03",
+        "skinDepth": 0.15011,
+        "floatingGap": 0.00435,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.11128,
+          0.40703,
+          0.15134
+        ],
+        "skin": "GEO-blimp-03",
+        "skinDepth": 0.14729,
+        "floatingGap": 0.00404,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "centaur",
+    "mouth": "GEO-centaur-15",
+    "mouthCentre": [
+      0.0,
+      0.74235,
+      0.2686
+    ],
+    "width": 0.07098,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.02883,
+          0.7456,
+          0.26758
+        ],
+        "skin": "GEO-centaur-10",
+        "skinDepth": 0.26306,
+        "floatingGap": 0.00452,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.73952,
+          0.27113
+        ],
+        "skin": "GEO-centaur-10",
+        "skinDepth": 0.26404,
+        "floatingGap": 0.00709,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02883,
+          0.7456,
+          0.26758
+        ],
+        "skin": "GEO-centaur-10",
+        "skinDepth": 0.26306,
+        "floatingGap": 0.00452,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "cheerleader",
+    "mouth": "GEO-cheerleader-12",
+    "mouthCentre": [
+      -0.00652,
+      0.49129,
+      0.12752
+    ],
+    "width": 0.07933,
+    "eyeMidX": -0.00652,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04026,
+          0.49497,
+          0.12806
+        ],
+        "skin": "GEO-cheerleader-03",
+        "skinDepth": 0.12426,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00652,
+          0.48756,
+          0.12831
+        ],
+        "skin": "GEO-cheerleader-03",
+        "skinDepth": 0.12517,
+        "floatingGap": 0.00314,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02723,
+          0.49497,
+          0.12806
+        ],
+        "skin": "GEO-cheerleader-03",
+        "skinDepth": 0.12426,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "coach",
+    "mouth": "GEO-coach-12",
+    "mouthCentre": [
+      0.0,
+      0.57218,
+      0.12274
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.57646,
+          0.12338
+        ],
+        "skin": "GEO-coach-03",
+        "skinDepth": 0.11961,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.56782,
+          0.12367
+        ],
+        "skin": "GEO-coach-03",
+        "skinDepth": 0.12067,
+        "floatingGap": 0.003,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.57646,
+          0.12338
+        ],
+        "skin": "GEO-coach-03",
+        "skinDepth": 0.11961,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "copycat",
+    "mouth": "GEO-copycat-10",
+    "mouthCentre": [
+      -0.13082,
+      0.64063,
+      0.16528
+    ],
+    "width": 0.06311,
+    "eyeMidX": -0.13082,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.15697,
+          0.64208,
+          0.16604
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.13082,
+          0.63973,
+          0.16661
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.10466,
+          0.64208,
+          0.16604
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "copycat",
+    "mouth": "GEO-copycat-19",
+    "mouthCentre": [
+      0.13082,
+      0.64063,
+      0.16528
+    ],
+    "width": 0.06311,
+    "eyeMidX": 0.13082,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.10466,
+          0.64208,
+          0.16604
+        ],
+        "skin": "GEO-copycat-12",
+        "skinDepth": 0.15724,
+        "floatingGap": 0.0088,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.13082,
+          0.63973,
+          0.16661
+        ],
+        "skin": "GEO-copycat-12",
+        "skinDepth": 0.15943,
+        "floatingGap": 0.00719,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.15697,
+          0.64208,
+          0.16604
+        ],
+        "skin": "GEO-copycat-12",
+        "skinDepth": 0.15724,
+        "floatingGap": 0.0088,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "dicemonger",
+    "mouth": "GEO-dicemonger-07",
+    "mouthCentre": [
+      0.0,
+      0.4406,
+      0.18923
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.44487,
+          0.18722
+        ],
+        "skin": "GEO-dicemonger-02",
+        "skinDepth": 0.16982,
+        "floatingGap": 0.0174,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.43624,
+          0.19185
+        ],
+        "skin": "GEO-dicemonger-02",
+        "skinDepth": 0.16982,
+        "floatingGap": 0.02203,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.44487,
+          0.18722
+        ],
+        "skin": "GEO-dicemonger-02",
+        "skinDepth": 0.16982,
+        "floatingGap": 0.0174,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "duelist",
+    "mouth": "GEO-duelist-12",
+    "mouthCentre": [
+      -0.00761,
+      0.55741,
+      0.14814
+    ],
+    "width": 0.09,
+    "eyeMidX": -0.00761,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0459,
+          0.56158,
+          0.14877
+        ],
+        "skin": "GEO-duelist-03",
+        "skinDepth": 0.14499,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00761,
+          0.55317,
+          0.14905
+        ],
+        "skin": "GEO-duelist-03",
+        "skinDepth": 0.14602,
+        "floatingGap": 0.00303,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03067,
+          0.56158,
+          0.14877
+        ],
+        "skin": "GEO-duelist-03",
+        "skinDepth": 0.14499,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "egg",
+    "mouth": "GEO-egg-08",
+    "mouthCentre": [
+      -0.0,
+      0.56795,
+      0.21416
+    ],
+    "width": 0.10558,
+    "eyeMidX": -0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04492,
+          0.57284,
+          0.21187
+        ],
+        "skin": "GEO-egg-02",
+        "skinDepth": 0.21365,
+        "floatingGap": -0.00179,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.56297,
+          0.21716
+        ],
+        "skin": "GEO-egg-02",
+        "skinDepth": 0.21796,
+        "floatingGap": -0.0008,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04492,
+          0.57284,
+          0.21187
+        ],
+        "skin": "GEO-egg-02",
+        "skinDepth": 0.21365,
+        "floatingGap": -0.00179,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "flip-flop",
+    "mouth": "GEO-flip-flop-05",
+    "mouthCentre": [
+      0.0,
+      0.23998,
+      0.0971
+    ],
+    "width": 0.08318,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.03513,
+          0.24352,
+          0.09504
+        ],
+        "skin": "GEO-flip-flop-00",
+        "skinDepth": 0.07851,
+        "floatingGap": 0.01653,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.23655,
+          0.0997
+        ],
+        "skin": "GEO-flip-flop-07",
+        "skinDepth": 0.13913,
+        "floatingGap": -0.03944,
+        "occluder": "GEO-flip-flop-07",
+        "occlusionDepth": 0.03944
+      },
+      {
+        "point": [
+          0.03513,
+          0.24352,
+          0.09504
+        ],
+        "skin": "GEO-flip-flop-07",
+        "skinDepth": 0.13121,
+        "floatingGap": -0.03617,
+        "occluder": "GEO-flip-flop-07",
+        "occlusionDepth": 0.03617
+      }
+    ]
+  },
+  {
+    "id": "genius",
+    "mouth": "GEO-genius-13",
+    "mouthCentre": [
+      0.00445,
+      0.28777,
+      0.1611
+    ],
+    "width": 0.07449,
+    "eyeMidX": 0.00445,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.02618,
+          0.29089,
+          0.1602
+        ],
+        "skin": "GEO-genius-02",
+        "skinDepth": 0.14698,
+        "floatingGap": 0.01323,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.00445,
+          0.28479,
+          0.16353
+        ],
+        "skin": "GEO-genius-02",
+        "skinDepth": 0.15461,
+        "floatingGap": 0.00893,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03508,
+          0.29089,
+          0.1602
+        ],
+        "skin": "GEO-genius-02",
+        "skinDepth": 0.14698,
+        "floatingGap": 0.01323,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "gunk",
+    "mouth": "GEO-gunk-14",
+    "mouthCentre": [
+      -0.00763,
+      0.42097,
+      0.20624
+    ],
+    "width": 0.1091,
+    "eyeMidX": -0.00763,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05404,
+          0.42602,
+          0.20387
+        ],
+        "skin": "GEO-gunk-00",
+        "skinDepth": 0.20363,
+        "floatingGap": 0.00024,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00763,
+          0.41583,
+          0.20934
+        ],
+        "skin": "GEO-gunk-00",
+        "skinDepth": 0.20717,
+        "floatingGap": 0.00217,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03878,
+          0.42602,
+          0.20387
+        ],
+        "skin": "GEO-gunk-00",
+        "skinDepth": 0.20363,
+        "floatingGap": 0.00024,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "hare",
+    "mouth": "GEO-hare-muzzle-mouth",
+    "mouthCentre": [
+      0.00653,
+      0.45598,
+      0.21454
+    ],
+    "width": 0.02646,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.00653,
+    "leftRightDepthDifference": 0.00599,
+    "samples": [
+      {
+        "point": [
+          -0.00469,
+          0.46141,
+          0.21675
+        ],
+        "skin": "GEO-hare-11",
+        "skinDepth": 0.20075,
+        "floatingGap": 0.016,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.00616,
+          0.45292,
+          0.21392
+        ],
+        "skin": "GEO-hare-muzzle1",
+        "skinDepth": 0.19921,
+        "floatingGap": 0.01472,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.01742,
+          0.44636,
+          0.21076
+        ],
+        "skin": "GEO-hare-muzzle1",
+        "skinDepth": 0.20204,
+        "floatingGap": 0.00872,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "hare",
+    "mouth": "GEO-hare-10",
+    "mouthCentre": [
+      0.0,
+      0.48017,
+      0.17023
+    ],
+    "width": 0.08298,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0353,
+          0.48402,
+          0.16843
+        ],
+        "skin": "GEO-hare-muzzle-1",
+        "skinDepth": 0.20489,
+        "floatingGap": -0.03646,
+        "occluder": "GEO-hare-muzzle-1",
+        "occlusionDepth": 0.03646
+      },
+      {
+        "point": [
+          0.0,
+          0.47626,
+          0.17259
+        ],
+        "skin": "GEO-hare-nose-tip",
+        "skinDepth": 0.23427,
+        "floatingGap": -0.06168,
+        "occluder": "GEO-hare-nose-tip",
+        "occlusionDepth": 0.06168
+      },
+      {
+        "point": [
+          0.0353,
+          0.48402,
+          0.16843
+        ],
+        "skin": "GEO-hare-muzzle1",
+        "skinDepth": 0.20489,
+        "floatingGap": -0.03646,
+        "occluder": "GEO-hare-muzzle1",
+        "occlusionDepth": 0.03646
+      }
+    ]
+  },
+  {
+    "id": "heckler",
+    "mouth": "GEO-heckler-09",
+    "mouthCentre": [
+      0.0037,
+      0.43582,
+      0.1819
+    ],
+    "width": 0.09303,
+    "eyeMidX": 0.0037,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0348,
+          0.43941,
+          0.18067
+        ],
+        "skin": "GEO-heckler-02",
+        "skinDepth": 0.17599,
+        "floatingGap": 0.00469,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0037,
+          0.43225,
+          0.18555
+        ],
+        "skin": "GEO-heckler-02",
+        "skinDepth": 0.18277,
+        "floatingGap": 0.00278,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04219,
+          0.43941,
+          0.18067
+        ],
+        "skin": "GEO-heckler-02",
+        "skinDepth": 0.17599,
+        "floatingGap": 0.00469,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "huge-baby",
+    "mouth": "GEO-huge-baby-08",
+    "mouthCentre": [
+      0.0,
+      0.52542,
+      0.19107
+    ],
+    "width": 0.1152,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04877,
+          0.53165,
+          0.18834
+        ],
+        "skin": "GEO-huge-baby-03",
+        "skinDepth": 0.17592,
+        "floatingGap": 0.01242,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.52035,
+          0.19492
+        ],
+        "skin": "GEO-huge-baby-03",
+        "skinDepth": 0.17704,
+        "floatingGap": 0.01788,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04877,
+          0.53165,
+          0.18834
+        ],
+        "skin": "GEO-huge-baby-03",
+        "skinDepth": 0.17592,
+        "floatingGap": 0.01242,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "inchworm",
+    "mouth": "GEO-inchworm-13",
+    "mouthCentre": [
+      0.16889,
+      0.51945,
+      0.11331
+    ],
+    "width": 0.05911,
+    "eyeMidX": 0.16889,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.14488,
+          0.52226,
+          0.11265
+        ],
+        "skin": "GEO-inchworm-08",
+        "skinDepth": 0.11585,
+        "floatingGap": -0.0032,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.16889,
+          0.5183,
+          0.11452
+        ],
+        "skin": "GEO-inchworm-08",
+        "skinDepth": 0.12064,
+        "floatingGap": -0.00612,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.1929,
+          0.52226,
+          0.11265
+        ],
+        "skin": "GEO-inchworm-08",
+        "skinDepth": 0.11998,
+        "floatingGap": -0.00733,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "lackey",
+    "mouth": "GEO-lackey-12",
+    "mouthCentre": [
+      0.0,
+      0.48829,
+      0.11399
+    ],
+    "width": 0.07866,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": -0.00272,
+    "samples": [
+      {
+        "point": [
+          -0.033,
+          0.48865,
+          0.11367
+        ],
+        "skin": "GEO-lackey-03",
+        "skinDepth": 0.11062,
+        "floatingGap": 0.00305,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00012,
+          0.48361,
+          0.11599
+        ],
+        "skin": "GEO-lackey-03",
+        "skinDepth": 0.11218,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0332,
+          0.4933,
+          0.11639
+        ],
+        "skin": "GEO-lackey-03",
+        "skinDepth": 0.11255,
+        "floatingGap": 0.00385,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaptoad",
+    "mouth": "GEO-leaptoad-09",
+    "mouthCentre": [
+      0.0,
+      0.51794,
+      0.05984
+    ],
+    "width": 0.14364,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.06171,
+          0.52379,
+          0.05692
+        ],
+        "skin": "GEO-leaptoad-03",
+        "skinDepth": 0.02161,
+        "floatingGap": 0.03531,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.5132,
+          0.06405
+        ],
+        "skin": "GEO-leaptoad-02",
+        "skinDepth": 0.05158,
+        "floatingGap": 0.01247,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.06171,
+          0.52379,
+          0.05692
+        ],
+        "skin": "GEO-leaptoad-04",
+        "skinDepth": 0.02161,
+        "floatingGap": 0.03531,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "legs",
+    "mouth": "GEO-legs-09",
+    "mouthCentre": [
+      0.0,
+      0.70839,
+      0.1745
+    ],
+    "width": 0.0873,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.03631,
+          0.7115,
+          0.17362
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.70517,
+          0.17711
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03631,
+          0.7115,
+          0.17362
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "lovable-loser",
+    "mouth": "GEO-lovable-loser-12",
+    "mouthCentre": [
+      0.0,
+      0.57218,
+      0.13605
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.57646,
+          0.13669
+        ],
+        "skin": "GEO-lovable-loser-03",
+        "skinDepth": 0.13292,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.56782,
+          0.13698
+        ],
+        "skin": "GEO-lovable-loser-03",
+        "skinDepth": 0.13398,
+        "floatingGap": 0.003,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.57646,
+          0.13669
+        ],
+        "skin": "GEO-lovable-loser-03",
+        "skinDepth": 0.13292,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "magician",
+    "mouth": "GEO-magician-12",
+    "mouthCentre": [
+      -0.00258,
+      0.56718,
+      0.15431
+    ],
+    "width": 0.09158,
+    "eyeMidX": -0.00258,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04154,
+          0.57142,
+          0.15494
+        ],
+        "skin": "GEO-magician-03",
+        "skinDepth": 0.15117,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00258,
+          0.56286,
+          0.15523
+        ],
+        "skin": "GEO-magician-03",
+        "skinDepth": 0.15222,
+        "floatingGap": 0.00301,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03638,
+          0.57142,
+          0.15494
+        ],
+        "skin": "GEO-magician-03",
+        "skinDepth": 0.15117,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mastermind",
+    "mouth": "GEO-mastermind-07",
+    "mouthCentre": [
+      0.0,
+      0.47819,
+      0.15351
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.48247,
+          0.1515
+        ],
+        "skin": "GEO-mastermind-02",
+        "skinDepth": 0.1388,
+        "floatingGap": 0.0127,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.47384,
+          0.15613
+        ],
+        "skin": "GEO-mastermind-02",
+        "skinDepth": 0.1388,
+        "floatingGap": 0.01733,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.48247,
+          0.1515
+        ],
+        "skin": "GEO-mastermind-02",
+        "skinDepth": 0.1388,
+        "floatingGap": 0.0127,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mouth",
+    "mouth": "GEO-GEO-mouth-17-glint",
+    "mouthCentre": [
+      -0.11709,
+      0.73081,
+      0.07171
+    ],
+    "width": 0.01347,
+    "eyeMidX": null,
+    "centreDeltaX": null,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.12318,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.11709,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.111,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mouth",
+    "mouth": "GEO-GEO-mouth-19-glint",
+    "mouthCentre": [
+      0.12705,
+      0.73081,
+      0.07171
+    ],
+    "width": 0.01347,
+    "eyeMidX": null,
+    "centreDeltaX": null,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.12096,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.12705,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.13314,
+          0.73081,
+          0.07171
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mouth",
+    "mouth": "GEO-mouth-20",
+    "mouthCentre": [
+      -0.0,
+      0.62968,
+      0.04024
+    ],
+    "width": 0.12906,
+    "eyeMidX": -0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05498,
+          0.63562,
+          0.03729
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.62499,
+          0.04442
+        ],
+        "skin": "GEO-mouth-02",
+        "skinDepth": -0.0107,
+        "floatingGap": 0.05513,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05498,
+          0.63562,
+          0.03729
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "party-animal",
+    "mouth": "GEO-party-animal-12",
+    "mouthCentre": [
+      0.0,
+      0.55052,
+      0.13491
+    ],
+    "width": 0.08745,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0372,
+          0.55457,
+          0.13301
+        ],
+        "skin": "GEO-party-animal-13",
+        "skinDepth": 0.18935,
+        "floatingGap": -0.05635,
+        "occluder": "GEO-party-animal-13",
+        "occlusionDepth": 0.05635
+      },
+      {
+        "point": [
+          -0.0,
+          0.5464,
+          0.13739
+        ],
+        "skin": "GEO-party-animal-13",
+        "skinDepth": 0.20119,
+        "floatingGap": -0.0638,
+        "occluder": "GEO-party-animal-13",
+        "occlusionDepth": 0.0638
+      },
+      {
+        "point": [
+          0.0372,
+          0.55457,
+          0.13301
+        ],
+        "skin": "GEO-party-animal-13",
+        "skinDepth": 0.18935,
+        "floatingGap": -0.05635,
+        "occluder": "GEO-party-animal-13",
+        "occlusionDepth": 0.05635
+      }
+    ]
+  },
+  {
+    "id": "rocket-scientist",
+    "mouth": "GEO-rocket-scientist-09",
+    "mouthCentre": [
+      0.0,
+      0.43627,
+      0.15166
+    ],
+    "width": 0.05738,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.02337,
+          0.43874,
+          0.15101
+        ],
+        "skin": "GEO-rocket-scientist-04",
+        "skinDepth": 0.13736,
+        "floatingGap": 0.01366,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.43536,
+          0.15284
+        ],
+        "skin": "GEO-rocket-scientist-04",
+        "skinDepth": 0.13736,
+        "floatingGap": 0.01548,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02337,
+          0.43874,
+          0.15101
+        ],
+        "skin": "GEO-rocket-scientist-04",
+        "skinDepth": 0.13736,
+        "floatingGap": 0.01366,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "romantic",
+    "mouth": "GEO-romantic-07",
+    "mouthCentre": [
+      -0.01711,
+      0.53333,
+      0.11685
+    ],
+    "width": 0.09442,
+    "eyeMidX": -0.01711,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05687,
+          0.53757,
+          0.11416
+        ],
+        "skin": "GEO-romantic-02",
+        "skinDepth": 0.09985,
+        "floatingGap": 0.01431,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.01711,
+          0.52924,
+          0.11954
+        ],
+        "skin": "GEO-romantic-02",
+        "skinDepth": 0.09985,
+        "floatingGap": 0.01969,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02265,
+          0.53757,
+          0.11416
+        ],
+        "skin": "GEO-romantic-02",
+        "skinDepth": 0.09985,
+        "floatingGap": 0.01431,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "scoocher",
+    "mouth": "GEO-scoocher-08",
+    "mouthCentre": [
+      -0.05639,
+      0.5469,
+      0.14399
+    ],
+    "width": 0.07461,
+    "eyeMidX": -0.05639,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.08682,
+          0.55044,
+          0.14301
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.05639,
+          0.54367,
+          0.14654
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.02597,
+          0.55044,
+          0.14301
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "sisyphus",
+    "mouth": "GEO-sisyphus-08",
+    "mouthCentre": [
+      -0.18328,
+      0.50375,
+      0.15901
+    ],
+    "width": 0.05587,
+    "eyeMidX": -0.18328,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.20614,
+          0.50557,
+          0.15766
+        ],
+        "skin": "GEO-sisyphus-03",
+        "skinDepth": 0.16254,
+        "floatingGap": -0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.18328,
+          0.50392,
+          0.16081
+        ],
+        "skin": "GEO-sisyphus-03",
+        "skinDepth": 0.16418,
+        "floatingGap": -0.00336,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.16043,
+          0.50557,
+          0.15766
+        ],
+        "skin": "GEO-sisyphus-03",
+        "skinDepth": 0.16254,
+        "floatingGap": -0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "skipper",
+    "mouth": "GEO-skipper-12",
+    "mouthCentre": [
+      0.0,
+      0.57218,
+      0.14817
+    ],
+    "width": 0.09239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0393,
+          0.57646,
+          0.14881
+        ],
+        "skin": "GEO-skipper-03",
+        "skinDepth": 0.14504,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.56782,
+          0.1491
+        ],
+        "skin": "GEO-skipper-03",
+        "skinDepth": 0.1461,
+        "floatingGap": 0.003,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0393,
+          0.57646,
+          0.14881
+        ],
+        "skin": "GEO-skipper-03",
+        "skinDepth": 0.14504,
+        "floatingGap": 0.00377,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "stickler",
+    "mouth": "GEO-stickler-08",
+    "mouthCentre": [
+      -0.00552,
+      0.61642,
+      0.13306
+    ],
+    "width": 0.07673,
+    "eyeMidX": -0.00552,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0367,
+          0.61934,
+          0.13153
+        ],
+        "skin": "GEO-stickler-02",
+        "skinDepth": 0.11467,
+        "floatingGap": 0.01686,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00552,
+          0.61359,
+          0.13597
+        ],
+        "skin": "GEO-stickler-02",
+        "skinDepth": 0.11467,
+        "floatingGap": 0.0213,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02566,
+          0.61934,
+          0.13153
+        ],
+        "skin": "GEO-stickler-02",
+        "skinDepth": 0.11467,
+        "floatingGap": 0.01686,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "suckerfish",
+    "mouth": "GEO-suckerfish-09",
+    "mouthCentre": [
+      0.07119,
+      0.41485,
+      0.11845
+    ],
+    "width": 0.07038,
+    "eyeMidX": 0.07119,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.04248,
+          0.418,
+          0.1172
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": "GEO-suckerfish-02",
+        "occlusionDepth": 0.01676
+      },
+      {
+        "point": [
+          0.07119,
+          0.41167,
+          0.12097
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09991,
+          0.418,
+          0.1172
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "third-wheel",
+    "mouth": "GEO-third-wheel-11",
+    "mouthCentre": [
+      0.0,
+      0.62439,
+      0.13063
+    ],
+    "width": 0.07765,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.03179,
+          0.62781,
+          0.12964
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.6212,
+          0.13323
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03179,
+          0.62781,
+          0.12964
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "twin",
+    "mouth": "GEO-twin-08",
+    "mouthCentre": [
+      -0.14482,
+      0.68723,
+      0.14871
+    ],
+    "width": 0.0661,
+    "eyeMidX": -0.14482,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.17218,
+          0.68952,
+          0.14743
+        ],
+        "skin": "GEO-twin-03",
+        "skinDepth": 0.14238,
+        "floatingGap": 0.00504,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.14482,
+          0.68693,
+          0.15063
+        ],
+        "skin": "GEO-twin-03",
+        "skinDepth": 0.14529,
+        "floatingGap": 0.00533,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.11746,
+          0.68952,
+          0.14743
+        ],
+        "skin": "GEO-twin-03",
+        "skinDepth": 0.14238,
+        "floatingGap": 0.00504,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "twin",
+    "mouth": "GEO-twin-15",
+    "mouthCentre": [
+      0.14482,
+      0.68723,
+      0.14871
+    ],
+    "width": 0.0661,
+    "eyeMidX": 0.14482,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.11746,
+          0.68952,
+          0.14743
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.14482,
+          0.68693,
+          0.15063
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.17218,
+          0.68952,
+          0.14743
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "bite-mark",
+    "mouth": "GEO-bite-mark-smile-22",
+    "mouthCentre": [
+      0.0,
+      0.50854,
+      0.14612
+    ],
+    "width": 0.20021,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09433,
+          0.5245,
+          0.14097
+        ],
+        "skin": "GEO-bite-mark-face-8",
+        "skinDepth": 0.13829,
+        "floatingGap": 0.00268,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.49131,
+          0.1516
+        ],
+        "skin": "GEO-bite-mark-face-8",
+        "skinDepth": 0.14679,
+        "floatingGap": 0.00481,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09433,
+          0.5245,
+          0.14097
+        ],
+        "skin": "GEO-bite-mark-face-8",
+        "skinDepth": 0.13829,
+        "floatingGap": 0.00268,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "blunderdog",
+    "mouth": "GEO-blunderdog-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.49137,
+      0.13445
+    ],
+    "width": 0.19017,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": -0.06952,
+    "samples": [
+      {
+        "point": [
+          -0.08959,
+          0.50653,
+          0.09558
+        ],
+        "skin": "GEO-blunderdog-head-6",
+        "skinDepth": 0.09182,
+        "floatingGap": 0.00376,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.475,
+          0.10307
+        ],
+        "skin": "GEO-blunderdog-head-6",
+        "skinDepth": 0.09833,
+        "floatingGap": 0.00473,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.08959,
+          0.50653,
+          0.1651
+        ],
+        "skin": "GEO-blunderdog-head-6",
+        "skinDepth": 0.09182,
+        "floatingGap": 0.07328,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "cheatah",
+    "mouth": "GEO-cheatah-smile-17",
+    "mouthCentre": [
+      0.01105,
+      0.48729,
+      0.1369
+    ],
+    "width": 0.19184,
+    "eyeMidX": 0.01105,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": -0.07661,
+    "samples": [
+      {
+        "point": [
+          -0.07933,
+          0.50259,
+          0.09416
+        ],
+        "skin": "GEO-cheatah-head-6",
+        "skinDepth": 0.09034,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.01105,
+          0.47078,
+          0.10024
+        ],
+        "skin": "GEO-cheatah-head-6",
+        "skinDepth": 0.09542,
+        "floatingGap": 0.00482,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.10144,
+          0.50259,
+          0.17077
+        ],
+        "skin": "GEO-cheatah-cheetah-muzzle-20",
+        "skinDepth": 0.17334,
+        "floatingGap": -0.00257,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "diva",
+    "mouth": "GEO-diva-lips-26",
+    "mouthCentre": [
+      -0.02877,
+      0.57534,
+      0.13644
+    ],
+    "width": 0.13973,
+    "eyeMidX": null,
+    "centreDeltaX": null,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.08716,
+          0.57534,
+          0.13644
+        ],
+        "skin": "GEO-diva-diva-head-6",
+        "skinDepth": 0.10262,
+        "floatingGap": 0.03382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.02877,
+          0.57534,
+          0.13644
+        ],
+        "skin": "GEO-diva-diva-head-6",
+        "skinDepth": 0.11251,
+        "floatingGap": 0.02393,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02963,
+          0.57534,
+          0.13644
+        ],
+        "skin": "GEO-diva-diva-head-6",
+        "skinDepth": 0.10262,
+        "floatingGap": 0.03382,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "gloth",
+    "mouth": "GEO-gloth-goth-mouth-19",
+    "mouthCentre": [
+      0.0,
+      0.58181,
+      0.18327
+    ],
+    "width": 0.06788,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.02814,
+          0.58181,
+          0.18327
+        ],
+        "skin": "GEO-gloth-pale-face-7",
+        "skinDepth": 0.15235,
+        "floatingGap": 0.03092,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.58181,
+          0.18327
+        ],
+        "skin": "GEO-gloth-pale-face-7",
+        "skinDepth": 0.15491,
+        "floatingGap": 0.02835,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02814,
+          0.58181,
+          0.18327
+        ],
+        "skin": "GEO-gloth-pale-face-7",
+        "skinDepth": 0.15235,
+        "floatingGap": 0.03092,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "hopfrog",
+    "mouth": "GEO-hopfrog-smile-15",
+    "mouthCentre": [
+      0.0,
+      0.4347,
+      0.13573
+    ],
+    "width": 0.37148,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.18395,
+          0.4515,
+          0.11186
+        ],
+        "skin": "GEO-hopfrog-wide-frog-face-6",
+        "skinDepth": 0.10796,
+        "floatingGap": 0.0039,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.41806,
+          0.15875
+        ],
+        "skin": "GEO-hopfrog-wide-frog-face-6",
+        "skinDepth": 0.15408,
+        "floatingGap": 0.00467,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.18395,
+          0.4515,
+          0.11186
+        ],
+        "skin": "GEO-hopfrog-wide-frog-face-6",
+        "skinDepth": 0.10796,
+        "floatingGap": 0.0039,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "icarus",
+    "mouth": "GEO-icarus-smile-16",
+    "mouthCentre": [
+      0.0,
+      0.41835,
+      0.09997
+    ],
+    "width": 0.15921,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.07501,
+          0.43105,
+          0.09599
+        ],
+        "skin": "GEO-icarus-head-6",
+        "skinDepth": 0.09246,
+        "floatingGap": 0.00353,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.40465,
+          0.10331
+        ],
+        "skin": "GEO-icarus-head-6",
+        "skinDepth": 0.09944,
+        "floatingGap": 0.00387,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.07501,
+          0.43105,
+          0.09599
+        ],
+        "skin": "GEO-icarus-head-6",
+        "skinDepth": 0.09246,
+        "floatingGap": 0.00353,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "kingtripper",
+    "mouth": "GEO-kingtripper-smile-10",
+    "mouthCentre": [
+      -0.00187,
+      0.55851,
+      0.1619
+    ],
+    "width": 0.27591,
+    "eyeMidX": -0.00187,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": -0.10125,
+    "samples": [
+      {
+        "point": [
+          -0.13704,
+          0.57671,
+          0.11159
+        ],
+        "skin": "GEO-kingtripper-lizard-head-2",
+        "skinDepth": 0.10754,
+        "floatingGap": 0.00405,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00187,
+          0.54067,
+          0.18907
+        ],
+        "skin": "GEO-kingtripper-lizard-head-2",
+        "skinDepth": 0.13162,
+        "floatingGap": 0.05744,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.13329,
+          0.57671,
+          0.21284
+        ],
+        "skin": "GEO-kingtripper-lizard-head-2",
+        "skinDepth": 0.10754,
+        "floatingGap": 0.1053,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "le-saboteur",
+    "mouth": "GEO-le-saboteur-smile-18",
+    "mouthCentre": [
+      0.00396,
+      0.55465,
+      0.18537
+    ],
+    "width": 0.32679,
+    "eyeMidX": 0.00396,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": -0.10989,
+    "samples": [
+      {
+        "point": [
+          -0.1571,
+          0.57267,
+          0.1303
+        ],
+        "skin": "GEO-le-saboteur-croc-head-6",
+        "skinDepth": 0.12622,
+        "floatingGap": 0.00409,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.00396,
+          0.53688,
+          0.19507
+        ],
+        "skin": "GEO-le-saboteur-croc-snout-7",
+        "skinDepth": 0.19425,
+        "floatingGap": 0.00082,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.16502,
+          0.57267,
+          0.24019
+        ],
+        "skin": "GEO-le-saboteur-croc-snout-7",
+        "skinDepth": 0.23657,
+        "floatingGap": 0.00363,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "magical-athlete",
+    "mouth": "GEO-magical-athlete-smile-17",
+    "mouthCentre": [
+      0.01248,
+      0.49611,
+      0.12479
+    ],
+    "width": 0.19532,
+    "eyeMidX": 0.01248,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.07954,
+          0.51168,
+          0.12132
+        ],
+        "skin": "GEO-magical-athlete-head-6",
+        "skinDepth": 0.11751,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.01248,
+          0.4793,
+          0.12751
+        ],
+        "skin": "GEO-magical-athlete-head-6",
+        "skinDepth": 0.12267,
+        "floatingGap": 0.00483,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.1045,
+          0.51168,
+          0.12132
+        ],
+        "skin": "GEO-magical-athlete-head-6",
+        "skinDepth": 0.11751,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mr-dice-guy",
+    "mouth": "GEO-mr-dice-guy-smile-17",
+    "mouthCentre": [
+      -0.00374,
+      0.4519,
+      0.11403
+    ],
+    "width": 0.17791,
+    "eyeMidX": -0.00374,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.08756,
+          0.46609,
+          0.11087
+        ],
+        "skin": "GEO-mr-dice-guy-head-6",
+        "skinDepth": 0.10704,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00374,
+          0.43659,
+          0.1165
+        ],
+        "skin": "GEO-mr-dice-guy-head-6",
+        "skinDepth": 0.11174,
+        "floatingGap": 0.00476,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.08008,
+          0.46609,
+          0.11087
+        ],
+        "skin": "GEO-mr-dice-guy-head-6",
+        "skinDepth": 0.10704,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mush",
+    "mouth": "GEO-mush-mouth-13",
+    "mouthCentre": [
+      -0.1328,
+      0.6141,
+      0.15058
+    ],
+    "width": 0.18684,
+    "eyeMidX": -0.14773,
+    "centreDeltaX": 0.01493,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.21089,
+          0.6141,
+          0.15058
+        ],
+        "skin": "GEO-mush-absorbed-face-6",
+        "skinDepth": 0.13446,
+        "floatingGap": 0.01612,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.1328,
+          0.6141,
+          0.15058
+        ],
+        "skin": "GEO-mush-absorbed-face-6",
+        "skinDepth": 0.15451,
+        "floatingGap": -0.00393,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.05472,
+          0.6141,
+          0.15058
+        ],
+        "skin": "GEO-mush-absorbed-face-6",
+        "skinDepth": 0.13446,
+        "floatingGap": 0.01612,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mush",
+    "mouth": "GEO-mush-mouth-21",
+    "mouthCentre": [
+      0.12364,
+      0.52847,
+      0.24904
+    ],
+    "width": 0.19783,
+    "eyeMidX": 0.09434,
+    "centreDeltaX": 0.02931,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.04097,
+          0.52847,
+          0.24904
+        ],
+        "skin": "GEO-mush-absorbed-face-14",
+        "skinDepth": 0.23197,
+        "floatingGap": 0.01707,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.12364,
+          0.52847,
+          0.24904
+        ],
+        "skin": "GEO-mush-absorbed-face-14",
+        "skinDepth": 0.2532,
+        "floatingGap": -0.00416,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.20632,
+          0.52847,
+          0.24904
+        ],
+        "skin": "GEO-mush-absorbed-face-14",
+        "skinDepth": 0.23197,
+        "floatingGap": 0.01707,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mush",
+    "mouth": "GEO-mush-mouth-29",
+    "mouthCentre": [
+      0.16944,
+      0.79499,
+      0.03381
+    ],
+    "width": 0.13189,
+    "eyeMidX": 0.16944,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.11432,
+          0.79499,
+          0.03381
+        ],
+        "skin": "GEO-mush-absorbed-face-22",
+        "skinDepth": 0.02089,
+        "floatingGap": 0.01292,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.16944,
+          0.79499,
+          0.03381
+        ],
+        "skin": "GEO-mush-absorbed-face-22",
+        "skinDepth": 0.0373,
+        "floatingGap": -0.00349,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.22456,
+          0.79499,
+          0.03381
+        ],
+        "skin": "GEO-mush-absorbed-face-22",
+        "skinDepth": 0.02089,
+        "floatingGap": 0.01292,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "mush",
+    "mouth": "GEO-mush-mouth-37",
+    "mouthCentre": [
+      -0.06869,
+      0.86551,
+      0.01091
+    ],
+    "width": 0.10991,
+    "eyeMidX": -0.06869,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.11462,
+          0.86551,
+          0.01091
+        ],
+        "skin": "GEO-mush-absorbed-face-30",
+        "skinDepth": 0.00014,
+        "floatingGap": 0.01077,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.06869,
+          0.86551,
+          0.01091
+        ],
+        "skin": "GEO-mush-absorbed-face-30",
+        "skinDepth": 0.01382,
+        "floatingGap": -0.00291,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.02276,
+          0.86551,
+          0.01091
+        ],
+        "skin": "GEO-mush-absorbed-face-30",
+        "skinDepth": 0.00014,
+        "floatingGap": 0.01077,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "nemesis",
+    "mouth": "GEO-nemesis-open-mouth-14",
+    "mouthCentre": [
+      -0.01773,
+      0.56559,
+      0.16584
+    ],
+    "width": 0.05752,
+    "eyeMidX": -0.01773,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04158,
+          0.56559,
+          0.16584
+        ],
+        "skin": "GEO-nemesis-statue-face-6",
+        "skinDepth": 0.12378,
+        "floatingGap": 0.04206,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.01773,
+          0.56559,
+          0.16584
+        ],
+        "skin": "GEO-nemesis-statue-face-6",
+        "skinDepth": 0.12625,
+        "floatingGap": 0.0396,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.00611,
+          0.56559,
+          0.16584
+        ],
+        "skin": "GEO-nemesis-statue-face-6",
+        "skinDepth": 0.12378,
+        "floatingGap": 0.04206,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "overtaker",
+    "mouth": "GEO-overtaker-smile-18",
+    "mouthCentre": [
+      -0.012,
+      0.47971,
+      0.13789
+    ],
+    "width": 0.18256,
+    "eyeMidX": -0.012,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": -0.04877,
+    "samples": [
+      {
+        "point": [
+          -0.09801,
+          0.49427,
+          0.11016
+        ],
+        "skin": "GEO-overtaker-head-6",
+        "skinDepth": 0.1067,
+        "floatingGap": 0.00346,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.012,
+          0.464,
+          0.11856
+        ],
+        "skin": "GEO-overtaker-head-6",
+        "skinDepth": 0.11471,
+        "floatingGap": 0.00386,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.07401,
+          0.49427,
+          0.15893
+        ],
+        "skin": "GEO-overtaker-blue-snout-11",
+        "skinDepth": 0.15834,
+        "floatingGap": 0.0006,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "party-pooper",
+    "mouth": "GEO-party-pooper-grumpy-mouth-21",
+    "mouthCentre": [
+      0.0,
+      0.49221,
+      0.15794
+    ],
+    "width": 0.11932,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05611,
+          0.48499,
+          0.15403
+        ],
+        "skin": "GEO-party-pooper-cat-muzzle-13",
+        "skinDepth": 0.11486,
+        "floatingGap": 0.03917,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.50025,
+          0.16197
+        ],
+        "skin": "GEO-party-pooper-cat-muzzle-13",
+        "skinDepth": 0.16643,
+        "floatingGap": -0.00446,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05611,
+          0.48499,
+          0.15403
+        ],
+        "skin": "GEO-party-pooper-cat-muzzle-13",
+        "skinDepth": 0.11486,
+        "floatingGap": 0.03917,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "re-runner",
+    "mouth": "GEO-re-runner-smile-22",
+    "mouthCentre": [
+      0.0,
+      0.54198,
+      0.11726
+    ],
+    "width": 0.21338,
+    "eyeMidX": null,
+    "centreDeltaX": null,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.10053,
+          0.55899,
+          0.11347
+        ],
+        "skin": "GEO-re-runner-head-6",
+        "skinDepth": 0.10968,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.52362,
+          0.12023
+        ],
+        "skin": "GEO-re-runner-head-6",
+        "skinDepth": 0.11532,
+        "floatingGap": 0.00491,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.10053,
+          0.55899,
+          0.11347
+        ],
+        "skin": "GEO-re-runner-head-6",
+        "skinDepth": 0.10968,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "soulmate",
+    "mouth": "GEO-soulmate-joyful-mouth-20",
+    "mouthCentre": [
+      -0.01028,
+      0.5079,
+      0.15806
+    ],
+    "width": 0.22768,
+    "eyeMidX": -0.01028,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.10544,
+          0.5079,
+          0.15806
+        ],
+        "skin": "GEO-soulmate-muzzle-13",
+        "skinDepth": 0.10895,
+        "floatingGap": 0.04911,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.01028,
+          0.5079,
+          0.15806
+        ],
+        "skin": "GEO-soulmate-muzzle-13",
+        "skinDepth": 0.1403,
+        "floatingGap": 0.01776,
+        "occluder": "GEO-soulmate-tongue-21",
+        "occlusionDepth": 0.03
+      },
+      {
+        "point": [
+          0.08487,
+          0.5079,
+          0.15806
+        ],
+        "skin": "GEO-soulmate-muzzle-13",
+        "skinDepth": 0.10895,
+        "floatingGap": 0.04911,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "spoilsport",
+    "mouth": "GEO-spoilsport-crying-mouth-25",
+    "mouthCentre": [
+      0.0,
+      0.43525,
+      0.17053
+    ],
+    "width": 0.13239,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05533,
+          0.43525,
+          0.17053
+        ],
+        "skin": "GEO-spoilsport-torso-5",
+        "skinDepth": 0.09126,
+        "floatingGap": 0.07927,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.43525,
+          0.17053
+        ],
+        "skin": "GEO-spoilsport-pig-head-11",
+        "skinDepth": 0.10094,
+        "floatingGap": 0.06959,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05533,
+          0.43525,
+          0.17053
+        ],
+        "skin": "GEO-spoilsport-torso-5",
+        "skinDepth": 0.09126,
+        "floatingGap": 0.07927,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "streaker",
+    "mouth": "GEO-streaker-smile-16",
+    "mouthCentre": [
+      0.04465,
+      0.42077,
+      0.10279
+    ],
+    "width": 0.1373,
+    "eyeMidX": 0.04465,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.018,
+          0.43661,
+          0.0987
+        ],
+        "skin": "GEO-streaker-long-pale-body-1",
+        "skinDepth": 0.08369,
+        "floatingGap": 0.01501,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04465,
+          0.40434,
+          0.10694
+        ],
+        "skin": "GEO-streaker-long-pale-body-1",
+        "skinDepth": 0.09552,
+        "floatingGap": 0.01143,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.1073,
+          0.43661,
+          0.0987
+        ],
+        "skin": "GEO-streaker-long-pale-body-1",
+        "skinDepth": 0.08369,
+        "floatingGap": 0.01501,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "stunner",
+    "mouth": "GEO-stunner-red-lips-18",
+    "mouthCentre": [
+      0.06469,
+      0.43993,
+      0.23536
+    ],
+    "width": 0.11868,
+    "eyeMidX": 0.06469,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          0.01509,
+          0.43993,
+          0.23536
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.06469,
+          0.43993,
+          0.23536
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.11429,
+          0.43993,
+          0.23536
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "switcharoo",
+    "mouth": "GEO-switcharoo-centred-smile-5",
+    "mouthCentre": [
+      -0.06611,
+      0.61359,
+      0.21522
+    ],
+    "width": 0.14585,
+    "eyeMidX": null,
+    "centreDeltaX": null,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.13112,
+          0.62162,
+          0.21293
+        ],
+        "skin": "GEO-switcharoo-kangaroo-snout-4",
+        "skinDepth": 0.20946,
+        "floatingGap": 0.00347,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.06611,
+          0.60283,
+          0.21803
+        ],
+        "skin": "GEO-switcharoo-kangaroo-snout-4",
+        "skinDepth": 0.214,
+        "floatingGap": 0.00402,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00111,
+          0.62162,
+          0.21293
+        ],
+        "skin": "GEO-switcharoo-kangaroo-snout-4",
+        "skinDepth": 0.20946,
+        "floatingGap": 0.00347,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "understudy",
+    "mouth": "GEO-understudy-smile-18",
+    "mouthCentre": [
+      0.04516,
+      0.46959,
+      0.14255
+    ],
+    "width": 0.17578,
+    "eyeMidX": 0.04516,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.03766,
+          0.4836,
+          0.1389
+        ],
+        "skin": "GEO-understudy-head-6",
+        "skinDepth": 0.11459,
+        "floatingGap": 0.02431,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04516,
+          0.45446,
+          0.14635
+        ],
+        "skin": "GEO-understudy-head-6",
+        "skinDepth": 0.12268,
+        "floatingGap": 0.02367,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.12797,
+          0.4836,
+          0.1389
+        ],
+        "skin": "GEO-understudy-head-6",
+        "skinDepth": 0.11459,
+        "floatingGap": 0.02431,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-cletus",
+    "mouth": "GEO-extra-mile-cletus-smile-17",
+    "mouthCentre": [
+      -0.04184,
+      0.4523,
+      0.11022
+    ],
+    "width": 0.17807,
+    "eyeMidX": -0.04184,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.12573,
+          0.4665,
+          0.10706
+        ],
+        "skin": "GEO-extra-mile-cletus-head-6",
+        "skinDepth": 0.10323,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.04184,
+          0.43697,
+          0.1127
+        ],
+        "skin": "GEO-extra-mile-cletus-head-6",
+        "skinDepth": 0.10794,
+        "floatingGap": 0.00476,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04206,
+          0.4665,
+          0.10706
+        ],
+        "skin": "GEO-extra-mile-cletus-head-6",
+        "skinDepth": 0.10323,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-doc-paradox",
+    "mouth": "GEO-extra-mile-doc-paradox-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.56187,
+      0.12722
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.57837,
+          0.12355
+        ],
+        "skin": "GEO-extra-mile-doc-paradox-head-6",
+        "skinDepth": 0.11974,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.54406,
+          0.1301
+        ],
+        "skin": "GEO-extra-mile-doc-paradox-head-6",
+        "skinDepth": 0.12521,
+        "floatingGap": 0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09749,
+          0.57837,
+          0.12355
+        ],
+        "skin": "GEO-extra-mile-doc-paradox-head-6",
+        "skinDepth": 0.11974,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-dom-and-gary",
+    "mouth": "GEO-extra-mile-dom-and-gary-smile-17",
+    "mouthCentre": [
+      -0.01916,
+      0.42528,
+      0.08169
+    ],
+    "width": 0.16743,
+    "eyeMidX": -0.01916,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09805,
+          0.43863,
+          0.07872
+        ],
+        "skin": "GEO-extra-mile-dom-and-gary-head-6",
+        "skinDepth": 0.07488,
+        "floatingGap": 0.00384,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.01916,
+          0.41088,
+          0.08402
+        ],
+        "skin": "GEO-extra-mile-dom-and-gary-head-6",
+        "skinDepth": 0.0793,
+        "floatingGap": 0.00472,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05972,
+          0.43863,
+          0.07872
+        ],
+        "skin": "GEO-extra-mile-dom-and-gary-head-6",
+        "skinDepth": 0.07488,
+        "floatingGap": 0.00384,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-gingy",
+    "mouth": "GEO-extra-mile-gingy-smile-17",
+    "mouthCentre": [
+      -0.03692,
+      0.46091,
+      0.0882
+    ],
+    "width": 0.18146,
+    "eyeMidX": -0.03692,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.12241,
+          0.47537,
+          0.08498
+        ],
+        "skin": "GEO-extra-mile-gingy-head-6",
+        "skinDepth": 0.08115,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.03692,
+          0.44529,
+          0.09072
+        ],
+        "skin": "GEO-extra-mile-gingy-head-6",
+        "skinDepth": 0.08595,
+        "floatingGap": 0.00478,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.04857,
+          0.47537,
+          0.08498
+        ],
+        "skin": "GEO-extra-mile-gingy-head-6",
+        "skinDepth": 0.08115,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-gluebert",
+    "mouth": "GEO-extra-mile-gluebert-smile-19",
+    "mouthCentre": [
+      0.0,
+      0.44285,
+      0.16421
+    ],
+    "width": 0.12325,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.05376,
+          0.45915,
+          0.16065
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.42528,
+          0.16868
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05376,
+          0.45915,
+          0.16065
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-king-pete",
+    "mouth": "GEO-extra-mile-king-pete-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.52355,
+      0.10867
+    ],
+    "width": 0.20612,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09711,
+          0.53998,
+          0.10501
+        ],
+        "skin": "GEO-extra-mile-king-pete-head-6",
+        "skinDepth": 0.10121,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.50581,
+          0.11154
+        ],
+        "skin": "GEO-extra-mile-king-pete-head-6",
+        "skinDepth": 0.10666,
+        "floatingGap": 0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09711,
+          0.53998,
+          0.10501
+        ],
+        "skin": "GEO-extra-mile-king-pete-head-6",
+        "skinDepth": 0.10121,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-moneybags",
+    "mouth": "GEO-extra-mile-moneybags-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5027,
+      0.11339
+    ],
+    "width": 0.19791,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09324,
+          0.51847,
+          0.10987
+        ],
+        "skin": "GEO-extra-mile-moneybags-head-6",
+        "skinDepth": 0.10606,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.48566,
+          0.11614
+        ],
+        "skin": "GEO-extra-mile-moneybags-head-6",
+        "skinDepth": 0.11129,
+        "floatingGap": 0.00485,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09324,
+          0.51847,
+          0.10987
+        ],
+        "skin": "GEO-extra-mile-moneybags-head-6",
+        "skinDepth": 0.10606,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-mr-fox",
+    "mouth": "GEO-extra-mile-mr-fox-smile-17",
+    "mouthCentre": [
+      -0.03626,
+      0.38218,
+      0.02947
+    ],
+    "width": 0.15046,
+    "eyeMidX": -0.03626,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.10715,
+          0.39418,
+          0.0268
+        ],
+        "skin": "GEO-extra-mile-mr-fox-head-6",
+        "skinDepth": 0.02294,
+        "floatingGap": 0.00386,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.03626,
+          0.36923,
+          0.03156
+        ],
+        "skin": "GEO-extra-mile-mr-fox-head-6",
+        "skinDepth": 0.02692,
+        "floatingGap": 0.00464,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03462,
+          0.39418,
+          0.0268
+        ],
+        "skin": "GEO-extra-mile-mr-fox-head-6",
+        "skinDepth": 0.02294,
+        "floatingGap": 0.00386,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-pooh",
+    "mouth": "GEO-extra-mile-pooh-smile-17",
+    "mouthCentre": [
+      0.01599,
+      0.47337,
+      0.09048
+    ],
+    "width": 0.18636,
+    "eyeMidX": 0.01599,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.07181,
+          0.48823,
+          0.08717
+        ],
+        "skin": "GEO-extra-mile-pooh-head-6",
+        "skinDepth": 0.08334,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.01599,
+          0.45733,
+          0.09307
+        ],
+        "skin": "GEO-extra-mile-pooh-head-6",
+        "skinDepth": 0.08827,
+        "floatingGap": 0.0048,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.10379,
+          0.48823,
+          0.08717
+        ],
+        "skin": "GEO-extra-mile-pooh-head-6",
+        "skinDepth": 0.08334,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-robin-hood",
+    "mouth": "GEO-extra-mile-robin-hood-smile-17",
+    "mouthCentre": [
+      -0.04836,
+      0.44088,
+      0.11116
+    ],
+    "width": 0.17357,
+    "eyeMidX": -0.04836,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.13013,
+          0.45471,
+          0.10808
+        ],
+        "skin": "GEO-extra-mile-robin-hood-head-6",
+        "skinDepth": 0.10424,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.04836,
+          0.42594,
+          0.11358
+        ],
+        "skin": "GEO-extra-mile-robin-hood-head-6",
+        "skinDepth": 0.10883,
+        "floatingGap": 0.00474,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03342,
+          0.45471,
+          0.10808
+        ],
+        "skin": "GEO-extra-mile-robin-hood-head-6",
+        "skinDepth": 0.10424,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-saint-nick",
+    "mouth": "GEO-extra-mile-saint-nick-smile-17",
+    "mouthCentre": [
+      -0.00997,
+      0.37358,
+      0.13605
+    ],
+    "width": 0.14708,
+    "eyeMidX": -0.00997,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.07927,
+          0.3853,
+          0.12859
+        ],
+        "skin": "GEO-extra-mile-saint-nick-head-6",
+        "skinDepth": 0.06739,
+        "floatingGap": 0.0612,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00997,
+          0.36092,
+          0.14414
+        ],
+        "skin": "GEO-extra-mile-saint-nick-head-6",
+        "skinDepth": 0.07127,
+        "floatingGap": 0.07287,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05932,
+          0.3853,
+          0.12859
+        ],
+        "skin": "GEO-extra-mile-saint-nick-head-6",
+        "skinDepth": 0.06739,
+        "floatingGap": 0.0612,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-school-bully",
+    "mouth": "GEO-extra-mile-school-bully-smile-17",
+    "mouthCentre": [
+      -0.02056,
+      0.48958,
+      0.08168
+    ],
+    "width": 0.19275,
+    "eyeMidX": -0.02056,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.11137,
+          0.50495,
+          0.07755
+        ],
+        "skin": "GEO-extra-mile-school-bully-head-6",
+        "skinDepth": 0.07373,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.02056,
+          0.47299,
+          0.08827
+        ],
+        "skin": "GEO-extra-mile-school-bully-gorilla-torso-18",
+        "skinDepth": 0.08212,
+        "floatingGap": 0.00615,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.07025,
+          0.50495,
+          0.07755
+        ],
+        "skin": "GEO-extra-mile-school-bully-head-6",
+        "skinDepth": 0.07373,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-scout",
+    "mouth": "GEO-extra-mile-scout-smile-17",
+    "mouthCentre": [
+      -0.07591,
+      0.3926,
+      0.09959
+    ],
+    "width": 0.15457,
+    "eyeMidX": -0.07591,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.14873,
+          0.40492,
+          0.09685
+        ],
+        "skin": "GEO-extra-mile-scout-head-6",
+        "skinDepth": 0.09299,
+        "floatingGap": 0.00385,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.07591,
+          0.3793,
+          0.10174
+        ],
+        "skin": "GEO-extra-mile-scout-head-6",
+        "skinDepth": 0.09708,
+        "floatingGap": 0.00466,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.00309,
+          0.40492,
+          0.09685
+        ],
+        "skin": "GEO-extra-mile-scout-head-6",
+        "skinDepth": 0.09299,
+        "floatingGap": 0.00385,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-snub",
+    "mouth": "GEO-extra-mile-snub-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.49683,
+      0.07834
+    ],
+    "width": 0.1956,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09215,
+          0.51243,
+          0.07487
+        ],
+        "skin": "GEO-extra-mile-snub-head-6",
+        "skinDepth": 0.07106,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0,
+          0.48,
+          0.08106
+        ],
+        "skin": "GEO-extra-mile-snub-head-6",
+        "skinDepth": 0.07623,
+        "floatingGap": 0.00484,
+        "occluder": "GEO-extra-mile-snub-trunk-20",
+        "occlusionDepth": 0.09476
+      },
+      {
+        "point": [
+          0.09215,
+          0.51243,
+          0.07487
+        ],
+        "skin": "GEO-extra-mile-snub-head-6",
+        "skinDepth": 0.07106,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-terrible-toddler",
+    "mouth": "GEO-extra-mile-terrible-toddler-crying-mouth-18",
+    "mouthCentre": [
+      -0.0,
+      0.59847,
+      0.14033
+    ],
+    "width": 0.27203,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.11332,
+          0.59847,
+          0.14033
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.10126,
+        "floatingGap": 0.03907,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.59847,
+          0.14033
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.12833,
+        "floatingGap": 0.012,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.11332,
+          0.59847,
+          0.14033
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.10126,
+        "floatingGap": 0.03907,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-terrible-toddler",
+    "mouth": "GEO-extra-mile-terrible-toddler-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5256,
+      0.10002
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.5421,
+          0.09634
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.09254,
+        "floatingGap": 0.0038,
+        "occluder": "GEO-extra-mile-terrible-toddler-crying-mouth-18",
+        "occlusionDepth": 0.06049
+      },
+      {
+        "point": [
+          -0.0,
+          0.50779,
+          0.10289
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.09801,
+        "floatingGap": 0.00488,
+        "occluder": "GEO-extra-mile-terrible-toddler-crying-mouth-18",
+        "occlusionDepth": 0.05712
+      },
+      {
+        "point": [
+          0.09749,
+          0.5421,
+          0.09634
+        ],
+        "skin": "GEO-extra-mile-terrible-toddler-head-6",
+        "skinDepth": 0.09254,
+        "floatingGap": 0.0038,
+        "occluder": "GEO-extra-mile-terrible-toddler-crying-mouth-18",
+        "occlusionDepth": 0.06049
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-thief",
+    "mouth": "GEO-extra-mile-thief-smile-11",
+    "mouthCentre": [
+      0.0391,
+      0.4571,
+      0.09539
+    ],
+    "width": 0.17996,
+    "eyeMidX": 0.07458,
+    "centreDeltaX": -0.03549,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04569,
+          0.47145,
+          0.09219
+        ],
+        "skin": "GEO-extra-mile-thief-head-6",
+        "skinDepth": 0.08837,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0391,
+          0.44161,
+          0.09789
+        ],
+        "skin": "GEO-extra-mile-thief-head-6",
+        "skinDepth": 0.09312,
+        "floatingGap": 0.00477,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.12388,
+          0.47145,
+          0.09219
+        ],
+        "skin": "GEO-extra-mile-thief-head-6",
+        "skinDepth": 0.08837,
+        "floatingGap": 0.00383,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-toll-troll",
+    "mouth": "GEO-extra-mile-toll-troll-open-mouth-28",
+    "mouthCentre": [
+      0.0,
+      0.5285,
+      0.09377
+    ],
+    "width": 0.19605,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.08194,
+          0.5285,
+          0.09377
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.07003,
+        "floatingGap": 0.02374,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.5285,
+          0.09377
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.08476,
+        "floatingGap": 0.009,
+        "occluder": "GEO-extra-mile-toll-troll-nose-20",
+        "occlusionDepth": 0.10578
+      },
+      {
+        "point": [
+          0.08194,
+          0.5285,
+          0.09377
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.07003,
+        "floatingGap": 0.02373,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-toll-troll",
+    "mouth": "GEO-extra-mile-toll-troll-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.49409,
+      0.06463
+    ],
+    "width": 0.19452,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09165,
+          0.5096,
+          0.06118
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.05736,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.47735,
+          0.06734
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.06251,
+        "floatingGap": 0.00483,
+        "occluder": "GEO-extra-mile-toll-troll-open-mouth-28",
+        "occlusionDepth": 0.03671
+      },
+      {
+        "point": [
+          0.09165,
+          0.5096,
+          0.06118
+        ],
+        "skin": "GEO-extra-mile-toll-troll-head-6",
+        "skinDepth": 0.05736,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-totally-fair-ref",
+    "mouth": "GEO-extra-mile-totally-fair-ref-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5006,
+      0.0716
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.5171,
+          0.06914
+        ],
+        "skin": "GEO-extra-mile-totally-fair-ref-head-6",
+        "skinDepth": 0.06642,
+        "floatingGap": 0.00272,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.48279,
+          0.07183
+        ],
+        "skin": "GEO-extra-mile-totally-fair-ref-head-6",
+        "skinDepth": 0.06813,
+        "floatingGap": 0.00369,
+        "occluder": "GEO-extra-mile-totally-fair-ref-ref-shirt-stripe-23",
+        "occlusionDepth": 0.01885
+      },
+      {
+        "point": [
+          0.09749,
+          0.5171,
+          0.06914
+        ],
+        "skin": "GEO-extra-mile-totally-fair-ref-head-6",
+        "skinDepth": 0.06642,
+        "floatingGap": 0.00272,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "extra-mile-witch-hazel",
+    "mouth": "GEO-extra-mile-witch-hazel-smile-17",
+    "mouthCentre": [
+      0.02881,
+      0.38937,
+      0.07529
+    ],
+    "width": 0.15329,
+    "eyeMidX": 0.02881,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.04341,
+          0.40159,
+          0.07257
+        ],
+        "skin": "GEO-extra-mile-witch-hazel-head-6",
+        "skinDepth": 0.06872,
+        "floatingGap": 0.00385,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.02881,
+          0.37618,
+          0.07742
+        ],
+        "skin": "GEO-extra-mile-witch-hazel-head-6",
+        "skinDepth": 0.07277,
+        "floatingGap": 0.00465,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.10103,
+          0.40159,
+          0.07257
+        ],
+        "skin": "GEO-extra-mile-witch-hazel-head-6",
+        "skinDepth": 0.06872,
+        "floatingGap": 0.00385,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-crash-dummy",
+    "mouth": "GEO-leaf-crash-dummy-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5256,
+      0.10002
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.5421,
+          0.09634
+        ],
+        "skin": "GEO-leaf-crash-dummy-head-6",
+        "skinDepth": 0.09254,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.50779,
+          0.10289
+        ],
+        "skin": "GEO-leaf-crash-dummy-head-6",
+        "skinDepth": 0.09801,
+        "floatingGap": 0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09749,
+          0.5421,
+          0.09634
+        ],
+        "skin": "GEO-leaf-crash-dummy-head-6",
+        "skinDepth": 0.09254,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-filmmaker",
+    "mouth": "GEO-leaf-filmmaker-smile-17",
+    "mouthCentre": [
+      -0.02652,
+      0.47914,
+      0.04213
+    ],
+    "width": 0.18864,
+    "eyeMidX": -0.02652,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.11539,
+          0.49418,
+          0.03878
+        ],
+        "skin": "GEO-leaf-filmmaker-head-6",
+        "skinDepth": 0.03496,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.02652,
+          0.46291,
+          0.04476
+        ],
+        "skin": "GEO-leaf-filmmaker-head-6",
+        "skinDepth": 0.03995,
+        "floatingGap": 0.00481,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.06236,
+          0.49418,
+          0.03878
+        ],
+        "skin": "GEO-leaf-filmmaker-head-6",
+        "skinDepth": 0.03496,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-loan-shark",
+    "mouth": "GEO-leaf-loan-shark-wide-grin-2",
+    "mouthCentre": [
+      -0.0,
+      0.44,
+      0.18
+    ],
+    "width": 0.3,
+    "eyeMidX": 0.0,
+    "centreDeltaX": -0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.12498,
+          0.44,
+          0.18
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.44,
+          0.18
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.12498,
+          0.44,
+          0.18
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-nepo-baby",
+    "mouth": "GEO-leaf-nepo-baby-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5256,
+      0.12269
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.5421,
+          0.11901
+        ],
+        "skin": "GEO-leaf-nepo-baby-head-6",
+        "skinDepth": 0.11521,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.50779,
+          0.12556
+        ],
+        "skin": "GEO-leaf-nepo-baby-head-6",
+        "skinDepth": 0.12068,
+        "floatingGap": 0.00488,
+        "occluder": "GEO-leaf-nepo-baby-pacifier-20",
+        "occlusionDepth": 0.07795
+      },
+      {
+        "point": [
+          0.09749,
+          0.5421,
+          0.11901
+        ],
+        "skin": "GEO-leaf-nepo-baby-head-6",
+        "skinDepth": 0.11521,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-philanthropist",
+    "mouth": "GEO-leaf-philanthropist-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.51641,
+      0.12973
+    ],
+    "width": 0.20331,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09578,
+          0.53261,
+          0.12612
+        ],
+        "skin": "GEO-leaf-philanthropist-head-6",
+        "skinDepth": 0.12232,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.49891,
+          0.13256
+        ],
+        "skin": "GEO-leaf-philanthropist-head-6",
+        "skinDepth": 0.12769,
+        "floatingGap": 0.00487,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09578,
+          0.53261,
+          0.12612
+        ],
+        "skin": "GEO-leaf-philanthropist-head-6",
+        "skinDepth": 0.12232,
+        "floatingGap": 0.00381,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-revolutionary",
+    "mouth": "GEO-leaf-revolutionary-smile-17",
+    "mouthCentre": [
+      -0.03134,
+      0.47069,
+      0.10236
+    ],
+    "width": 0.18531,
+    "eyeMidX": -0.03134,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.11865,
+          0.48546,
+          0.09907
+        ],
+        "skin": "GEO-leaf-revolutionary-head-6",
+        "skinDepth": 0.09525,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.03134,
+          0.45474,
+          0.10494
+        ],
+        "skin": "GEO-leaf-revolutionary-head-6",
+        "skinDepth": 0.10015,
+        "floatingGap": 0.00479,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.05596,
+          0.48546,
+          0.09907
+        ],
+        "skin": "GEO-leaf-revolutionary-head-6",
+        "skinDepth": 0.09525,
+        "floatingGap": 0.00382,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-sole-survivor",
+    "mouth": "GEO-leaf-sole-survivor-smile-17",
+    "mouthCentre": [
+      -0.00844,
+      0.51081,
+      0.11494
+    ],
+    "width": 0.2011,
+    "eyeMidX": -0.00844,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.10319,
+          0.52684,
+          0.11137
+        ],
+        "skin": "GEO-leaf-sole-survivor-head-6",
+        "skinDepth": 0.10756,
+        "floatingGap": 0.00381,
+        "occluder": "GEO-leaf-sole-survivor-long-moustache-28",
+        "occlusionDepth": 0.0518
+      },
+      {
+        "point": [
+          -0.00844,
+          0.4935,
+          0.11774
+        ],
+        "skin": "GEO-leaf-sole-survivor-head-6",
+        "skinDepth": 0.11288,
+        "floatingGap": 0.00486,
+        "occluder": "GEO-leaf-sole-survivor-long-moustache-30",
+        "occlusionDepth": 0.04833
+      },
+      {
+        "point": [
+          0.08631,
+          0.52684,
+          0.11137
+        ],
+        "skin": "GEO-leaf-sole-survivor-head-6",
+        "skinDepth": 0.10756,
+        "floatingGap": 0.00381,
+        "occluder": "GEO-leaf-sole-survivor-long-moustache-32",
+        "occlusionDepth": 0.0518
+      }
+    ]
+  },
+  {
+    "id": "leaf-sore-loser",
+    "mouth": "GEO-leaf-sore-loser-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.42936,
+      0.07521
+    ],
+    "width": 0.16904,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.07964,
+          0.44284,
+          0.07221
+        ],
+        "skin": "GEO-leaf-sore-loser-head-6",
+        "skinDepth": 0.06837,
+        "floatingGap": 0.00384,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.41481,
+          0.07756
+        ],
+        "skin": "GEO-leaf-sore-loser-head-6",
+        "skinDepth": 0.07284,
+        "floatingGap": 0.00472,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.07964,
+          0.44284,
+          0.07221
+        ],
+        "skin": "GEO-leaf-sore-loser-head-6",
+        "skinDepth": 0.06837,
+        "floatingGap": 0.00384,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-spiteful-spirit",
+    "mouth": "GEO-leaf-spiteful-spirit-flame-grimace-15",
+    "mouthCentre": [
+      -0.00212,
+      0.25709,
+      0.14637
+    ],
+    "width": 0.32876,
+    "eyeMidX": -0.00255,
+    "centreDeltaX": 0.00043,
+    "leftRightDepthDifference": -0.0023,
+    "samples": [
+      {
+        "point": [
+          -0.14845,
+          0.2418,
+          0.12915
+        ],
+        "skin": "GEO-leaf-spiteful-spirit-flame-body-1",
+        "skinDepth": 0.09628,
+        "floatingGap": 0.03287,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0038,
+          0.24358,
+          0.16471
+        ],
+        "skin": "GEO-leaf-spiteful-spirit-flame-body-1",
+        "skinDepth": 0.12536,
+        "floatingGap": 0.03935,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.14156,
+          0.23495,
+          0.13145
+        ],
+        "skin": "GEO-leaf-spiteful-spirit-flame-body-1",
+        "skinDepth": 0.09587,
+        "floatingGap": 0.03557,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-thespian",
+    "mouth": "GEO-leaf-thespian-smile-17",
+    "mouthCentre": [
+      -0.04578,
+      0.44539,
+      0.12801
+    ],
+    "width": 0.17535,
+    "eyeMidX": -0.04578,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.12839,
+          0.45937,
+          0.11853
+        ],
+        "skin": "GEO-leaf-thespian-head-6",
+        "skinDepth": 0.07842,
+        "floatingGap": 0.04011,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.04578,
+          0.4303,
+          0.13849
+        ],
+        "skin": "GEO-leaf-thespian-head-6",
+        "skinDepth": 0.08305,
+        "floatingGap": 0.05544,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.03683,
+          0.45937,
+          0.11853
+        ],
+        "skin": "GEO-leaf-thespian-head-6",
+        "skinDepth": 0.07842,
+        "floatingGap": 0.04011,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-triangle-man",
+    "mouth": "GEO-leaf-triangle-man-smile-12",
+    "mouthCentre": [
+      0.0,
+      0.40218,
+      0.05583
+    ],
+    "width": 0.13021,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.0579,
+          0.41705,
+          0.05257
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.38571,
+          0.06
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.0579,
+          0.41705,
+          0.05257
+        ],
+        "skin": null,
+        "skinDepth": null,
+        "floatingGap": null,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  },
+  {
+    "id": "leaf-zombie",
+    "mouth": "GEO-leaf-zombie-smile-17",
+    "mouthCentre": [
+      0.0,
+      0.5256,
+      0.07619
+    ],
+    "width": 0.20693,
+    "eyeMidX": 0.0,
+    "centreDeltaX": 0.0,
+    "leftRightDepthDifference": 0.0,
+    "samples": [
+      {
+        "point": [
+          -0.09749,
+          0.5421,
+          0.07251
+        ],
+        "skin": "GEO-leaf-zombie-head-6",
+        "skinDepth": 0.06871,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          -0.0,
+          0.50779,
+          0.07906
+        ],
+        "skin": "GEO-leaf-zombie-head-6",
+        "skinDepth": 0.07418,
+        "floatingGap": 0.00488,
+        "occluder": null,
+        "occlusionDepth": 0
+      },
+      {
+        "point": [
+          0.09749,
+          0.5421,
+          0.07251
+        ],
+        "skin": "GEO-leaf-zombie-head-6",
+        "skinDepth": 0.06871,
+        "floatingGap": 0.0038,
+        "occluder": null,
+        "occlusionDepth": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-silly-goose",
+  "node": "toy_extra-mile-silly-goose",
+  "url": "/models/extra-mile/extra-mile-silly-goose.glb",
+  "bytes": 58564,
+  "triangles": 2812,
+  "draws": 5,
+  "bounds": [
+    0.54858,
+    0.98,
+    0.4556
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-silly-goose.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white long-neck goose, yellow beak, dark sunglasses and propeller cap",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

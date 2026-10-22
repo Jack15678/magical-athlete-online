@@ -1,5 +1,9 @@
 {
-  "version": 1,
+  "version": 3,
+  "units": "metres",
+  "up": "+Y",
+  "forward": "+Z",
+  "pivot": "ground-centre",
   "generator": "Blender 5.2.3 LTS Release Candidate",
   "source": "assets/blender/toy-racers.blend",
   "collapseRatio": 0.36,
@@ -21,7 +25,16 @@
         0.9999108910560608,
         1.0000720024108887,
         1.0010368824005127
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "baba-yaga",
@@ -40,26 +53,44 @@
         1.0013383626937866,
         1.0000041723251343,
         1.0009127855300903
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "banana",
       "node": "toy_banana",
-      "triangles": 1669,
-      "sourceTriangles": 4508,
+      "triangles": 3319,
+      "sourceTriangles": 9000,
       "draws": 4,
       "bounds": [
-        0.59,
+        0.59037,
         0.938,
-        0.24649
+        0.25949
       ],
       "pivotY": 0,
       "protectedSmallComponents": 11,
       "canonicalBoundsScale": [
-        0.9996154308319092,
-        0.9997131824493408,
-        1.0009117126464844
-      ]
+        0.9997870922088623,
+        0.9995091557502747,
+        0.999880850315094
+      ],
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "blimp",
@@ -78,7 +109,16 @@
         1.0002875328063965,
         0.9923474788665771,
         1.0001249313354492
-      ]
+      ],
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "centaur",
@@ -97,7 +137,16 @@
         1.000588297843933,
         0.9992240071296692,
         1.0003416538238525
-      ]
+      ],
+      "motionProfile": "quadruped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "cheerleader",
@@ -116,7 +165,16 @@
         1.0003174543380737,
         0.9997203946113586,
         1.0013093948364258
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "coach",
@@ -135,7 +193,16 @@
         1.0002214908599854,
         1.0012091398239136,
         1.001097559928894
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "copycat",
@@ -154,7 +221,16 @@
         0.9993650317192078,
         0.9997504353523254,
         1.0010193586349487
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "dicemonger",
@@ -173,7 +249,16 @@
         1.0001239776611328,
         0.9997963905334473,
         1.0013892650604248
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "duelist",
@@ -192,7 +277,16 @@
         0.999918520450592,
         1.0007787942886353,
         1.0009474754333496
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "egg",
@@ -211,7 +305,16 @@
         0.9987127184867859,
         1.0001473426818848,
         1.0014728307724
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "flip-flop",
@@ -230,7 +333,16 @@
         0.9998503923416138,
         0.9992519021034241,
         1.001685380935669
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "genius",
@@ -249,7 +361,16 @@
         1.0009557008743286,
         0.9999707937240601,
         1.0031005144119263
-      ]
+      ],
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "gunk",
@@ -268,7 +389,16 @@
         0.998794674873352,
         0.9998131394386292,
         0.9998902082443237
-      ]
+      ],
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "hare",
@@ -287,7 +417,16 @@
         1.0,
         1.000272274017334,
         1.0010868310928345
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "heckler",
@@ -306,7 +445,16 @@
         1.0003502368927002,
         1.0027896165847778,
         1.0012116432189941
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "huge-baby",
@@ -325,7 +473,16 @@
         1.0000475645065308,
         1.000059723854065,
         1.000963807106018
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "hypnotist",
@@ -344,7 +501,16 @@
         1.000459909439087,
         1.000213861465454,
         1.0009739398956299
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "inchworm",
@@ -363,12 +529,21 @@
         1.0,
         1.000343680381775,
         0.9999423623085022
-      ]
+      ],
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "lackey",
       "node": "toy_lackey",
-      "triangles": 2006,
+      "triangles": 2005,
       "sourceTriangles": 5510,
       "draws": 4,
       "bounds": [
@@ -382,7 +557,16 @@
         1.0006440877914429,
         0.9999287128448486,
         0.9988191723823547
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "leaptoad",
@@ -401,7 +585,16 @@
         1.0002312660217285,
         1.0001806020736694,
         1.0041295289993286
-      ]
+      ],
+      "motionProfile": "quadruped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "legs",
@@ -420,7 +613,16 @@
         1.000588297843933,
         0.9991834163665771,
         1.0011245012283325
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "lovable-loser",
@@ -439,7 +641,16 @@
         1.0004910230636597,
         1.000664234161377,
         0.9988165497779846
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "magician",
@@ -458,7 +669,16 @@
         0.9997551441192627,
         1.0020246505737305,
         1.0009328126907349
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "mastermind",
@@ -477,7 +697,16 @@
         0.9998300075531006,
         1.0001193284988403,
         1.0009679794311523
-      ]
+      ],
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "mouth",
@@ -496,7 +725,16 @@
         1.001983642578125,
         1.0035299062728882,
         1.0026744604110718
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "party-animal",
@@ -515,7 +753,16 @@
         0.9998503923416138,
         1.0013407468795776,
         1.0008219480514526
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "rocket-scientist",
@@ -534,7 +781,16 @@
         1.0004265308380127,
         1.0005897283554077,
         0.999971866607666
-      ]
+      ],
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "romantic",
@@ -553,7 +809,16 @@
         0.9998209476470947,
         0.9996522665023804,
         1.0010416507720947
-      ]
+      ],
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "scoocher",
@@ -572,7 +837,16 @@
         1.0004850625991821,
         1.0007325410842896,
         1.0017964839935303
-      ]
+      ],
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "sisyphus",
@@ -591,7 +865,16 @@
         0.9990379214286804,
         1.000109076499939,
         1.0016270875930786
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "skipper",
@@ -610,7 +893,16 @@
         1.0003025531768799,
         0.9996510744094849,
         1.0013982057571411
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "stickler",
@@ -629,7 +921,16 @@
         1.0009288787841797,
         1.0007867813110352,
         1.0016251802444458
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "suckerfish",
@@ -648,7 +949,16 @@
         0.9868943691253662,
         1.0132650136947632,
         1.00102698802948
-      ]
+      ],
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "third-wheel",
@@ -667,7 +977,16 @@
         1.0073288679122925,
         1.0000689029693604,
         0.9944048523902893
-      ]
+      ],
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "twin",
@@ -686,17 +1005,23 @@
         1.0,
         0.9999145269393921,
         1.0015113353729248
-      ]
+      ],
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     }
   ],
-  "totalTriangles": 71065,
-  "bytes": 857268,
+  "totalTriangles": 72714,
+  "bytes": 1256928,
+  "optimizedBytes": 1256928,
   "compression": "EXT_meshopt_compression",
   "materialCount": 10,
   "textureCount": 0,
-  "optimizedBytes": 857268,
-  "units": "metres",
-  "up": "+Y",
-  "forward": "+Z",
-  "pivot": "ground-centre"
+  "skeletalAnimation": true
 }

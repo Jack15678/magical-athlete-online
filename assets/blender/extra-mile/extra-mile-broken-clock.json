@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-broken-clock",
+  "node": "toy_extra-mile-broken-clock",
+  "url": "/models/extra-mile/extra-mile-broken-clock.glb",
+  "bytes": 55984,
+  "triangles": 2832,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.91875,
+    0.43125
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-broken-clock.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "cracked golden clock face, black bowler hat, moustache and brown feet",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-snake-eyes",
+  "node": "toy_extra-mile-snake-eyes",
+  "url": "/models/extra-mile/extra-mile-snake-eyes.glb",
+  "bytes": 50840,
+  "triangles": 2788,
+  "draws": 4,
+  "bounds": [
+    0.40074,
+    0.98,
+    0.29464
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-snake-eyes.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "green coiled snake, cream belly, forked red tongue and two white dice above its eyes",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

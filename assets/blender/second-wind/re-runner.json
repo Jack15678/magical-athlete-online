@@ -1,46 +1,32 @@
 {
-  "version": 1,
-  "edition": "second-wind",
-  "generator": "Blender 5.2.3 LTS Release Candidate",
-  "source": "assets/blender/second-wind.blend",
-  "units": "metres",
-  "up": "+Y",
-  "forward": "+Z",
-  "pivot": "ground-centre",
-  "compression": "EXT_meshopt_compression",
-  "models": [
-    {
-      "id": "re-runner",
-      "node": "toy_re-runner",
-      "url": "/models/second-wind/re-runner.glb",
-      "avatar": "/models/second-wind/avatars/re-runner.png",
-      "bytes": 48484,
-      "triangles": 4144,
-      "draws": 6,
-      "bounds": [
-        0.6,
-        0.91633,
-        0.38336
-      ],
-      "pivotY": 0,
-      "animations": [
-        "idle",
-        "move",
-        "skill",
-        "fall",
-        "recover"
-      ],
-      "recognition": "Grey curly-haired veteran runner, violet sweatband, pink tracksuit with yellow stripes and bent jogging arms.",
-      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
-      "referenceChecked": true,
-      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Re-Runner.png",
-      "editableSource": "assets/blender/second-wind/re-runner.blend"
-    }
+  "id": "re-runner",
+  "node": "toy_re-runner",
+  "url": "/models/second-wind/re-runner.glb",
+  "avatar": "/avatars/second-wind/re-runner.svg",
+  "bytes": 58940,
+  "triangles": 4144,
+  "draws": 6,
+  "bounds": [
+    0.6,
+    0.91633,
+    0.38336
   ],
-  "variants": [],
-  "totalBytes": 48484,
-  "totalTriangles": 4144,
-  "materialCount": 15,
-  "textureCount": 0,
-  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "recognition": "Grey curly-haired veteran runner, violet sweatband, pink tracksuit with yellow stripes and bent jogging arms.",
+  "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+  "referenceChecked": true,
+  "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Re-Runner.png",
+  "editableSource": "assets/blender/second-wind/re-runner.blend",
+  "modelPreview": "/models/second-wind/avatars/re-runner.png",
+  "avatarStyle": "flat-cartoon-svg",
+  "motionProfile": "biped",
+  "bones": 5,
+  "mouthSurfaceVersion": "surface-mouth-v2"
 }

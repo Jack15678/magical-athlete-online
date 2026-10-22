@@ -1,0 +1,31 @@
+{
+  "renderedFrames": 389,
+  "calls": 346,
+  "triangles": 142210,
+  "geometries": 113,
+  "textures": 89,
+  "environment": true,
+  "loadedModels": 8,
+  "loadedModelNames": [
+    "toy_extra-mile-cletus",
+    "toy_extra-mile-witch-hazel",
+    "toy_extra-mile-whisper",
+    "toy_extra-mile-silly-goose",
+    "toy_extra-mile-honey-pot",
+    "toy_extra-mile-oddball",
+    "toy_extra-mile-lazy-bones",
+    "toy_extra-mile-snub"
+  ],
+  "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "pixelRatio": 1,
+  "shadows": true,
+  "toneMapping": 4,
+  "exposure": 1.1,
+  "colorSpace": "srgb",
+  "samples": 80,
+  "medianFrameMs": 9.200000286102295,
+  "p95FrameMs": 11,
+  "maxFrameMs": 11.299999713897705,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+  "caveat": "Measured in local headless Edge at the stated viewport; mobile is a viewport/layout check, not a physical phone performance measurement. Forced invalidate samples actual WebGL scene frames without claiming idle demand rendering is continuous."
+}

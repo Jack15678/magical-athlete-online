@@ -1,0 +1,16 @@
+{
+  "desktopLimit": 5,
+  "mobileLimit": 3,
+  "orderedIds": [
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "independentLifetimes": true,
+  "duplicateSilent": true,
+  "historyRetained": true,
+  "reconnectSilent": true,
+  "errors": []
+}

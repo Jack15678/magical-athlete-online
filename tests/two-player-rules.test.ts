@@ -1,9 +1,10 @@
+const CHARACTERS=characterPool('mixed');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyGameAction, automaticAction, createGame, resolveTasks, systemAction } from '../src/engine/index.js';
 import { immediateRoomAction } from '../src/shared/automation.js';
 import { projectRoom, reduceRoomAction, setRoomDeadline, validateActionEnvelope } from '../src/shared/room-core.js';
-import { CHARACTERS } from '../src/shared/characters.js';
+import { CHARACTERS as ALL_CHARACTERS, characterPool } from '../src/shared/characters.js';
 import { BrowserAuthority } from '../src/browser/authority.js';
 import { IDBFactory } from 'fake-indexeddb';
 import type { RelayMetadata } from '../src/shared/relay.js';

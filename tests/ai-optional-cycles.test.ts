@@ -33,3 +33,11 @@ test('the AI hint has no authority over a human and cannot act for another playe
   const v=fixture();v.logs=cycle();v.selfId='p1';assert.equal(decideAI(v),undefined);
   v.selfId='p0';v.pending!.options=v.pending!.options.filter(o=>o.id!=='skip');v.pending!.optional=false;assert.deepEqual(decideAI(v),{type:'choose',choiceId:'choice',optionId:'r1'});
 });
+
+function hypnotistView():RoomView {
+ const view=fixture();view.racers[0]!.characterId='hypnotist';view.racers[0]!.position=1;view.racers[0]!.flags.publicAbilities={powers:['hypnotist']};
+ view.racers[1]!.characterId='baba-yaga';view.racers[1]!.position=5;view.racers[1]!.flags.publicAbilities={powers:['baba-yaga']};
+ view.pending={id:'hypnotist',playerId:'p0',racerId:'r0',kind:'hypnotist',title:'召唤目标',optional:true,options:[{id:'r1',label:'芭芭雅嘎'},{id:'skip',label:'不使用'}]};return view;
+}
+test('public AI avoids voluntarily summoning an effective Baba Yaga that would repeatedly trip itself before main movement',()=>{const view=hypnotistView(),before=JSON.stringify(view);assert.deepEqual(decideAI(view),{type:'choose',choiceId:'hypnotist',optionId:'skip'});assert.equal(JSON.stringify(view),before);});
+test('AI can still summon a publicly disabled Baba Yaga or resist its trip with a visible immunity',()=>{const disabled=hypnotistView();disabled.racers[1]!.flags.publicAbilities={powers:[],disabledBy:['null-id']};assert.deepEqual(decideAI(disabled),{type:'choose',choiceId:'hypnotist',optionId:'r1'});const immune=hypnotistView();immune.racers[0]!.flags.publicAbilities={powers:['hypnotist','leaf-catfish']};assert.deepEqual(decideAI(immune),{type:'choose',choiceId:'hypnotist',optionId:'r1'});});

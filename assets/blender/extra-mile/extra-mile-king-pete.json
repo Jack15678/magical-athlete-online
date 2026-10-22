@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-king-pete",
+  "node": "toy_extra-mile-king-pete",
+  "url": "/models/extra-mile/extra-mile-king-pete.glb",
+  "bytes": 48196,
+  "triangles": 2874,
+  "draws": 6,
+  "bounds": [
+    0.59766,
+    0.98,
+    0.40529
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-king-pete.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "blue child king, pointed golden crown, red jersey and baseball bat",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-king-pete.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

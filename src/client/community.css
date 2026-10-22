@@ -15,3 +15,13 @@ body>.room-community{position:fixed;top:auto;right:auto;margin:0;transform:none;
 @keyframes chat-notice-arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.chat-notice{animation:none}}
 @media(max-width:650px){body>.room-community.is-open{right:8px;max-width:none}.chat-notice-region{width:min(310px,calc(100vw - 28px))}}
+
+.chat-notice-region{display:flex;flex-direction:column;gap:8px;max-height:calc(100dvh - 220px);overflow:hidden;padding:3px;pointer-events:none}
+.chat-notice{flex:none;pointer-events:auto;border-width:1px;padding:10px 12px;animation-duration:var(--chat-notice-enter,220ms);will-change:transform,opacity}
+.chat-notice.is-leaving{animation:chat-notice-leave var(--chat-notice-exit,220ms) ease-in forwards;pointer-events:none}
+@keyframes chat-notice-leave{to{opacity:0;transform:translateY(-8px)}}
+html[data-chat-choice="true"] .chat-notice-region{max-height:max(80px,calc(100dvh - var(--chat-skill-height,48dvh) - 170px))}
+html[data-motion="reduce"] .chat-notice{animation:none!important;will-change:auto}
+html[data-motion="reduce"] .chat-notice.is-leaving{opacity:0}
+@media(prefers-reduced-motion:reduce){.chat-notice{animation:none!important;will-change:auto}.chat-notice.is-leaving{opacity:0}}
+@media(max-width:650px){.chat-notice-region{gap:6px;max-height:calc(100dvh - 205px)}.chat-notice{padding:8px 10px}.chat-notice span{font-size:12px;-webkit-line-clamp:2}}

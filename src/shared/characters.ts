@@ -1,3 +1,4 @@
+import { FAN_CHARACTERS } from './fan-expansions.js';
 import { SECOND_WIND_CHARACTERS } from './second-wind.js';
 import type { CharacterPool } from './types.js';
 /** CMYK 2025 base box, 36 racers. Chinese names are project translations.
@@ -6,7 +7,7 @@ import type { CharacterPool } from './types.js';
  */
 export interface CharacterSource { url: string; title: string; locator: string; accessed: string; version: string }
 export interface CharacterData {
-  edition?: 'original' | 'second-wind'; imageUrl?: string; verification?: string; limit?: string;
+  edition?: 'original' | 'second-wind' | 'extra-mile' | 'leaf'; imageUrl?: string; verification?: string; limit?: string; adaptation?: string;
   id: string; nameEn: string; nameZh: string; translation: '本项目译名'; ability: string;
   timing: string[]; optional: boolean; targets: string; scope: string; duration: string;
   statuses: string[]; sources: CharacterSource[]; testId: string; verified: boolean;
@@ -1248,7 +1249,7 @@ export const ORIGINAL_CHARACTERS: readonly CharacterData[] = [
     "verified": true
   }
 ];
-export const CHARACTERS: readonly CharacterData[] = [...ORIGINAL_CHARACTERS.map(c=>({...c,edition:'original' as const})),...SECOND_WIND_CHARACTERS];
-export function characterPool(pool: CharacterPool = 'original') { return pool==='mixed'?CHARACTERS:pool==='second-wind'?SECOND_WIND_CHARACTERS:ORIGINAL_CHARACTERS; }
+export const CHARACTERS: readonly CharacterData[] = [...ORIGINAL_CHARACTERS.map(c=>({...c,edition:'original' as const})),...SECOND_WIND_CHARACTERS,...FAN_CHARACTERS];
+export function characterPool(pool: CharacterPool = 'original') { return pool==='mixed'?[...ORIGINAL_CHARACTERS,...SECOND_WIND_CHARACTERS]:pool==='second-wind'?SECOND_WIND_CHARACTERS:ORIGINAL_CHARACTERS; }
 export const CHARACTER_BY_ID: Readonly<Record<string, CharacterData>> = Object.fromEntries(CHARACTERS.map(character => [character.id, character]));
 export const CHARACTER_IDS = CHARACTERS.map(character => character.id);

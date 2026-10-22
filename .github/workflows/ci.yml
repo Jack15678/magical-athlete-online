@@ -53,7 +53,7 @@ jobs:
         if: inputs.browser_suite == 'all'
         env:
           CI: true
-      - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"
+      - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "server authority 8 independent"
         env:
           CI: true
           RELAY_SMOKE: '1'

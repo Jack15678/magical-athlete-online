@@ -13,7 +13,7 @@ for model in manifest['models']+manifest['variants']:
     assert all(o.name.startswith('GEO-') for o in edit.children)
     assert sorted(a.name for a in bpy.data.actions)==['fall','idle','move','recover','skill']
     boundaries=0; loose=0
-    for child in root.children:
+    for child in [o for o in root.children if o.type=='MESH']:
         bm=bmesh.new(); bm.from_mesh(child.data)
         boundaries+=sum(e.is_boundary for e in bm.edges); loose+=sum(e.is_wire for e in bm.edges); bm.free()
     record={'id':model['id'],'source':model['editableSource'],'sourceSha256':hashlib.sha256((ROOT/model['editableSource']).read_bytes()).hexdigest(),'glbSha256':hashlib.sha256((ROOT/'public/models/second-wind'/(model['id']+'.glb')).read_bytes()).hexdigest(),'editableParts':len(edit.children),'gameMeshes':len(root.children),'boundaryEdges':boundaries,'looseEdges':loose,'clips':sorted(a.name for a in bpy.data.actions)}

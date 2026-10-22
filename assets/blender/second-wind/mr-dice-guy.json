@@ -1,46 +1,32 @@
 {
-  "version": 1,
-  "edition": "second-wind",
-  "generator": "Blender 5.2.3 LTS Release Candidate",
-  "source": "assets/blender/second-wind.blend",
-  "units": "metres",
-  "up": "+Y",
-  "forward": "+Z",
-  "pivot": "ground-centre",
-  "compression": "EXT_meshopt_compression",
-  "models": [
-    {
-      "id": "mr-dice-guy",
-      "node": "toy_mr-dice-guy",
-      "url": "/models/second-wind/mr-dice-guy.glb",
-      "avatar": "/models/second-wind/avatars/mr-dice-guy.png",
-      "bytes": 59648,
-      "triangles": 5168,
-      "draws": 9,
-      "bounds": [
-        0.6,
-        0.88877,
-        0.48337
-      ],
-      "pivotY": 0,
-      "animations": [
-        "idle",
-        "move",
-        "skill",
-        "fall",
-        "recover"
-      ],
-      "recognition": "Olive dice magician, violet top hat with large numbered die, blue suit and red bow tie, four coloured floating dice.",
-      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
-      "referenceChecked": true,
-      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mr.%20Dice%20Guy.png",
-      "editableSource": "assets/blender/second-wind/mr-dice-guy.blend"
-    }
+  "id": "mr-dice-guy",
+  "node": "toy_mr-dice-guy",
+  "url": "/models/second-wind/mr-dice-guy.glb",
+  "avatar": "/avatars/second-wind/mr-dice-guy.svg",
+  "bytes": 72912,
+  "triangles": 5168,
+  "draws": 9,
+  "bounds": [
+    0.6,
+    0.88877,
+    0.48337
   ],
-  "variants": [],
-  "totalBytes": 59648,
-  "totalTriangles": 5168,
-  "materialCount": 15,
-  "textureCount": 0,
-  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "recognition": "Olive dice magician, violet top hat with large numbered die, blue suit and red bow tie, four coloured floating dice.",
+  "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+  "referenceChecked": true,
+  "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Mr.%20Dice%20Guy.png",
+  "editableSource": "assets/blender/second-wind/mr-dice-guy.blend",
+  "modelPreview": "/models/second-wind/avatars/mr-dice-guy.png",
+  "avatarStyle": "flat-cartoon-svg",
+  "motionProfile": "biped",
+  "bones": 5,
+  "mouthSurfaceVersion": "surface-mouth-v2"
 }

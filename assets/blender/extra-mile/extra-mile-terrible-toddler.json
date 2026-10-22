@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-terrible-toddler",
+  "node": "toy_extra-mile-terrible-toddler",
+  "url": "/models/extra-mile/extra-mile-terrible-toddler.glb",
+  "bytes": 52500,
+  "triangles": 3644,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.82516,
+    0.38874
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-terrible-toddler.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "pink crying monkey baby, white diaper, large open mouth and ears",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-terrible-toddler.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

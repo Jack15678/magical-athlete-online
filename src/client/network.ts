@@ -16,6 +16,7 @@ export interface RoomConnection {
   emit(event: 'sync'): unknown;
   request(envelope: ActionEnvelope): Promise<ActionReply>;
   acknowledgeEvents?(cursor:number):void;
+  readEvents?(afterId:number):Promise<import('../shared/types.js').PublicEventBatch>;
   subscribeCommunity?(listener: (state: CommunityState) => void): () => void;
   sendChat?(message: ChatSend): Promise<ChatReply>;
   rename?(request: {requestId: string; name: string}): Promise<RenameReply>;
@@ -115,12 +116,14 @@ export async function checkOwnedRoom(identity: Identity): Promise<OwnedRoom | nu
   return ownedRecords().find(room => room.code === identity.roomCode) ?? null;
 }
 export interface JoinReply { identity: Identity; room: RoomView }
-export async function listRooms(): Promise<RoomSummary[]> {
+export interface RoomDirectoryReply { rooms: RoomSummary[]; capacity?: {used:number;limit:number} }
+export async function listRoomDirectory(): Promise<RoomDirectoryReply> {
   const response = await fetch(BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms', { cache: 'no-store' });
   const reply = await response.json().catch(() => ({}));
   if (!response.ok) throw Error(reply.error || '暂时无法获取房间列表。');
-  return reply.rooms;
+  return reply;
 }
+export async function listRooms(): Promise<RoomSummary[]> { return (await listRoomDirectory()).rooms; }
 export async function leaveRoom(identity: Identity): Promise<void> {
   const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
   let response: Response;
@@ -131,7 +134,7 @@ export async function leaveRoom(identity: Identity): Promise<void> {
   if (!response.ok) throw Error(reply.error || '退出房间未确认，请重试。');
   if (!reply.retainIdentity) forgetIdentity(identity.roomCode, identity);
 }
-export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number; role?: RoomRole; characterPool?: CharacterPool }): Promise<JoinReply> {
+export async function enterRoom(code: string | null, data: { name: string; maxPlayers?: number; timeoutSeconds?: number; mode?: GameMode; aiCount?: number; role?: RoomRole; characterPool?: CharacterPool; config?: import('../shared/room-config.js').RoomConfig; requestId?:string }): Promise<JoinReply> {
   const prefix = BROWSER_HOST_MODE ? '/api/browser/rooms' : '/api/rooms';
   const { role, ...creation } = data;
   const response = await fetch(code ? `${prefix}/${encodeURIComponent(code)}/join` : prefix, {
@@ -157,17 +160,18 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
   let closed = false;
   let expired = false;
   let closedMessage='房间已解散，请创建或加入其他房间。';
-  const eventClient=new PresentationEventClient(async afterId=>{
+  const readEvents:NonNullable<RoomConnection['readEvents']>=async afterId=>{
     const reply=await new Promise<PublicEventReply>((resolve,reject)=>socket.timeout(6500).emit('events',{afterId},(error:Error|null,value:PublicEventReply)=>error?reject(error):resolve(value)));
     if(!reply.ok||!reply.batch)throw Error(reply.error??'尚未取得完整动画记录。');return reply.batch;
-  },onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
+  };
+  const eventClient=new PresentationEventClient(readEvents,onSnapshot,error=>onStatus('error',error instanceof Error?error.message:'动画记录同步失败，请重新连接。'));
   const finishClosed = () => { closed = true; forgetClosedRoom(identity.roomCode); eventClient.reset(); socket.io.reconnection(false); socket.disconnect(); onStatus(expired ? 'expired' : 'closed', expired ? '房间已到期关闭，请重新创建。' : closedMessage); };
   socket.on('connect', () => { eventClient.reset(); if (closed) { finishClosed(); return; } onStatus('online'); socket.emit('sync'); });
   socket.on('snapshot', (room: RoomView) => { if(room.closedAt)onSnapshot(room);else eventClient.receive(room); if (room.closedAt) { closed = true; socket.io.reconnection(false); onStatus('closed', '房间已解散，请创建或加入其他房间。'); } });
-  socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主连续离开超过30分钟，房间已关闭。'; finishClosed(); } });
+  socket.on('room-closed', (event: { code: string; reason?: 'expired'|'host-away'|'dismissed' }) => { if (event.code === identity.roomCode) { expired = event.reason === 'expired'; if(event.reason==='host-away')closedMessage='房主离线保留期限已到，房间已关闭。'; finishClosed(); } });
   socket.on('disconnect', () => { if (closed) finishClosed(); else onStatus('offline'); });
-  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || /房间已解散|房间已关闭/.test(error.message)) {if(error.message.includes('30分钟'))closedMessage=error.message;finishClosed();} else onStatus('error', error.message); });
-  return { get connected() { return !closed && socket.connected; }, subscribeCommunity: community.subscribe,
+  socket.on('connect_error', (error: Error & { data?: { code?: string } }) => { if (error.data?.code === 'ROOM_EXPIRED' || /3小时|已过期/.test(error.message)) { expired = true; finishClosed(); } else if (error.data?.code === 'ROOM_CLOSED' || /房间已解散|房间已关闭/.test(error.message)) {if(error.message.includes('房间已关闭'))closedMessage=error.message;finishClosed();} else onStatus('error', error.message); });
+  return { get connected() { return !closed && socket.connected; }, subscribeCommunity: community.subscribe, readEvents,
     sendChat(message) { return new Promise((resolve,reject) => socket.timeout(6500).emit('chat-send', message, (error: Error | null, reply: ChatReply) => { if (error) reject(error); else { if (reply.message) community.update({messages: [reply.message]}); resolve(reply); } })); },
     rename(request) { return new Promise((resolve,reject) => socket.timeout(6500).emit('rename', request, (error: Error | null, reply: RenameReply) => { if (error) reject(error); else { if (reply.ok) community.update({name: reply.name, renameRemaining: reply.remaining}); resolve(reply); } })); },
     connect() { if (!closed) { if(socket.connected){eventClient.reset();onStatus('online');socket.emit('sync');chatSync();}else socket.connect(); } }, disconnect() { eventClient.reset(); socket.disconnect(); }, acknowledgeEvents(cursor){eventClient.acknowledge(cursor);}, emit(event) { if (!closed) socket.emit(event); }, async request(envelope) { try { return await socketRequest(socket, envelope); } catch (error) { if (closed && envelope.action.type === 'close') return { ok: true }; throw error; } } };

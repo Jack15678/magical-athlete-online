@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-school-bully",
+  "node": "toy_extra-mile-school-bully",
+  "url": "/models/extra-mile/extra-mile-school-bully.glb",
+  "bytes": 54544,
+  "triangles": 3736,
+  "draws": 6,
+  "bounds": [
+    0.6,
+    0.81085,
+    0.43921
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-school-bully.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "grey gorilla, dark backward cap, blue shorts and wooden slingshot",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-school-bully.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

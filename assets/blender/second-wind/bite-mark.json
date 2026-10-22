@@ -1,46 +1,32 @@
 {
-  "version": 1,
-  "edition": "second-wind",
-  "generator": "Blender 5.2.3 LTS Release Candidate",
-  "source": "assets/blender/second-wind.blend",
-  "units": "metres",
-  "up": "+Y",
-  "forward": "+Z",
-  "pivot": "ground-centre",
-  "compression": "EXT_meshopt_compression",
-  "models": [
-    {
-      "id": "bite-mark",
-      "node": "toy_bite-mark",
-      "url": "/models/second-wind/bite-mark.glb",
-      "avatar": "/models/second-wind/avatars/bite-mark.png",
-      "bytes": 39336,
-      "triangles": 3384,
-      "draws": 4,
-      "bounds": [
-        0.6,
-        0.87734,
-        0.45245
-      ],
-      "pivotY": 0,
-      "animations": [
-        "idle",
-        "move",
-        "skill",
-        "fall",
-        "recover"
-      ],
-      "recognition": "Olive pointed ears, long purple mane, off-white ringer shirt, hunched claw hands.",
-      "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
-      "referenceChecked": true,
-      "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Bite%20Mark.png",
-      "editableSource": "assets/blender/second-wind/bite-mark.blend"
-    }
+  "id": "bite-mark",
+  "node": "toy_bite-mark",
+  "url": "/models/second-wind/bite-mark.glb",
+  "avatar": "/avatars/second-wind/bite-mark.svg",
+  "bytes": 49588,
+  "triangles": 3384,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.87734,
+    0.45245
   ],
-  "variants": [],
-  "totalBytes": 39336,
-  "totalTriangles": 3384,
-  "materialCount": 15,
-  "textureCount": 0,
-  "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "recognition": "Olive pointed ears, long purple mane, off-white ringer shirt, hunched claw hands.",
+  "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
+  "referenceChecked": true,
+  "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Bite%20Mark.png",
+  "editableSource": "assets/blender/second-wind/bite-mark.blend",
+  "modelPreview": "/models/second-wind/avatars/bite-mark.png",
+  "avatarStyle": "flat-cartoon-svg",
+  "motionProfile": "biped",
+  "bones": 5,
+  "mouthSurfaceVersion": "surface-mouth-v2"
 }

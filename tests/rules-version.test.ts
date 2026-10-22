@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../src/engine/index.js';
-import { automaticRoomAction, CURRENT_RULES_VERSION, LEGACY_RULES_VERSION, SECOND_WIND_V1_RULES_VERSION, roomRules } from '../src/engine/runtime.js';
-import { reduceRoomAction } from '../src/shared/room-core.js';
+import { automaticRoomAction, timeoutRoomAction, SECOND_WIND_V2_RULES_VERSION, CURRENT_RULES_VERSION, LEGACY_RULES_VERSION, SECOND_WIND_V1_RULES_VERSION, roomRules } from '../src/engine/runtime.js';
+import { projectRoom, reduceRoomAction } from '../src/shared/room-core.js';
+import { enabledCharacterIds } from '../src/shared/room-config.js';
 import { Rooms } from '../src/server/rooms.js';
 import { immediateRoomAction } from '../src/shared/automation.js';
 import { Store } from '../src/server/store.js';
@@ -40,6 +41,18 @@ test('未知规则版本不会进入当前规则结算，仍可读取和解散',
   assert.equal(reduceRoomAction(unsupported,'p0',{type:'close'},{now:2,rematchSeed:0}).closedAt,2);
 });
 
+test('旧原版练习的公开配置与冻结引擎的36张可选牌保持一致',()=>{
+  for(const version of [undefined,LEGACY_RULES_VERSION,SECOND_WIND_V1_RULES_VERSION,SECOND_WIND_V2_RULES_VERSION]){
+    const old=room();old.mode='practice';old.game.mode='practice';old.game.players=old.game.players.slice(0,1);old.maxPlayers=1;
+    old.game.rulesVersion=version;old.game.characterPool='mixed';delete old.game.config;
+    roomRules(old.game).startGame(old.game);
+    const view=projectRoom(old,'p0',{authorityId:'p0',authorityOnline:true});
+    const allowed=enabledCharacterIds(view.config,view.characterPool,true);
+    assert.equal(allowed.length,version===undefined||version===LEGACY_RULES_VERSION?36:72);
+    assert.deepEqual(new Set(allowed),new Set(old.game.draft!.market));
+  }
+});
+
 test('SQLite恢复会持久锁定旧规则且不会悄悄更新到新规则',()=>{
   const store=new Store(':memory:');
   try{
@@ -47,4 +60,11 @@ test('SQLite恢复会持久锁定旧规则且不会悄悄更新到新规则',()=
     const rooms=new Rooms(store,0,()=>2);assert.equal(rooms.get(saved.code).game.rulesVersion,LEGACY_RULES_VERSION);
     assert.equal(store.load()[0]!.game.rulesVersion,LEGACY_RULES_VERSION);
   }finally{store.close();}
+});
+
+test('timeout defaults are v3-only and cannot rewrite frozen v2 human-choice timing',()=>{
+ const modern=room().game;modern.phase='race';modern.pending={id:'target',playerId:'p0',racerId:'r0',kind:'hypnotist',title:'选目标',optional:true,context:{},options:[{id:'skip',label:'不使用'}]};
+ assert.deepEqual(timeoutRoomAction(modern),{playerId:'p0',action:{type:'choose',choiceId:'target',optionId:'skip'}});
+ const old=structuredClone(modern);old.rulesVersion=SECOND_WIND_V2_RULES_VERSION;assert.equal(timeoutRoomAction(old),undefined);
+ for(const kind of ['duel-roll','em-cletus-roll']){modern.pending.kind=kind;modern.pending.options=[{id:'roll',label:'投掷'}];assert.equal(timeoutRoomAction(modern),undefined);}
 });

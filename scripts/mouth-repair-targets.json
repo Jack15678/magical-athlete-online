@@ -1,0 +1,333 @@
+{
+  "version": "surface-mouth-v2",
+  "gap": 0.004,
+  "targets": [
+    {
+      "id": "bite-mark",
+      "mouth": "GEO-bite-mark-smile-22",
+      "hosts": [
+        "GEO-bite-mark-face-8"
+      ]
+    },
+    {
+      "id": "blunderdog",
+      "mouth": "GEO-blunderdog-smile-17",
+      "hosts": [
+        "GEO-blunderdog-head-6"
+      ]
+    },
+    {
+      "id": "cheatah",
+      "mouth": "GEO-cheatah-smile-17",
+      "hosts": [
+        "GEO-cheatah-head-6",
+        "GEO-cheatah-cheetah-muzzle-20"
+      ]
+    },
+    {
+      "id": "hopfrog",
+      "mouth": "GEO-hopfrog-smile-15",
+      "hosts": [
+        "GEO-hopfrog-wide-frog-face-6"
+      ]
+    },
+    {
+      "id": "icarus",
+      "mouth": "GEO-icarus-smile-16",
+      "hosts": [
+        "GEO-icarus-head-6"
+      ]
+    },
+    {
+      "id": "kingtripper",
+      "mouth": "GEO-kingtripper-smile-10",
+      "hosts": [
+        "GEO-kingtripper-lizard-head-2"
+      ]
+    },
+    {
+      "id": "le-saboteur",
+      "mouth": "GEO-le-saboteur-smile-18",
+      "hosts": [
+        "GEO-le-saboteur-croc-head-6",
+        "GEO-le-saboteur-croc-snout-7"
+      ]
+    },
+    {
+      "id": "magical-athlete",
+      "mouth": "GEO-magical-athlete-smile-17",
+      "hosts": [
+        "GEO-magical-athlete-head-6"
+      ]
+    },
+    {
+      "id": "mr-dice-guy",
+      "mouth": "GEO-mr-dice-guy-smile-17",
+      "hosts": [
+        "GEO-mr-dice-guy-head-6"
+      ]
+    },
+    {
+      "id": "re-runner",
+      "mouth": "GEO-re-runner-smile-22",
+      "hosts": [
+        "GEO-re-runner-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-cletus",
+      "mouth": "GEO-extra-mile-cletus-smile-17",
+      "hosts": [
+        "GEO-extra-mile-cletus-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-doc-paradox",
+      "mouth": "GEO-extra-mile-doc-paradox-smile-17",
+      "hosts": [
+        "GEO-extra-mile-doc-paradox-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-dom-and-gary",
+      "mouth": "GEO-extra-mile-dom-and-gary-smile-17",
+      "hosts": [
+        "GEO-extra-mile-dom-and-gary-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-gingy",
+      "mouth": "GEO-extra-mile-gingy-smile-17",
+      "hosts": [
+        "GEO-extra-mile-gingy-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-king-pete",
+      "mouth": "GEO-extra-mile-king-pete-smile-17",
+      "hosts": [
+        "GEO-extra-mile-king-pete-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-moneybags",
+      "mouth": "GEO-extra-mile-moneybags-smile-17",
+      "hosts": [
+        "GEO-extra-mile-moneybags-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-mr-fox",
+      "mouth": "GEO-extra-mile-mr-fox-smile-17",
+      "hosts": [
+        "GEO-extra-mile-mr-fox-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-pooh",
+      "mouth": "GEO-extra-mile-pooh-smile-17",
+      "hosts": [
+        "GEO-extra-mile-pooh-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-robin-hood",
+      "mouth": "GEO-extra-mile-robin-hood-smile-17",
+      "hosts": [
+        "GEO-extra-mile-robin-hood-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-saint-nick",
+      "mouth": "GEO-extra-mile-saint-nick-smile-17",
+      "hosts": [
+        "GEO-extra-mile-saint-nick-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-school-bully",
+      "mouth": "GEO-extra-mile-school-bully-smile-17",
+      "hosts": [
+        "GEO-extra-mile-school-bully-head-6",
+        "GEO-extra-mile-school-bully-gorilla-torso-18"
+      ]
+    },
+    {
+      "id": "extra-mile-scout",
+      "mouth": "GEO-extra-mile-scout-smile-17",
+      "hosts": [
+        "GEO-extra-mile-scout-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-snub",
+      "mouth": "GEO-extra-mile-snub-smile-17",
+      "hosts": [
+        "GEO-extra-mile-snub-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-terrible-toddler",
+      "mouth": "GEO-extra-mile-terrible-toddler-smile-17",
+      "hosts": [
+        "GEO-extra-mile-terrible-toddler-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-thief",
+      "mouth": "GEO-extra-mile-thief-smile-11",
+      "hosts": [
+        "GEO-extra-mile-thief-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-toll-troll",
+      "mouth": "GEO-extra-mile-toll-troll-smile-17",
+      "hosts": [
+        "GEO-extra-mile-toll-troll-head-6"
+      ]
+    },
+    {
+      "id": "extra-mile-totally-fair-ref",
+      "mouth": "GEO-extra-mile-totally-fair-ref-smile-17",
+      "hosts": [
+        "GEO-extra-mile-totally-fair-ref-head-6"
+      ],
+      "heightShift": -0.025
+    },
+    {
+      "id": "extra-mile-witch-hazel",
+      "mouth": "GEO-extra-mile-witch-hazel-smile-17",
+      "hosts": [
+        "GEO-extra-mile-witch-hazel-head-6"
+      ]
+    },
+    {
+      "id": "leaf-crash-dummy",
+      "mouth": "GEO-leaf-crash-dummy-smile-17",
+      "hosts": [
+        "GEO-leaf-crash-dummy-head-6"
+      ]
+    },
+    {
+      "id": "leaf-filmmaker",
+      "mouth": "GEO-leaf-filmmaker-smile-17",
+      "hosts": [
+        "GEO-leaf-filmmaker-head-6"
+      ]
+    },
+    {
+      "id": "leaf-nepo-baby",
+      "mouth": "GEO-leaf-nepo-baby-smile-17",
+      "hosts": [
+        "GEO-leaf-nepo-baby-head-6"
+      ]
+    },
+    {
+      "id": "leaf-philanthropist",
+      "mouth": "GEO-leaf-philanthropist-smile-17",
+      "hosts": [
+        "GEO-leaf-philanthropist-head-6"
+      ]
+    },
+    {
+      "id": "leaf-revolutionary",
+      "mouth": "GEO-leaf-revolutionary-smile-17",
+      "hosts": [
+        "GEO-leaf-revolutionary-head-6"
+      ]
+    },
+    {
+      "id": "leaf-sole-survivor",
+      "mouth": "GEO-leaf-sole-survivor-smile-17",
+      "hosts": [
+        "GEO-leaf-sole-survivor-head-6"
+      ]
+    },
+    {
+      "id": "leaf-sore-loser",
+      "mouth": "GEO-leaf-sore-loser-smile-17",
+      "hosts": [
+        "GEO-leaf-sore-loser-head-6"
+      ]
+    },
+    {
+      "id": "leaf-thespian",
+      "mouth": "GEO-leaf-thespian-smile-17",
+      "hosts": [
+        "GEO-leaf-thespian-head-6"
+      ]
+    },
+    {
+      "id": "leaf-zombie",
+      "mouth": "GEO-leaf-zombie-smile-17",
+      "hosts": [
+        "GEO-leaf-zombie-head-6"
+      ]
+    },
+    {
+      "id": "cheerleader",
+      "mouth": "GEO-cheerleader-12",
+      "hosts": [
+        "GEO-cheerleader-03"
+      ]
+    },
+    {
+      "id": "coach",
+      "mouth": "GEO-coach-12",
+      "hosts": [
+        "GEO-coach-03"
+      ]
+    },
+    {
+      "id": "duelist",
+      "mouth": "GEO-duelist-12",
+      "hosts": [
+        "GEO-duelist-03"
+      ]
+    },
+    {
+      "id": "heckler",
+      "mouth": "GEO-heckler-09",
+      "hosts": [
+        "GEO-heckler-02"
+      ]
+    },
+    {
+      "id": "lackey",
+      "mouth": "GEO-lackey-12",
+      "hosts": [
+        "GEO-lackey-03"
+      ]
+    },
+    {
+      "id": "lovable-loser",
+      "mouth": "GEO-lovable-loser-12",
+      "hosts": [
+        "GEO-lovable-loser-03"
+      ]
+    },
+    {
+      "id": "magician",
+      "mouth": "GEO-magician-12",
+      "hosts": [
+        "GEO-magician-03"
+      ]
+    },
+    {
+      "id": "skipper",
+      "mouth": "GEO-skipper-12",
+      "hosts": [
+        "GEO-skipper-03"
+      ]
+    },
+    {
+      "id": "overtaker",
+      "mouth": "GEO-overtaker-smile-18",
+      "hosts": [
+        "GEO-overtaker-head-6",
+        "GEO-overtaker-blue-snout-11"
+      ]
+    }
+  ]
+}

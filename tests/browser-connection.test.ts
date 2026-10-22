@@ -108,7 +108,7 @@ test('owner absence closure reports its own terminal reason and never reconnects
   const client=closingTransport(),statuses:{state:string;message?:string}[]=[];
   Reflect.set(client.connection,'onStatus',(state:string,message?:string)=>statuses.push({state,message}));
   client.receive({type:'room-closed',code:'ABC234',closedAt:123,reason:'host-away'});
-  assert.deepEqual(statuses,[{state:'closed',message:'房主连续离开超过30分钟，房间已关闭。'}]);
+  assert.deepEqual(statuses,[{state:'closed',message:'房主离线保留期限已到，房间已关闭。'}]);
   const events=[...client.events];client.connection.connect();assert.deepEqual(client.events,events);
 });
 

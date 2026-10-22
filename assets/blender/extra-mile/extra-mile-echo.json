@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-echo",
+  "node": "toy_extra-mile-echo",
+  "url": "/models/extra-mile/extra-mile-echo.glb",
+  "bytes": 49712,
+  "triangles": 2100,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.795,
+    0.23232
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-echo.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "upside-down dark bat hanging from a brown branch, folded wings and small ears",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

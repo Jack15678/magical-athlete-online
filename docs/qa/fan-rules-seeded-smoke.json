@@ -1,0 +1,113 @@
+{
+  "verifiedAt": "2026-10-22",
+  "rulesVersion": "cmyk-base-aug2026-fan-v3",
+  "allFourPacks": true,
+  "authorityAutomaticPolicy": [
+    {
+      "players": 2,
+      "seed": 42,
+      "phase": "finished",
+      "steps": 351,
+      "rounds": 4,
+      "rolls": 259,
+      "events": 722,
+      "diagnostic": null
+    },
+    {
+      "players": 2,
+      "seed": 20512026,
+      "phase": "finished",
+      "steps": 356,
+      "rounds": 4,
+      "rolls": 278,
+      "events": 642,
+      "diagnostic": null
+    },
+    {
+      "players": 2,
+      "seed": 20261022,
+      "phase": "finished",
+      "steps": 407,
+      "rounds": 4,
+      "rolls": 277,
+      "events": 681,
+      "diagnostic": null
+    },
+    {
+      "players": 4,
+      "seed": 42,
+      "phase": "finished",
+      "steps": 338,
+      "rounds": 4,
+      "rolls": 259,
+      "events": 687,
+      "diagnostic": null
+    },
+    {
+      "players": 4,
+      "seed": 20512026,
+      "phase": "finished",
+      "steps": 372,
+      "rounds": 4,
+      "rolls": 305,
+      "events": 680,
+      "diagnostic": null
+    },
+    {
+      "players": 4,
+      "seed": 20261022,
+      "phase": "finished",
+      "steps": 347,
+      "rounds": 4,
+      "rolls": 270,
+      "events": 579,
+      "diagnostic": null
+    },
+    {
+      "players": 8,
+      "seed": 42,
+      "phase": "finished",
+      "steps": 589,
+      "rounds": 4,
+      "rolls": 351,
+      "events": 1121,
+      "diagnostic": null
+    },
+    {
+      "players": 8,
+      "seed": 20512026,
+      "phase": "finished",
+      "steps": 943,
+      "rounds": 4,
+      "rolls": 475,
+      "events": 1836,
+      "diagnostic": null
+    },
+    {
+      "players": 8,
+      "seed": 20261022,
+      "phase": "finished",
+      "steps": 604,
+      "rounds": 4,
+      "rolls": 352,
+      "events": 986,
+      "diagnostic": null
+    }
+  ],
+  "projectedAiRegression": [
+    {
+      "players": 2,
+      "seed": 7,
+      "status": "complete",
+      "steps": 2533,
+      "races": 4,
+      "phase": "finished",
+      "elapsedMs": 10011
+    }
+  ],
+  "commands": [
+    "pnpm exec tsx scripts/check-fan-replays.ts",
+    "AUDIT_SEEDS=7 AUDIT_PLAYERS=2 pnpm exec tsx scripts/audit-fan-matches.ts"
+  ],
+  "note": "Failed and paused full private states stay under ignored .local; this report contains no identity credentials or secret cards."
+}

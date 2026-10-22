@@ -1,0 +1,32 @@
+{
+  "id": "leaf-sore-loser",
+  "node": "toy_leaf-sore-loser",
+  "url": "/models/leaf/leaf-sore-loser.glb",
+  "bytes": 44784,
+  "triangles": 3288,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.67407,
+    0.33333
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/leaf/leaf-sore-loser.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / sore-loser",
+  "referenceDate": "2026-10-22",
+  "recognition": "orange angry athlete with enormous nose, blue shorts and raised clenched fists",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts.",
+  "avatar": "/models/leaf/avatars/leaf-sore-loser.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

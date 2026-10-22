@@ -1,0 +1,30 @@
+{
+  "id": "leaf-toucan",
+  "node": "toy_leaf-toucan",
+  "url": "/models/leaf/leaf-toucan.glb",
+  "bytes": 66600,
+  "triangles": 3784,
+  "draws": 6,
+  "bounds": [
+    0.27317,
+    0.38584,
+    0.6
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/leaf/leaf-toucan.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / toucan",
+  "referenceDate": "2026-10-22",
+  "recognition": "pink toucan, bright yellow face patch and oversized blue beak with orange tip",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts."
+}

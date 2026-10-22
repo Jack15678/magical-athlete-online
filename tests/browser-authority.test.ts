@@ -180,7 +180,7 @@ test('Pending choices, queue, random history and receipts recover exactly; the h
   const before=await raw(env);assert.ok(before.room.game.pending);assert.ok(before.room.game.randomLog.length);a.dispose();
   env.clock.now+=900_000;
   const loaded=await BrowserAuthority.load({...meta,phase:before.room.game.phase},env.options);const restored=await raw(env);
-  assert.deepEqual(restored.room.game,before.room.game);assert.equal(restored.room.version,before.room.version);assert.equal(restored.room.deadline,null, 'a restored human choice waits for its controller');
+  assert.deepEqual(restored.room.game,before.room.game);assert.equal(restored.room.version,before.room.version);assert.equal(restored.room.deadline,['duel-roll','em-cletus-roll'].includes(restored.room.game.pending!.kind)?null:env.clock.now+meta.timeoutSeconds*1000,'ordinary v3 choices restore the configured timeout; protected real duel rolls keep waiting');
   assert.equal((await loaded.action(last!.playerId,last!.envelope)).duplicate,true);
   assert.equal(automaticAction(restored.room.game), undefined);
   const pending=restored.room.game.pending!;

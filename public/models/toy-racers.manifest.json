@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "generator": "Blender 5.2.3 LTS Release Candidate",
   "units": "metres",
   "up": "+Y",
@@ -17,7 +17,16 @@
         0.385
       ],
       "pivotY": 0,
-      "refinement": "flask-rim, rear-flask-seam; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "flask-rim, rear-flask-seam; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "baba-yaga",
@@ -30,12 +39,21 @@
         0.4728
       ],
       "pivotY": 0,
-      "refinement": "back-window-a, back-window-b, roof-ridge; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-window-a, back-window-b, roof-ridge; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "banana",
       "node": "toy_banana",
-      "triangles": 4508,
+      "triangles": 9000,
       "draws": 4,
       "bounds": [
         0.59,
@@ -43,7 +61,16 @@
         0.2465
       ],
       "pivotY": 0,
-      "refinement": "peel-back-ridge; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "peel-back-ridge; rounded molded edges, smoother organic surfaces and eye glints; smoother curved peel; moulded toe caps and cream soles; same silhouette and ground pivot; smoother curved peel; moulded toe caps and cream soles; same silhouette and ground pivot",
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "blimp",
@@ -56,7 +83,16 @@
         0.3882
       ],
       "pivotY": 0,
-      "refinement": "back-gore; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-gore; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "centaur",
@@ -69,7 +105,16 @@
         0.5778
       ],
       "pivotY": 0,
-      "refinement": "mane, saddle-seam; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "mane, saddle-seam; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "quadruped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "cheerleader",
@@ -78,11 +123,21 @@
       "draws": 6,
       "bounds": [
         0.59,
-        0.7872,
+        0.78717,
         0.3811
       ],
       "pivotY": 0,
-      "refinement": "ponytail, skirt-hem; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "ponytail, skirt-hem; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "coach",
@@ -91,11 +146,21 @@
       "draws": 5,
       "bounds": [
         0.59,
-        0.8976,
-        0.4605
+        0.89758,
+        0.46054
       ],
       "pivotY": 0,
-      "refinement": "cap-seam, jacket-back; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "cap-seam, jacket-back; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "copycat",
@@ -108,7 +173,16 @@
         0.3658
       ],
       "pivotY": 0,
-      "refinement": "tail-blue, tail-pink; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "tail-blue, tail-pink; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "dicemonger",
@@ -121,7 +195,16 @@
         0.4329
       ],
       "pivotY": 0,
-      "refinement": "back-pip-a, back-pip-b; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-pip-a, back-pip-b; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "duelist",
@@ -129,12 +212,22 @@
       "triangles": 5500,
       "draws": 4,
       "bounds": [
-        0.5898,
-        0.9035,
-        0.4408
+        0.58985,
+        0.90345,
+        0.44083
       ],
       "pivotY": 0,
-      "refinement": "coat-tail, helmet-back; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "coat-tail, helmet-back; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "egg",
@@ -147,7 +240,16 @@
         0.4906
       ],
       "pivotY": 0,
-      "refinement": "back-shell-crack; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-shell-crack; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "flip-flop",
@@ -160,7 +262,16 @@
         0.3052
       ],
       "pivotY": 0,
-      "refinement": "sole-seam; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "sole-seam; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "genius",
@@ -173,7 +284,16 @@
         0.363
       ],
       "pivotY": 0,
-      "refinement": "brain-rear-fold; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "brain-rear-fold; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "gunk",
@@ -186,7 +306,16 @@
         0.4768
       ],
       "pivotY": 0,
-      "refinement": "Voxel-fused asymmetrical slime body, relaxed continuous side/back surface, molded eyes, rear and side bubbles"
+      "refinement": "Voxel-fused asymmetrical slime body, relaxed continuous side/back surface, molded eyes, rear and side bubbles",
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "hare",
@@ -199,7 +328,16 @@
         0.4711
       ],
       "pivotY": 0,
-      "refinement": "Rounded muzzle, molded eye glints, inner ears, belly, connected arms/paws, toe seams, round rear tail"
+      "refinement": "Rounded muzzle, molded eye glints, inner ears, belly, connected arms/paws, toe seams, round rear tail",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "heckler",
@@ -212,7 +350,17 @@
         0.59
       ],
       "pivotY": 0,
-      "refinement": "cup-back-rim; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "cup-back-rim; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "huge-baby",
@@ -225,7 +373,16 @@
         0.4517
       ],
       "pivotY": 0,
-      "refinement": "diaper-back; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "diaper-back; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "hypnotist",
@@ -238,7 +395,16 @@
         0.4892
       ],
       "pivotY": 0,
-      "refinement": "robe-back-fold; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "robe-back-fold; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "inchworm",
@@ -251,7 +417,16 @@
         0.2702
       ],
       "pivotY": 0,
-      "refinement": "back-segment-stripe; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-segment-stripe; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "lackey",
@@ -261,10 +436,20 @@
       "bounds": [
         0.59,
         0.7338,
-        0.3563
+        0.35628
       ],
       "pivotY": 0,
-      "refinement": "apron-back-tie; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "apron-back-tie; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "leaptoad",
@@ -277,7 +462,16 @@
         0.4647
       ],
       "pivotY": 0,
-      "refinement": "back-spot-a, back-spot-b; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-spot-a, back-spot-b; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "quadruped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "legs",
@@ -290,7 +484,16 @@
         0.3925
       ],
       "pivotY": 0,
-      "refinement": "knee-a, knee-b; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "knee-a, knee-b; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "lovable-loser",
@@ -299,11 +502,21 @@
       "draws": 6,
       "bounds": [
         0.59,
-        0.86,
-        0.4207
+        0.85998,
+        0.42068
       ],
       "pivotY": 0,
-      "refinement": "back-patch-stitch; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-patch-stitch; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "magician",
@@ -311,12 +524,22 @@
       "triangles": 5816,
       "draws": 5,
       "bounds": [
-        0.5899,
-        1.0015,
-        0.5217
+        0.58994,
+        1.00154,
+        0.52173
       ],
       "pivotY": 0,
-      "refinement": "cape-collar, hat-back-band; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "cape-collar, hat-back-band; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "mastermind",
@@ -329,7 +552,16 @@
         0.3615
       ],
       "pivotY": 0,
-      "refinement": "chair-back-scroll; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "chair-back-scroll; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "mouth",
@@ -342,7 +574,16 @@
         0.4556
       ],
       "pivotY": 0,
-      "refinement": "rear-lip-contour; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "rear-lip-contour; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "party-animal",
@@ -355,7 +596,16 @@
         0.4199
       ],
       "pivotY": 0,
-      "refinement": "back-confetti; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-confetti; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "rocket-scientist",
@@ -368,7 +618,16 @@
         0.3352
       ],
       "pivotY": 0,
-      "refinement": "rear-panel-seam; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "rear-panel-seam; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "romantic",
@@ -381,7 +640,16 @@
         0.2857
       ],
       "pivotY": 0,
-      "refinement": "heart-back-emboss; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "heart-back-emboss; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "float",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "scoocher",
@@ -394,7 +662,16 @@
         0.3525
       ],
       "pivotY": 0,
-      "refinement": "seat-back-trim; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "seat-back-trim; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "sisyphus",
@@ -407,7 +684,16 @@
         0.4496
       ],
       "pivotY": 0,
-      "refinement": "boulder-rear-vein; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "boulder-rear-vein; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "skipper",
@@ -416,11 +702,21 @@
       "draws": 4,
       "bounds": [
         0.59,
-        0.9634,
-        0.4448
+        0.96337,
+        0.44484
       ],
       "pivotY": 0,
-      "refinement": "collar-back; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "collar-back; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5,
+      "mouthSurfaceVersion": "surface-mouth-v2"
     },
     {
       "id": "stickler",
@@ -433,7 +729,16 @@
         0.3171
       ],
       "pivotY": 0,
-      "refinement": "rear-ruler-edge; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "rear-ruler-edge; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "suckerfish",
@@ -446,7 +751,16 @@
         0.3827
       ],
       "pivotY": 0,
-      "refinement": "back-fin-ray; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "back-fin-ray; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "long",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "third-wheel",
@@ -459,7 +773,16 @@
         0.3052
       ],
       "pivotY": 0,
-      "refinement": "rear-hub; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "rear-hub; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "wheel",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     },
     {
       "id": "twin",
@@ -472,13 +795,23 @@
         0.3336
       ],
       "pivotY": 0,
-      "refinement": "rear-bond; rounded molded edges, smoother organic surfaces and eye glints"
+      "refinement": "rear-bond; rounded molded edges, smoother organic surfaces and eye glints",
+      "motionProfile": "biped",
+      "animations": [
+        "idle",
+        "move",
+        "skill",
+        "fall",
+        "recover"
+      ],
+      "bones": 5
     }
   ],
-  "totalTriangles": 192306,
+  "totalTriangles": 196798,
   "materialCount": 10,
   "textureCount": 0,
-  "bytes": 1636676,
-  "optimizedBytes": 1636676,
-  "compression": "EXT_meshopt_compression"
+  "bytes": 2233404,
+  "optimizedBytes": 2233404,
+  "compression": "EXT_meshopt_compression",
+  "skeletalAnimation": true
 }

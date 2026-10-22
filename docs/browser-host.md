@@ -1,5 +1,7 @@
 # 浏览器主持模式
 
+> 2026-10-22 本分支的新建房间已改为服务端 Durable Object 权威结算，见[迭代说明](fan-iteration-2026-10-22.md)。本文保留旧浏览器计算房间恢复与部署历史；已存在的旧房间继续使用原存档。部署命令及网址配置仍适用。
+
 正式入口：https://magical-athlete.qiuh23.workers.dev 。已部署到用户确认的Workers Free；无需在游玩设备安装本项目、Node或Tailscale。
 
 `pnpm build`同时生成本机版与浏览器房主版，兼容Cloudflare面板默认构建命令；`pnpm build:browser`可只构建网页房主版本。
