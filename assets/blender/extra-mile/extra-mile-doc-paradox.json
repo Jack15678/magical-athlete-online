@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-doc-paradox",
+  "node": "toy_extra-mile-doc-paradox",
+  "url": "/models/extra-mile/extra-mile-doc-paradox.glb",
+  "bytes": 54660,
+  "triangles": 3640,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.94304,
+    0.44315
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-doc-paradox.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "blue scientist, swept white hair and upright green time portal",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-doc-paradox.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

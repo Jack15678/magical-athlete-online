@@ -1,0 +1,30 @@
+{
+  "id": "leaf-loan-shark",
+  "node": "toy_leaf-loan-shark",
+  "url": "/models/leaf/leaf-loan-shark.glb",
+  "bytes": 44444,
+  "triangles": 1310,
+  "draws": 5,
+  "bounds": [
+    0.52,
+    0.98,
+    0.52
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/leaf/leaf-loan-shark.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / loan-shark",
+  "referenceDate": "2026-10-22",
+  "recognition": "blue upright shark, red fedora and broad orange-toothed grin",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts."
+}

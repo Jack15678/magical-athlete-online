@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-heads",
+  "node": "toy_extra-mile-heads",
+  "url": "/models/extra-mile/extra-mile-heads.glb",
+  "bytes": 36072,
+  "triangles": 2412,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.5524,
+    0.45332
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-heads.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "horizontal copper coin, tall eyes and white limbs",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

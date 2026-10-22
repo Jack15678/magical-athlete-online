@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-22T05:50:53.840Z",
+  "source": "server reducer + public projection + decideAI, numeric reproducible RNG seeds",
+  "config": {
+    "version": "room-config-v1",
+    "characterPacks": {
+      "original": true,
+      "second-wind": true,
+      "extra-mile": true,
+      "leaf-fan": true
+    },
+    "optionalRules": []
+  },
+  "maxActions": 20000,
+  "failures": 0,
+  "results": [
+    {
+      "players": 2,
+      "seed": 1,
+      "status": "complete",
+      "steps": 261,
+      "races": 4,
+      "phase": "finished",
+      "elapsedMs": 340
+    },
+    {
+      "players": 2,
+      "seed": 2,
+      "status": "complete",
+      "steps": 292,
+      "races": 4,
+      "phase": "finished",
+      "elapsedMs": 355
+    }
+  ],
+  "racedCharacterIds": [
+    "bite-mark",
+    "doppelgangster",
+    "extra-mile-cletus",
+    "extra-mile-doc-paradox",
+    "extra-mile-gingy",
+    "extra-mile-heads",
+    "extra-mile-moneybags",
+    "extra-mile-robin-hood",
+    "extra-mile-saint-nick",
+    "extra-mile-school-bully",
+    "extra-mile-scout",
+    "extra-mile-shuffler",
+    "extra-mile-snake-eyes",
+    "extra-mile-toll-troll",
+    "le-saboteur",
+    "leaf-crash-dummy",
+    "leaf-spiteful-spirit",
+    "leaf-triangle-man",
+    "mastermind",
+    "mr-dice-guy",
+    "null",
+    "party-pooper",
+    "romantic",
+    "scoocher",
+    "soulmate",
+    "spoilsport",
+    "stepdad",
+    "the-hose",
+    "third-wheel"
+  ]
+}

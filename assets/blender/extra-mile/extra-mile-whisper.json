@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-whisper",
+  "node": "toy_extra-mile-whisper",
+  "url": "/models/extra-mile/extra-mile-whisper.glb",
+  "bytes": 43288,
+  "triangles": 1612,
+  "draws": 3,
+  "bounds": [
+    0.56647,
+    0.98,
+    0.46451
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-whisper.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "lavender ghost, pointed scalloped hem and hands covering its mouth",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

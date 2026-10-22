@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-thief",
+  "node": "toy_extra-mile-thief",
+  "url": "/models/extra-mile/extra-mile-thief.glb",
+  "bytes": 47456,
+  "triangles": 3196,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.74917,
+    0.32194
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-thief.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "green burglar, dark beanie/mask, striped shirt and tan loot sack",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-thief.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

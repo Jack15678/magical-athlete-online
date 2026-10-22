@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-mr-fox",
+  "node": "toy_extra-mile-mr-fox",
+  "url": "/models/extra-mile/extra-mile-mr-fox.glb",
+  "bytes": 48268,
+  "triangles": 3520,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.67048,
+    0.37253
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-mr-fox.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "orange fox lawyer, navy suit, cream muzzle, briefcase and balance scales",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-mr-fox.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

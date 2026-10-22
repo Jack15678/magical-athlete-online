@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-doctor-dice",
+  "node": "toy_extra-mile-doctor-dice",
+  "url": "/models/extra-mile/extra-mile-doctor-dice.glb",
+  "bytes": 43144,
+  "triangles": 2932,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.94088,
+    0.40071
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-doctor-dice.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white die doctor, blue limbs, silver head mirror and stethoscope",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

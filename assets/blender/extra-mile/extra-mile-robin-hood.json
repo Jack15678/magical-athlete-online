@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-robin-hood",
+  "node": "toy_extra-mile-robin-hood",
+  "url": "/models/extra-mile/extra-mile-robin-hood.glb",
+  "bytes": 46544,
+  "triangles": 2884,
+  "draws": 6,
+  "bounds": [
+    0.6,
+    0.86532,
+    0.3803
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-robin-hood.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "grey archer, pointed green feathered hat/tunic, belt and longbow",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-robin-hood.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

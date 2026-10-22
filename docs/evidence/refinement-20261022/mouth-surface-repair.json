@@ -1,0 +1,705 @@
+{
+  "version": "surface-mouth-v2",
+  "passed": true,
+  "targetGap": 0.004,
+  "models": [
+    {
+      "id": "bite-mark",
+      "source": "assets/blender/second-wind/bite-mark.blend",
+      "sourceSha256": "5fd64fbdec3d7c15052ecaeb3d6db7e0531ca5f24487b3fd33b451ec82fe4fad",
+      "glbSha256": "87c037f2f672095fd43ee4fadaf67d0bb33076cbae408508c87df8f5a89e57a0",
+      "mouth": "GEO-bite-mark-smile-22",
+      "hosts": [
+        "GEO-bite-mark-face-8"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "blunderdog",
+      "source": "assets/blender/second-wind/blunderdog.blend",
+      "sourceSha256": "662b70000b7e4b6592f8f11f8b8268a40d61609ca2beb347cb7ba229ca9a89f5",
+      "glbSha256": "eba49fe246c0acf76ad34ad3fc93a43b82045ce5f1842a747677324d76518697",
+      "mouth": "GEO-blunderdog-smile-17",
+      "hosts": [
+        "GEO-blunderdog-head-6",
+        "GEO-blunderdog-dog-nose-9"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "cheatah",
+      "source": "assets/blender/second-wind/cheatah.blend",
+      "sourceSha256": "cb1f7c0ca3ae878b64dd21a7f4294cd077c896742f3e24239693222313157c31",
+      "glbSha256": "fae14f6ed7b6bdb3613b21fca4300b724e7bcee17cdbb0e532ae9f06c3be372d",
+      "mouth": "GEO-cheatah-smile-17",
+      "hosts": [
+        "GEO-cheatah-head-6",
+        "GEO-cheatah-cheetah-muzzle-20"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "hopfrog",
+      "source": "assets/blender/second-wind/hopfrog.blend",
+      "sourceSha256": "5a2c524cdd9a984ee2d6b6e8ca3b7e4790c56e8cff4767a286dcd173b1228903",
+      "glbSha256": "3eb23226a38d3953f2267e4e480d290e7a2d7b42bee58a7fbbafae2e8b951be7",
+      "mouth": "GEO-hopfrog-smile-15",
+      "hosts": [
+        "GEO-hopfrog-wide-frog-face-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "icarus",
+      "source": "assets/blender/second-wind/icarus.blend",
+      "sourceSha256": "9172a0dd20ead01b9d9ff63bae72356a7baa45d338337aa20f9cc7f0fc3caa7d",
+      "glbSha256": "da95a039f67bfadbaf19417d3e4f01fa91b5996b2222d9732d30ab612278e21a",
+      "mouth": "GEO-icarus-smile-16",
+      "hosts": [
+        "GEO-icarus-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "kingtripper",
+      "source": "assets/blender/second-wind/kingtripper.blend",
+      "sourceSha256": "b49990a7512d0b8f5c715d74bde364d1850dec99f23357a63aff01fff9d37302",
+      "glbSha256": "1ade661d9684737a9846e10d54574de9cc222b8c8e88edb5bc9d62f889b90c89",
+      "mouth": "GEO-kingtripper-smile-10",
+      "hosts": [
+        "GEO-kingtripper-lizard-head-2",
+        "GEO-kingtripper-long-grin-3"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "le-saboteur",
+      "source": "assets/blender/second-wind/le-saboteur.blend",
+      "sourceSha256": "34e33228a8bbbf2eb121d53c53bf873b7c2545d36d9d24b9f069cd883896a533",
+      "glbSha256": "a58418e3443d3808b9a2af43b47f5b023c7cf70d655fbe00f0fe9fd2bd3d06d1",
+      "mouth": "GEO-le-saboteur-smile-18",
+      "hosts": [
+        "GEO-le-saboteur-croc-head-6",
+        "GEO-le-saboteur-croc-snout-7"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "magical-athlete",
+      "source": "assets/blender/second-wind/magical-athlete.blend",
+      "sourceSha256": "3847864cf36f42de9fcb0afdf80025781574e4d6f6086241d7a9d43ba55f9281",
+      "glbSha256": "f294add730ad26479876d18e9708d70fc85ba6400be31157b03d45b260f355a6",
+      "mouth": "GEO-magical-athlete-smile-17",
+      "hosts": [
+        "GEO-magical-athlete-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "mr-dice-guy",
+      "source": "assets/blender/second-wind/mr-dice-guy.blend",
+      "sourceSha256": "3494d52339d2ea879aac2be6ff62ad145d9052133fb1945ee68b18cafd922479",
+      "glbSha256": "31089eb85e55846486e4d17a149d50f1ee56997bbccc133e63da7e7229ca7cba",
+      "mouth": "GEO-mr-dice-guy-smile-17",
+      "hosts": [
+        "GEO-mr-dice-guy-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 30,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "re-runner",
+      "source": "assets/blender/second-wind/re-runner.blend",
+      "sourceSha256": "bd4385d044deaf15e8504bfacd22f4d7ee80a86e5c9ea31b1f55c2bc0c3140c0",
+      "glbSha256": "8f6c90f0527bbf509ea0a8cfee3c449baee8d0a4c1e16c72c0797e9d66f353fb",
+      "mouth": "GEO-re-runner-smile-22",
+      "hosts": [
+        "GEO-re-runner-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "extra-mile-cletus",
+      "source": "assets/blender/extra-mile/extra-mile-cletus.blend",
+      "sourceSha256": "533ec76ef9c23ef9dddd857414ac5f929d72a00912c01625acc04c65006b68d6",
+      "glbSha256": "4b84fb0856e9d364ab1a269a762cea3577d4bcd9c51cc4b42df10fe83f15d35a",
+      "mouth": "GEO-extra-mile-cletus-smile-17",
+      "hosts": [
+        "GEO-extra-mile-cletus-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-doc-paradox",
+      "source": "assets/blender/extra-mile/extra-mile-doc-paradox.blend",
+      "sourceSha256": "f2f67e1915c4f01ce2d6a406204fc97768a0b1f27bfd93de5748cb81dd6fd852",
+      "glbSha256": "339bbe2fcfaff13dac03bf1a63797d04e663b8f9c91b6b1e5430d28056c82725",
+      "mouth": "GEO-extra-mile-doc-paradox-smile-17",
+      "hosts": [
+        "GEO-extra-mile-doc-paradox-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-dom-and-gary",
+      "source": "assets/blender/extra-mile/extra-mile-dom-and-gary.blend",
+      "sourceSha256": "6f3a9459c16502d2a4a160ac6169de2f38681d2938e5caccb58a45eced4f3c04",
+      "glbSha256": "919325f3b424f07360d31d02c4b740ac638580d4482b87c15c992bcf1269d5aa",
+      "mouth": "GEO-extra-mile-dom-and-gary-smile-17",
+      "hosts": [
+        "GEO-extra-mile-dom-and-gary-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-gingy",
+      "source": "assets/blender/extra-mile/extra-mile-gingy.blend",
+      "sourceSha256": "bfb567dccba8cf56f04e2ba5262a0883f29e6691aab33464bfb5038b00f15af0",
+      "glbSha256": "da81bf22f941671c56721fbeaf08e376a7e776ca7141c0bde1b51309fbfd8b89",
+      "mouth": "GEO-extra-mile-gingy-smile-17",
+      "hosts": [
+        "GEO-extra-mile-gingy-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-king-pete",
+      "source": "assets/blender/extra-mile/extra-mile-king-pete.blend",
+      "sourceSha256": "cb13d73691f4098f4ad05680dfc89e5de6bb19ce267d929b0e3dd89bbbaa0c14",
+      "glbSha256": "99640fdd96534505b37775c79025b0a16aac07ba0e47476ddf35d2896a7b06f9",
+      "mouth": "GEO-extra-mile-king-pete-smile-17",
+      "hosts": [
+        "GEO-extra-mile-king-pete-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-moneybags",
+      "source": "assets/blender/extra-mile/extra-mile-moneybags.blend",
+      "sourceSha256": "0fd8d2de2c7ce5953fa3d914d8f0a056d204380010a1c200f87d2a101c23d9b5",
+      "glbSha256": "3a3f42954a90bf3b2b32d804171a0fffd403c08a55a040b4fe2b5e831e6d5a08",
+      "mouth": "GEO-extra-mile-moneybags-smile-17",
+      "hosts": [
+        "GEO-extra-mile-moneybags-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-mr-fox",
+      "source": "assets/blender/extra-mile/extra-mile-mr-fox.blend",
+      "sourceSha256": "129046905d55d45e47cd5e7a03dba51b8717d6bbd0ff583b7b4ab171530d91f5",
+      "glbSha256": "364c9dc9d69e79daa7ba09304a49ec50ff9707a73ef8954bb9520cd00d2cdeb3",
+      "mouth": "GEO-extra-mile-mr-fox-smile-17",
+      "hosts": [
+        "GEO-extra-mile-mr-fox-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-pooh",
+      "source": "assets/blender/extra-mile/extra-mile-pooh.blend",
+      "sourceSha256": "9690115077df106819f5ac5ffc2916c0e2062b4999488d85f86b483bd7c8646e",
+      "glbSha256": "b6d977e7ce07f290c24bcb463f2bde6645e0ad627c3db6371d79fbb67200412e",
+      "mouth": "GEO-extra-mile-pooh-smile-17",
+      "hosts": [
+        "GEO-extra-mile-pooh-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-robin-hood",
+      "source": "assets/blender/extra-mile/extra-mile-robin-hood.blend",
+      "sourceSha256": "e8958eac666b22417aeddacef7d26d9483a02c811da5bb22ef4ae191ff47a4fc",
+      "glbSha256": "c84462ad1138478a1b7bce6e51699b8993f10a0c58c5ba2985513cbee604018d",
+      "mouth": "GEO-extra-mile-robin-hood-smile-17",
+      "hosts": [
+        "GEO-extra-mile-robin-hood-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-saint-nick",
+      "source": "assets/blender/extra-mile/extra-mile-saint-nick.blend",
+      "sourceSha256": "b92717210a97f8682d16bc3976b351a26c293801e356f14479494d39a4789308",
+      "glbSha256": "2027bef9b72980932f27513025c8368d9eb72ab834101397a890b76e347f13cd",
+      "mouth": "GEO-extra-mile-saint-nick-smile-17",
+      "hosts": [
+        "GEO-extra-mile-saint-nick-head-6",
+        "GEO-extra-mile-saint-nick-long-beard-18"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-school-bully",
+      "source": "assets/blender/extra-mile/extra-mile-school-bully.blend",
+      "sourceSha256": "4016d513a60b98b7ea752ff57615274c75bee85824d7f49ab3a30b204f8d39fb",
+      "glbSha256": "8705ada0b794f90ae26a72ee8311f30a1a5e4261b99c091f98bd7e4fc62f0d92",
+      "mouth": "GEO-extra-mile-school-bully-smile-17",
+      "hosts": [
+        "GEO-extra-mile-school-bully-head-6",
+        "GEO-extra-mile-school-bully-gorilla-torso-18"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-scout",
+      "source": "assets/blender/extra-mile/extra-mile-scout.blend",
+      "sourceSha256": "09c9d3014327c7afdcc4355fa7dd18b72f6db1901612639645ab4f296f4b1d6e",
+      "glbSha256": "d4cb9de6ac4f5d075c6434b20e43b3cac76949c767ad31f10910344c7b12a339",
+      "mouth": "GEO-extra-mile-scout-smile-17",
+      "hosts": [
+        "GEO-extra-mile-scout-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-snub",
+      "source": "assets/blender/extra-mile/extra-mile-snub.blend",
+      "sourceSha256": "1af7c1abff3e10ee67f8a6ed4ba1eb8d7bdf7dc29467c725ca62fe3b2fd358dd",
+      "glbSha256": "97c5660b65aff9336bc4be9850b6385e7eb1cdbda15e568c056df1a82bd63fe7",
+      "mouth": "GEO-extra-mile-snub-smile-17",
+      "hosts": [
+        "GEO-extra-mile-snub-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-terrible-toddler",
+      "source": "assets/blender/extra-mile/extra-mile-terrible-toddler.blend",
+      "sourceSha256": "e726a8d02a28d0a2b38a8ae9fc21de9f18a514d35854d1f3f2f07129a0d68f1d",
+      "glbSha256": "4510faace3386de9bd68a363a65c5e8b521276254b363f7e0a6bc7f3e37fcad2",
+      "mouth": "GEO-extra-mile-terrible-toddler-smile-17",
+      "hosts": [
+        "GEO-extra-mile-terrible-toddler-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-thief",
+      "source": "assets/blender/extra-mile/extra-mile-thief.blend",
+      "sourceSha256": "01e843aaa964cb2c0f181af3b64c731d1126ec93b196788b6eff46ddde6c4097",
+      "glbSha256": "642d18932531137c4225d34e4b2ec34a7302609ed7693dda0263413214dd98e7",
+      "mouth": "GEO-extra-mile-thief-smile-11",
+      "hosts": [
+        "GEO-extra-mile-thief-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-toll-troll",
+      "source": "assets/blender/extra-mile/extra-mile-toll-troll.blend",
+      "sourceSha256": "185a6ae8501aa2128a940e44436b341604812213f3ec8959331350737b7cd50b",
+      "glbSha256": "dd2116e7d9e75961d06bcea6245635c034c63c633775161282cacbcb511e398d",
+      "mouth": "GEO-extra-mile-toll-troll-smile-17",
+      "hosts": [
+        "GEO-extra-mile-toll-troll-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 45,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-totally-fair-ref",
+      "source": "assets/blender/extra-mile/extra-mile-totally-fair-ref.blend",
+      "sourceSha256": "33a7fcfecab2d50a54e4736e622fc4b26925669c6eeca3685998288b8e8b60d5",
+      "glbSha256": "b18d3bd23f24b31f2ec8261db7a4384c8b48150b56c00193977206b0e256547c",
+      "mouth": "GEO-extra-mile-totally-fair-ref-smile-17",
+      "hosts": [
+        "GEO-extra-mile-totally-fair-ref-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 48,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "extra-mile-witch-hazel",
+      "source": "assets/blender/extra-mile/extra-mile-witch-hazel.blend",
+      "sourceSha256": "caa59a18b73097cade08bfd61f9c28541f7eabfd353b83cc4779928c04979826",
+      "glbSha256": "e9d872dc71b2f1fd55601d63114e182c045dcdb235bb5f2d29b64d87a4a7e472",
+      "mouth": "GEO-extra-mile-witch-hazel-smile-17",
+      "hosts": [
+        "GEO-extra-mile-witch-hazel-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-crash-dummy",
+      "source": "assets/blender/leaf/leaf-crash-dummy.blend",
+      "sourceSha256": "8e3e76a3bacdce7240370ac94e954be8c9e3e6ec19e84bd486b8f3a13e76dd41",
+      "glbSha256": "a1ff884540c164daf64eba7ee7c441d2903323bb80c3219ca2884eacf6f5165a",
+      "mouth": "GEO-leaf-crash-dummy-smile-17",
+      "hosts": [
+        "GEO-leaf-crash-dummy-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-filmmaker",
+      "source": "assets/blender/leaf/leaf-filmmaker.blend",
+      "sourceSha256": "44a6ade45ffb2862a295028b6133071a2af98652f59293f40212f1853c1f7f56",
+      "glbSha256": "07b5f9807cd61c6fc103bee7cc87c1622ad0c23345f87ba3f3e1cb28d7cc10c1",
+      "mouth": "GEO-leaf-filmmaker-smile-17",
+      "hosts": [
+        "GEO-leaf-filmmaker-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-nepo-baby",
+      "source": "assets/blender/leaf/leaf-nepo-baby.blend",
+      "sourceSha256": "92523f7f504db31129dafe18249edf481cf8785cb792bf04bb7e6baf219dc700",
+      "glbSha256": "697aea20097f3bfcd2009d89d76aa2440ca5ce387fead11c754a1bc18cd3bd3d",
+      "mouth": "GEO-leaf-nepo-baby-smile-17",
+      "hosts": [
+        "GEO-leaf-nepo-baby-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-philanthropist",
+      "source": "assets/blender/leaf/leaf-philanthropist.blend",
+      "sourceSha256": "3140be25eb107f3c58617438048fb269384a72aa655c6a486b6fd4d31432003c",
+      "glbSha256": "36da2565e39dc29eeda1b9e351776a15ba067b44b08afc6296a8b4004b344019",
+      "mouth": "GEO-leaf-philanthropist-smile-17",
+      "hosts": [
+        "GEO-leaf-philanthropist-head-6"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-revolutionary",
+      "source": "assets/blender/leaf/leaf-revolutionary.blend",
+      "sourceSha256": "031f48bae03916a9cfcdf8d2da6deb2106470738676e567d813c23baae268779",
+      "glbSha256": "4d74f56a5b4b17b62150f86c22fbdb95a38bf13ff55842f9a84a918866f08938",
+      "mouth": "GEO-leaf-revolutionary-smile-17",
+      "hosts": [
+        "GEO-leaf-revolutionary-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-sole-survivor",
+      "source": "assets/blender/leaf/leaf-sole-survivor.blend",
+      "sourceSha256": "d8cfe85cd6ca235ce012ef3ad6c44c118f3171bfbd55e7389525dd95d782be09",
+      "glbSha256": "c34136c707096db9a4523960047969f0da160f8af9628f838fc373697c372baa",
+      "mouth": "GEO-leaf-sole-survivor-smile-17",
+      "hosts": [
+        "GEO-leaf-sole-survivor-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 44,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-sore-loser",
+      "source": "assets/blender/leaf/leaf-sore-loser.blend",
+      "sourceSha256": "aa80311915aae04e9ce7da3ce6263daf838e1beeb2f2b2f44fd292aa35bb054e",
+      "glbSha256": "02117a06ef2c92063f1f05cad4d3c4db67e551871347cbdff876568c5879793e",
+      "mouth": "GEO-leaf-sore-loser-smile-17",
+      "hosts": [
+        "GEO-leaf-sore-loser-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "leaf-thespian",
+      "source": "assets/blender/leaf/leaf-thespian.blend",
+      "sourceSha256": "bafe3378be88d9a923106bf07e8fa6ed8bde3060788a2a3226477593c8a4808a",
+      "glbSha256": "f86f62e2e671eee166966c4d68c35b13dfe6556790147d1f47374b6ebc0f6561",
+      "mouth": "GEO-leaf-thespian-smile-17",
+      "hosts": [
+        "GEO-leaf-thespian-head-6",
+        "GEO-leaf-thespian-stage-beard-23"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 2.0
+    },
+    {
+      "id": "leaf-zombie",
+      "source": "assets/blender/leaf/leaf-zombie.blend",
+      "sourceSha256": "5ee3f23056595d9042ffbce72e3472643b7d2ffc81ba7d3d669831c2c3fd4bf6",
+      "glbSha256": "f1138868ca1918441463fc1e3f6cda391ae7d9ea3322bd41248fc199ee6f4a76",
+      "mouth": "GEO-leaf-zombie-smile-17",
+      "hosts": [
+        "GEO-leaf-zombie-head-6"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    },
+    {
+      "id": "cheerleader",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-cheerleader-12",
+      "hosts": [
+        "GEO-cheerleader-03"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "coach",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-coach-12",
+      "hosts": [
+        "GEO-coach-03"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "duelist",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-duelist-12",
+      "hosts": [
+        "GEO-duelist-03"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "heckler",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-heckler-09",
+      "hosts": [
+        "GEO-heckler-02"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "lackey",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-lackey-12",
+      "hosts": [
+        "GEO-lackey-03"
+      ],
+      "minCentrelineGap": 0.004,
+      "maxCentrelineGap": 0.004,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "lovable-loser",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-lovable-loser-12",
+      "hosts": [
+        "GEO-lovable-loser-03"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "magician",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-magician-12",
+      "hosts": [
+        "GEO-magician-03"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "skipper",
+      "source": "assets/blender/toy-racers.blend",
+      "sourceSha256": "dd51af1b71d000e799cfa450ad680304400c4147fddeb15a16040935ef41f879",
+      "glbSha256": "5087899b46318da7cf193a576554a1cc04c4c3bc2daaa46ebd69d3b7082f2e01",
+      "mouth": "GEO-skipper-12",
+      "hosts": [
+        "GEO-skipper-03"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 104,
+      "matchedShippingVertices": 104,
+      "eyePairs": 0.0
+    },
+    {
+      "id": "overtaker",
+      "source": "assets/blender/second-wind/overtaker.blend",
+      "sourceSha256": "7d3b05f46530f9f7624535077203456b40730ebf59a357f1b8f219d79878669a",
+      "glbSha256": "0015276ddcde5245acce59f779364f5007ef7354b0bc372c577ca455d7667059",
+      "mouth": "GEO-overtaker-smile-18",
+      "hosts": [
+        "GEO-overtaker-head-6",
+        "GEO-overtaker-blue-snout-11"
+      ],
+      "minCentrelineGap": 0.00399999,
+      "maxCentrelineGap": 0.00400001,
+      "sourceVertices": 54,
+      "matchedShippingVertices": 42,
+      "eyePairs": 1.0
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "generator": "Blender 5.2.3 LTS Release Candidate",
+  "reference": "user supplied miniature stadium image, 2026-10-22",
+  "high": {
+    "id": "banana",
+    "url": "/models/banana/banana.glb",
+    "bytes": 68764,
+    "triangles": 4950,
+    "draws": 7,
+    "bones": 5,
+    "animations": [
+      "idle",
+      "move",
+      "skill",
+      "fall",
+      "recover"
+    ],
+    "source": "assets/blender/banana.blend"
+  },
+  "economy": {
+    "id": "banana",
+    "url": "/models/banana/banana-economy.glb",
+    "bytes": 61712,
+    "triangles": 3934,
+    "draws": 7,
+    "bones": 5,
+    "animations": [
+      "idle",
+      "move",
+      "skill",
+      "fall",
+      "recover"
+    ],
+    "source": "assets/blender/banana.blend"
+  }
+}

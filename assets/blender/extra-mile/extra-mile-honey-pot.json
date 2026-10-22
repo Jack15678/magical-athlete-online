@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-honey-pot",
+  "node": "toy_extra-mile-honey-pot",
+  "url": "/models/extra-mile/extra-mile-honey-pot.glb",
+  "bytes": 54888,
+  "triangles": 2320,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.81019,
+    0.54995
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-honey-pot.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "striped yellow bee, white wings and blue honey pot",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

@@ -1,8 +1,8 @@
 import { publicEventBatch } from '../shared/public-events.js';
 import { secureRandomSeed, type RandomSeed } from '../shared/random.js';
 import { immediateRoomAction } from '../shared/automation.js';
-import { personalRoom, roomExpiry } from '../shared/room-lifecycle.js';
-import { automaticRoomAction as automaticAction } from '../engine/runtime.js';
+import { personalRoom, roomExpiry, roomExpiryMessage } from '../shared/room-lifecycle.js';
+import { timeoutRoomAction as timeoutAction } from '../engine/runtime.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
 import type { ActionEnvelope, ActionReply, Room, RoomView } from '../shared/types.js';
 import type { RelayMetadata } from '../shared/relay.js';
@@ -54,7 +54,7 @@ export class BrowserAuthority {
   static load(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,false,options); }
   private static async initialize(meta: RelayMetadata, allowCreate: boolean, options: AuthorityOptions): Promise<BrowserAuthority> {
     validateMetadata(meta); const factory=options.indexedDB ?? globalThis.indexedDB;
-    if ((options.now ?? Date.now)() >= roomExpiry(meta)) throw Error('房主离开超过30分钟，房间已关闭。');
+    if ((options.now ?? Date.now)() >= roomExpiry(meta)) throw Error(roomExpiryMessage(meta));
     if (!factory) throw Error('这个浏览器无法使用本地存档，不能主持比赛。请使用允许 IndexedDB 的正常浏览窗口。');
     const db=await open(factory,options.databaseName ?? AUTHORITY_DATABASE);
     try {
@@ -176,7 +176,7 @@ export class BrowserAuthority {
         if(record.room.closedAt!==undefined){save(record,false);return;}
         const immediate=immediateRoomAction(record.room,now);
         if(!immediate && (record.room.deadline===null||record.room.deadline>now)){save(record,false);return;}
-        const next=immediate??automaticAction(record.room.game);
+        const next=immediate??timeoutAction(record.room.game);
         if(!next){save(record,false);return;}
         this.perform(record,receipts,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:record.room.version,action:next.action},!immediate,(updated,result)=>save(updated,result.ok));
       });

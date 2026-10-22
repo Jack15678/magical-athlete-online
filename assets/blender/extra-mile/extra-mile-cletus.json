@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-cletus",
+  "node": "toy_extra-mile-cletus",
+  "url": "/models/extra-mile/extra-mile-cletus.glb",
+  "bytes": 47020,
+  "triangles": 2972,
+  "draws": 6,
+  "bounds": [
+    0.6,
+    0.86615,
+    0.4916
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-cletus.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "pink hunter, tall brown hat, red shirt and long double barrel toy rifle",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-cletus.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-gluebert",
+  "node": "toy_extra-mile-gluebert",
+  "url": "/models/extra-mile/extra-mile-gluebert.glb",
+  "bytes": 42104,
+  "triangles": 1744,
+  "draws": 3,
+  "bounds": [
+    0.53756,
+    0.98,
+    0.36529
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-gluebert.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white glue bottle, orange nozzle/label and white glue-puddle limbs",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

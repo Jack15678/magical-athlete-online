@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createApplication } from '../src/server/index.js';
 import type { Identity, RoomView, ActionEnvelope, ActionReply, GameAction } from '../src/shared/types.js';
 import { automaticAction,applyGameAction } from '../src/engine/index.js';
-import { ROOM_OWNER_AWAY_MS } from '../src/shared/room-lifecycle.js';
+import { ROOM_OWNER_AWAY_MS, ownerAwayMs } from '../src/shared/room-lifecycle.js';
 
 async function running(db=':memory:') {const a=createApplication(db);await new Promise<void>(r=>a.http.listen(0,'127.0.0.1',r));const addr=a.http.address();assert(addr&&typeof addr==='object');return {...a,url:`http://127.0.0.1:${addr.port}`};}
 async function post(url:string,path:string,data:unknown) {const r=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return {status:r.status,body:await r.json()};}
@@ -282,7 +282,7 @@ for(const mode of ['multiplayer','ai','practice'] as const)test(`Node ${mode} co
     one.socket.disconnect();await new Promise(resolve=>setTimeout(resolve,20));
     assert.equal(app.rooms.get(identity.roomCode).game.players[0]!.connected,true);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
     two.socket.disconnect();await settled(()=>app.rooms.get(identity.roomCode).hostLeftAt!==undefined);
-    const leftAt=app.rooms.get(identity.roomCode).hostLeftAt!;assert.equal(app.rooms.view(app.rooms.get(identity.roomCode),identity.playerId).expiresAt,leftAt+30*60*1000);
+    const leftAt=app.rooms.get(identity.roomCode).hostLeftAt!;assert.equal(app.rooms.view(app.rooms.get(identity.roomCode),identity.playerId).expiresAt,leftAt+ownerAwayMs({mode}));
     assert.equal(app.rooms.get(identity.roomCode).hostId,identity.playerId);assert.equal(app.rooms.get(identity.roomCode).ownerId,identity.playerId);
     assert.equal((await (await fetch(app.url+'/api/rooms')).json()).rooms.some((room:{code:string})=>room.code===identity.roomCode),mode!=='practice');
     const returned=await connect(app.url,identity);sockets.push(returned.socket);assert.equal(returned.view.hostLeftAt,undefined);assert.equal(app.rooms.get(identity.roomCode).hostLeftAt,undefined);
@@ -302,7 +302,7 @@ test('Node resume-status inspects saved rooms without presence or renewal and re
     const before=JSON.stringify(app.rooms.get(id.roomCode)),leftAt=app.rooms.get(id.roomCode).hostLeftAt!;
     for(let attempt=0;attempt<2;attempt++){
       const status=await post(app.url,`/api/rooms/${id.roomCode}/resume-status`,id);
-      assert.equal(status.status,200);assert.deepEqual(status.body,{ok:true,ownerId:id.playerId,mode:'practice',phase:'draft',createdAt:created.body.room.createdAt,hostLeftAt:leftAt,expiresAt:leftAt+ROOM_OWNER_AWAY_MS});
+      assert.equal(status.status,200);assert.deepEqual(status.body,{ok:true,ownerId:id.playerId,mode:'practice',phase:'draft',createdAt:created.body.room.createdAt,hostLeftAt:leftAt,expiresAt:leftAt+ownerAwayMs({mode:'practice'})});
       assert.equal(JSON.stringify(app.rooms.get(id.roomCode)),before);assert.equal(app.io.sockets.sockets.size,0);
     }
     assert.equal((await post(app.url,`/api/rooms/${id.roomCode}/resume-status`,{...id,token:'x'.repeat(43)})).status,401);

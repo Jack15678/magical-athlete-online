@@ -1,3 +1,4 @@
+import * as historicalV2 from '../src/engine/rules-v2.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ORIGINAL_CHARACTERS as CHARACTERS } from '../src/shared/characters.js';
@@ -383,17 +384,17 @@ test('WILD-extra-04 Leaptoad does not collect a star on an occupied space it ski
   const s = fixture(['leaptoad', 'alchemist'], [0, 1]); s.track = 'wild'; move(s, 0, 1);
   assert.equal(racer(s).position, 2); assert.equal(s.players[0]!.score, 0);
 });
-test('LOOP-extra-01 Huge Baby and an arrow repeat across a declined Suckerfish response only once', () => {
+test('v2 historical LOOP-extra-01 Huge Baby and an arrow repeat across a declined Suckerfish response only once', () => {
   // Minimized from the untouched full-game replay seed 82026, round 2.
   // Copycat still holds its pre-motion Suckerfish snapshot until the outer
   // movement's queued refreshCopies boundary, behind this track consequence.
   const s = fixture(['suckerfish', 'huge-baby', 'copycat'], [11, 12, 11]); s.track = 'wild';
   racer(s, 2).flags.copyPower = 'suckerfish'; racer(s, 2).flags.copyTarget = 'r0';
-  enqueueMove(s, 'r0', 1, 'test'); s.queue.push({ kind: 'gain', racerId: 'r0', amount: 1 }); resolveTasks(s);
+  enqueueMove(s, 'r0', 1, 'test'); s.queue.push({ kind: 'gain', racerId: 'r0', amount: 1 }); historicalV2.resolveTasks(s);
   let responses = 0;
   while (s.pending) {
     assert.ok(responses++ < 8, 'same board and effects across optional response boundaries must not grow forever');
-    assert.equal(s.pending.kind, 'suckerfish'); choose(s, 'skip');
+    assert.equal(s.pending.kind, 'suckerfish'); historicalV2.applyGameAction(s,s.pending!.playerId,{type:'choose',choiceId:s.pending!.id,optionId:'skip'});
   }
   assert.deepEqual(s.racers.map(r => r.position), [11, 12, 11]);
   assert.equal(s.logs.filter(event => event.type === 'loop').length, 1); assert.equal(s.flags.continuation, false);

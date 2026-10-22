@@ -6,6 +6,14 @@ import type { GameAction, Racer, RoomView } from '../shared/types.js';
 const strength:Record<string,number>={legs:10,hare:8,blimp:8,'lovable-loser':7,alchemist:7,'rocket-scientist':7,magician:7,'party-animal':6,coach:6,'flip-flop':6,genius:5,hypnotist:5,'third-wheel':5,cheerleader:5,suckerfish:5,sisyphus:3};
 const value=(id:string)=>strength[id]??4;
 const active=(r:Racer)=>!r.finished&&!r.eliminated;
+/** This projection already accounts for Null and public copied powers. Never
+ * inspect authoritative state or a private deck to predict an AI hazard. */
+function publicPowers(r:Racer):string[]{
+  const state=r.flags.publicAbilities as {powers?:unknown}|undefined;
+  if(Array.isArray(state?.powers))return state.powers.filter((power):power is string=>typeof power==='string');
+  return [...new Set([String(r.flags.power??r.flags.copiedPower??r.characterId),...((r.flags.acquiredPowers??[]) as string[])])];
+}
+
 /** A reproducible public-only seed varies secret/guess decisions without reading
  * another player's choice, the private queue, or the authoritative RNG state. */
 function publicChoice(view: RoomView, salt: string, count: number): number {
@@ -71,7 +79,15 @@ export function decideAI(view:RoomView):GameAction|undefined {
       case 'genius':pick=has('4')?'4':pick;break;
       case 'reroll':if((view.lastRoll?.face??6)<=3&&has('reroll'))pick='reroll';break;
       case 'flip-flop':{const target=others.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position+3)pick=target.id;break;}
-      case 'hypnotist':{const target=others.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position)pick=target.id;break;}
+      case 'hypnotist':{
+        // Summoning an active Baba Yaga before my main move trips me, so an AI
+        // can keep voluntarily resetting the opponent forever. Decline that
+        // visible hazard; humans retain every legal target and the rules never
+        // mistake repeated voluntary choices for a forced cycle.
+        const immune=r&&publicPowers(r).some(power=>['leaf-catfish','extra-mile-doctor-dice'].includes(power));
+        const safe=others.filter(target=>immune||!publicPowers(target).includes('baba-yaga'));
+        const target=safe.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position)pick=target.id;break;
+      }
       case 'third-wheel':{const positions=available.filter(x=>x!=='skip').map(Number).filter(Number.isFinite);const pos=Math.max(...positions);if(r&&pos>r.position)pick=String(pos);break;}
       case 'duelist':{
         // A public backward arrow can return both duelists to the exact square.

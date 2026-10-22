@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CommunityFeed } from '../src/client/community.js';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { CHAT_NOTICE_MS, ChatNoticeBubble, nextChatNotice } from '../src/client/chat-notices.js';
+import { CHAT_NOTICE_CONFIG, CHAT_NOTICE_MS, ChatNoticeBubble, appendChatNotices, advanceChatNotices } from '../src/client/chat-notices.js';
 import type { ChatMessage } from '../src/shared/types.js';
 const message = (id: number): ChatMessage => ({id, senderId:'p0', senderName:`发送时昵称${id}`, text:`message ${id}`, sentAt:1000 + id, kind:'player'});
 test('chat backfill merges out-of-order duplicates and preserves independent latest sequence with a bounded history', () => {
@@ -42,7 +42,7 @@ test('live bursts retain every fresh message when React batches several transpor
   feed.update({connected:true});feed.update({messages:[]},'history');
   for(let id=1;id<=3;id++)feed.update({messages:[message(id)]},'live');
   assert.equal(current.liveRevision,3);assert.deepEqual(current.liveMessages?.map(m=>m.id),[1,2,3]);
-  assert.equal(nextChatNotice(null,current.liveMessages!,'self',1_000)?.count,3);
+  assert.equal(appendChatNotices([],current.liveMessages!,'self',1_000,5).length,3);
 });
 
 test('late history replies and rename metadata never replay a previous notice; each room has its own notice sequence',()=>{
@@ -52,22 +52,31 @@ test('late history replies and rename metadata never replay a previous notice; e
   const another=new CommunityFeed();let separate!:typeof current;another.subscribe(state=>separate=state);another.update({connected:true});another.update({messages:[message(1)]},'history');assert.equal(separate.liveRevision,undefined);assert.equal(separate.name,undefined);
 });
 
-test('successive incoming messages extend a six second notice and summarize the burst while expiry keeps history intact',()=>{
-  const first=nextChatNotice(null,[message(1)],'self',1_000)!;assert.equal(first.expiresAt,1_000+CHAT_NOTICE_MS);assert.equal(first.count,1);
-  const extended=nextChatNotice(first,[message(2),message(3)],'self',6_500)!;assert.equal(extended.expiresAt,6_500+CHAT_NOTICE_MS);assert.equal(extended.count,3);assert.equal(extended.message.id,3);
-  const afterExpiry=nextChatNotice(extended,[message(4)],'self',13_000)!;assert.equal(afterExpiry.count,1);assert.equal(afterExpiry.message.id,4);
-  assert.equal(first.message.id,1,'notice updates do not mutate retained message snapshots');
+test('each bubble keeps an independent eight second lifetime and fades without deleting history',()=>{
+  const first=appendChatNotices([],[message(1)],'self',1_000,5);assert.equal(first[0]!.expiresAt,1_000+CHAT_NOTICE_MS);
+  const burst=appendChatNotices(first,[message(2),message(3)],'self',6_500,5);assert.deepEqual(burst.map(n=>n.message.id),[1,2,3]);
+  assert.equal(burst[0]!.expiresAt,9_000,'new messages never extend old messages');
+  const fading=advanceChatNotices(burst,9_000,5);assert.equal(fading[0]!.leaving,true);assert.equal(fading[1]!.leaving,false);
+  assert.deepEqual(advanceChatNotices(fading,9_000+CHAT_NOTICE_CONFIG.exitMs,5).map(n=>n.message.id),[2,3]);
+  assert.equal(first[0]!.message.id,1,'history message snapshots remain unchanged');
 });
 
 test('own messages do not cause a bubble or extend an existing bubble, and system messages remain eligible',()=>{
-  assert.equal(nextChatNotice(null,[message(1)],'p0',1_000),null);
-  const notice=nextChatNotice(null,[message(2)],'self',1_000)!;assert.equal(nextChatNotice(notice,[message(3)],'p0',3_000),notice);
-  const system={...message(4),senderId:undefined,kind:'system' as const};assert.equal(nextChatNotice(null,[system],'p0',1_000)?.message.id,4);
+  assert.deepEqual(appendChatNotices([],[message(1)],'p0',1_000,5),[]);
+  const notices=appendChatNotices([],[message(2)],'self',1_000,5);assert.deepEqual(appendChatNotices(notices,[message(3)],'p0',3_000,5),notices);
+  const system={...message(4),senderId:undefined,kind:'system' as const};assert.equal(appendChatNotices([],[system],'p0',1_000,5)[0]!.message.id,4);
 });
 
-test('collapsed notice renders nickname and body as escaped plain text, truncates long messages and summarizes multiple messages',()=>{
-  const raw={...message(1),senderName:'<img src=x onerror=alert(1)>',text:'<script>secret()</script>'+'长'.repeat(150)};
-  const notice=nextChatNotice(null,[message(0),raw],'self',1_000)!;
+test('bounded desktop/mobile stacks deduplicate stable IDs and keep oldest above newest',()=>{
+  const burst=Array.from({length:10},(_,i)=>message(i+1));
+  const desktop=appendChatNotices([],burst,'self',1_000,CHAT_NOTICE_CONFIG.desktopLimit);assert.deepEqual(desktop.map(n=>n.message.id),[6,7,8,9,10]);
+  assert.deepEqual(appendChatNotices(desktop,[message(8),message(10)],'self',2_000,5),desktop);
+  assert.deepEqual(advanceChatNotices(desktop,2_000,CHAT_NOTICE_CONFIG.mobileLimit).map(n=>n.message.id),[8,9,10]);
+});
+
+test('collapsed notices render nickname and body as escaped plain text and truncate only the preview',()=>{
+  const raw={...message(1),senderName:'<img src=x onerror=alert(1)>',text:'<script>secret()</script>'+'长'.repeat(200)};
+  const notice=appendChatNotices([],[raw],'self',1_000,5)[0]!;
   const output=renderToStaticMarkup(createElement(ChatNoticeBubble,{notice,onOpen:()=>{}}));
-  assert(!output.includes('<script>'));assert(!output.includes('<img'));assert(output.includes('&lt;script&gt;'));assert(output.includes('共 2 条新消息'));assert(output.includes('…'));assert(!output.includes('长'.repeat(110)));
+  assert(!output.includes('<script>'));assert(!output.includes('<img'));assert(output.includes('&lt;script&gt;'));assert(output.includes('…'));assert(!output.includes('长'.repeat(170)));assert.equal(raw.text.length,225);
 });

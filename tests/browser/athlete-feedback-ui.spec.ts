@@ -5,7 +5,7 @@ import { createGame, resolveTasks } from '../../src/engine/index.js';
 import { CHARACTERS } from '../../src/shared/characters.js';
 import type { Racer, Room } from '../../src/shared/types.js';
 
-const output='docs/qa/athlete-feedback';
+const output='docs/qa/fan-iteration';
 let application:ReturnType<typeof createApplication>,url:string;
 test.beforeAll(async()=>{
   application=createApplication(':memory:');
@@ -54,40 +54,38 @@ async function lowerLeft(page:Page,open:boolean){
   return rect;
 }
 
-test('real peer chat bubbles expire after six seconds while unread survives; desktop/mobile portals and reconnect history remain stable',async({browser})=>{
+test('independent eight second bubbles stack upward with desktop/mobile caps and silent reconnect history',async({browser})=>{
   const session=await pair(browser);const evidence:Record<string,unknown>={};
   try{
     await lowerLeft(session.host,false);
     await send(session.guest,'实时消息 <b>只按纯文本显示</b>');
-    const bubble=session.host.getByTestId('chat-notice');await expect(bubble).toContainText('聊天访客');await expect(bubble).toContainText('<b>只按纯文本显示</b>');
-    expect(await bubble.locator('b').count()).toBe(0);await expect(session.host.getByTestId('room-chat')).toHaveCount(0);
-    await expect(session.host.locator('.chat-unread')).toHaveText('1');
-    await session.host.screenshot({path:`${output}/chat-desktop-bubble.png`});
-    await session.host.waitForTimeout(3_500);await send(session.guest,'连续新消息会延长提示');const secondSeenAt=Date.now();
-    await expect(bubble).toContainText('连续新消息会延长提示');await expect(bubble).toContainText('共 2 条新消息');
-    await session.host.waitForTimeout(2_800);await expect(bubble).toBeVisible();
-    await session.host.screenshot({path:`${output}/chat-desktop-burst.png`});
-    await expect(bubble).toHaveCount(0,{timeout:5_000});evidence.burstLifetimeAfterNewestMs=Date.now()-secondSeenAt;expect(evidence.burstLifetimeAfterNewestMs).toBeGreaterThanOrEqual(4_800);
-    await expect(session.host.locator('.chat-unread')).toHaveText('2');
-    await openChat(session.host);evidence.desktopOpen=await lowerLeft(session.host,true);
-    await session.host.addStyleTag({content:'#root{transform:translate(350px,80px) scale(.8);contain:paint;position:relative;width:240px;overflow:hidden}'});
-    evidence.transformedRoot=await lowerLeft(session.host,true);await expect(session.host.getByRole('log')).toContainText('只按纯文本显示');
-    await session.host.screenshot({path:`${output}/chat-desktop-transformed-ancestor.png`});
-    await session.host.getByRole('button',{name:'收起聊天'}).click();await lowerLeft(session.host,false);
-    await session.host.reload();await online(session.host);await expect(session.host.getByTestId('chat-notice')).toHaveCount(0);
-    await session.host.setViewportSize({width:390,height:844});await openChat(session.host);evidence.mobileOpen=await lowerLeft(session.host,true);
-    await session.host.screenshot({path:`${output}/chat-mobile-drawer.png`});
-    await session.host.setViewportSize({width:390,height:560});evidence.mobileCompact=await lowerLeft(session.host,true);
-    await session.host.setViewportSize({width:390,height:844});await session.host.getByRole('button',{name:'收起聊天'}).click();
-    await send(session.guest,'手机上也能直接看到新消息');await expect(bubble).toContainText('手机上也能直接看到新消息');
-    evidence.mobileClosed=await lowerLeft(session.host,false);await session.host.screenshot({path:`${output}/chat-mobile-bubble.png`});
-    await session.host.reload();await online(session.host);await expect(session.host.getByTestId('chat-notice')).toHaveCount(0);await expect(session.host.locator('.chat-unread')).toHaveText('1');
-    await openChat(session.host);await expect(session.host.getByRole('log')).toContainText('手机上也能直接看到新消息');await session.host.getByRole('button',{name:'收起聊天'}).click();
-    await session.contexts[0]!.setOffline(true);await expect(session.host.locator('.connection.is-online')).toHaveCount(0);
+    const bubbles=session.host.getByTestId('chat-notice');await expect(bubbles).toHaveCount(1);await expect(bubbles.first()).toContainText('聊天访客');
+    await expect(bubbles.first()).toContainText('<b>只按纯文本显示</b>');expect(await bubbles.locator('b').count()).toBe(0);
+    const firstBox=await bubbles.first().boundingBox();await session.host.waitForTimeout(3_500);
+    await send(session.guest,'第二条消息有独立的八秒期限');await expect(bubbles).toHaveCount(2);
+    await expect(bubbles.last()).toContainText('第二条消息');expect((await bubbles.first().boundingBox())!.y).toBeLessThan(firstBox!.y);
+    await session.host.screenshot({path:`${output}/chat-independent-desktop.png`});
+    await expect(bubbles).toHaveCount(1,{timeout:6_000});await expect(bubbles.first()).toContainText('第二条消息');
+    await expect(bubbles).toHaveCount(0,{timeout:5_000});await expect(session.host.locator('.chat-unread')).toHaveText('2');
+    await session.host.waitForTimeout(2_500); // Leave the independent six-per-ten-second server send window.
+    for(let n=1;n<=6;n++)await send(session.guest,`连续气泡 ${n}`);
+    await expect(bubbles).toHaveCount(5);await expect(bubbles.first()).toContainText('连续气泡 2');await expect(bubbles.last()).toContainText('连续气泡 6');
+    const ids=await bubbles.evaluateAll(elements=>elements.map(element=>Number((element as HTMLElement).dataset.messageId)));
+    expect(ids).toEqual([...ids].sort((a,b)=>a-b));
+    const stored=application.rooms.get(session.code).chat!,duplicate=stored.messages.at(-1)!;
+    application.io.to(session.code).emit('chat',{messages:[duplicate],latestId:stored.latestId});await expect(bubbles).toHaveCount(5);
+    await session.host.screenshot({path:`${output}/chat-five-desktop.png`});
+    await session.host.setViewportSize({width:390,height:844});await expect(bubbles).toHaveCount(3);await expect(bubbles.first()).toContainText('连续气泡 4');
+    await session.host.screenshot({path:`${output}/chat-three-mobile.png`});
+    await openChat(session.host);await expect(session.host.getByRole('log')).toContainText('连续气泡 1');await expect(session.host.getByRole('log')).toContainText('连续气泡 6');await expect(bubbles).toHaveCount(0);
+    await lowerLeft(session.host,true);
+    await session.host.addStyleTag({content:'#root{transform:translate(350px,80px) scale(.8);contain:paint;position:relative;width:240px;overflow:hidden}'});await lowerLeft(session.host,true);
+    await session.host.getByRole('button',{name:'收起聊天'}).click();await session.host.reload();await online(session.host);await expect(bubbles).toHaveCount(0);
+    await session.host.waitForTimeout(10_100);await session.contexts[0]!.setOffline(true);await expect(session.host.locator('.connection.is-online')).toHaveCount(0);
     await send(session.guest,'离线期间补齐的历史不应冒泡');await session.contexts[0]!.setOffline(false);await online(session.host);
-    await expect(session.host.getByTestId('chat-notice')).toHaveCount(0);await openChat(session.host);await expect(session.host.getByRole('log')).toContainText('离线期间补齐的历史不应冒泡');
-    expect(session.errors).toEqual([]);evidence.errors=session.errors;evidence.realPeerMessages=application.rooms.chatHistory(session.code,session.ids[0]!).messages.length;
-    writeFileSync(`${output}/chat-browser-results.json`,JSON.stringify(evidence,null,2));
+    await expect(bubbles).toHaveCount(0);await openChat(session.host);await expect(session.host.getByRole('log')).toContainText('离线期间补齐的历史不应冒泡');
+    expect(session.errors).toEqual([]);Object.assign(evidence,{desktopLimit:5,mobileLimit:3,orderedIds:ids,independentLifetimes:true,duplicateSilent:true,historyRetained:true,reconnectSilent:true,errors:session.errors});
+    writeFileSync(`${output}/chat-stack-browser.json`,JSON.stringify(evidence,null,2));
   }finally{await Promise.all(session.contexts.map(context=>context.close()));}
 });
 

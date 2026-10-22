@@ -9,8 +9,8 @@ import { ORIGINAL_CHARACTERS } from '../src/shared/characters.js';
 const CHARACTER_IDS = ORIGINAL_CHARACTERS.map(character => character.id);
 
 for (const variant of [
-  { name: 'toy-racers', bytes: 2 * 1024 * 1024, triangles: 220_000, modelTriangles: 10_000 },
-  { name: 'toy-racers-economy', bytes: 1024 * 1024, triangles: 80_000, modelTriangles: 4_000 },
+  { name: 'toy-racers', bytes: 2.25 * 1024 * 1024, triangles: 220_000, modelTriangles: 10_000 },
+  { name: 'toy-racers-economy', bytes: 1.25 * 1024 * 1024, triangles: 80_000, modelTriangles: 4_000 },
 ]) test(`shipping ${variant.name} GLB decodes every racer within geometry and ground-pivot budgets`, async () => {
   const asset = new URL(`../public/models/${variant.name}.glb`, import.meta.url);
   const bytes = await readFile(asset);

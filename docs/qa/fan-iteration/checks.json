@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-22T06:33:24.2238428Z",
+  "unitTests": {
+    "passed": 702,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "productionBuilds": [
+    "Node client/server",
+    "Worker browser assets"
+  ],
+  "workerDryRun": "passed",
+  "productionQaHooks": "absent",
+  "uiCases": {
+    "notes": "Nine passed in combined run; updated continuation fixture and its focused public-log case passed after that run.",
+    "passed": 10
+  },
+  "serverEight": {
+    "elapsedSeconds": 93.106,
+    "rounds": 1,
+    "players": 8,
+    "hostRecovery": true,
+    "guestRecovery": true,
+    "realUiSteps": 125,
+    "pageErrors": 0
+  },
+  "artBrowser": {
+    "passed": 2,
+    "pageErrors": 0
+  },
+  "fanFourRaces": {
+    "notes": "Actual local workerd protocol and rendered browser UI.",
+    "spectator": true,
+    "rounds": 4,
+    "players": 3
+  },
+  "remoteCI": "See PR Checks; no remote result inferred from local checks."
+}

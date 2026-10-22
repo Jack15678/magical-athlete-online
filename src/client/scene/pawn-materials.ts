@@ -9,12 +9,12 @@ function toySurface(source: MeshStandardMaterial, lowQuality: boolean) {
     side: source.side,
     vertexColors: source.vertexColors,
     flatShading: source.flatShading,
-    clearcoat: paper ? .08 : ink ? .1 : .16,
+    clearcoat: paper ? .08 : ink ? .28 : .16,
     clearcoatRoughness: .52,
     specularIntensity: .65,
   });
   material.name = `${source.name}-${lowQuality ? 'matte' : 'satin'}`;
-  material.roughness = paper ? .64 : ink ? .56 : .47;
+  material.roughness = paper ? .64 : ink ? .38 : .5;
   material.metalness = 0;
   return material;
 }

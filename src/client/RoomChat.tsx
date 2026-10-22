@@ -3,13 +3,15 @@ import { createPortal } from 'react-dom';
 import type { RoomView } from '../shared/types.js';
 import type { RoomConnection } from './network.js';
 import type { CommunityState } from './community.js';
-import { ChatNoticeBubble, nextChatNotice, type ChatNotice } from './chat-notices.js';
+import { CHAT_NOTICE_CONFIG, ChatNoticeBubble, advanceChatNotices, appendChatNotices, type ChatNotice } from './chat-notices.js';
 
 export function RoomChat({ room, community, connection, immersive, onRename }: { room: RoomView; community: CommunityState; connection: RoomConnection | null; immersive: boolean; onRename: () => void }) {
   const [open, setOpen] = useState(false), [text, setText] = useState(''), [sending, setSending] = useState(false), [error, setError] = useState('');
   const [seen, setSeen] = useState(() => { try { return Number(sessionStorage.getItem(`magical-athlete:chat-read:${room.code}`)) || community.latestId; } catch { return community.latestId; } });
   const [newBelow, setNewBelow] = useState(false);
-  const [notice,setNotice]=useState<ChatNotice|null>(null);
+  const [notices,setNotices]=useState<ChatNotice[]>([]);
+  const [noticeLimit,setNoticeLimit]=useState(() => matchMedia(`(max-width:${CHAT_NOTICE_CONFIG.mobileBreakpoint}px)`).matches ? CHAT_NOTICE_CONFIG.mobileLimit : CHAT_NOTICE_CONFIG.desktopLimit);
+  const noticeRegion=useRef<HTMLDivElement>(null),noticeRects=useRef(new Map<string,DOMRect>());
   const noticed=useRef(community.liveRevision??0);
   const noticedMessage=useRef(community.liveMessages?.at(-1)?.id??0);
   const list = useRef<HTMLDivElement>(null), bottom = useRef(true), initial = useRef(true);
@@ -19,16 +21,33 @@ export function RoomChat({ room, community, connection, immersive, onRename }: {
   const scrollBottom = () => { if (list.current) list.current.scrollTop = list.current.scrollHeight; bottom.current = true; setNewBelow(false); markRead(); };
   useEffect(()=>{
     const revision=community.liveRevision??0;
-    if(open||!community.connected)setNotice(null);
-    else if(revision>noticed.current){const fresh=(community.liveMessages??[]).filter(message=>message.id>noticedMessage.current);setNotice(previous=>nextChatNotice(previous,fresh,room.selfId,Date.now()));}
+    if(open||!community.connected)setNotices([]);
+    else if(revision>noticed.current){const fresh=(community.liveMessages??[]).filter(message=>message.id>noticedMessage.current);setNotices(previous=>appendChatNotices(previous,fresh,room.selfId,Date.now(),noticeLimit));}
     noticed.current=revision;
     noticedMessage.current=community.liveMessages?.at(-1)?.id??noticedMessage.current;
-  },[community.liveRevision,community.connected,open,room.selfId]);
+  },[community.liveRevision,community.connected,open,room.selfId,noticeLimit]);
   useEffect(()=>{
-    if(!notice)return;
-    const timer=setTimeout(()=>setNotice(current=>current&&current.expiresAt<=Date.now()?null:current),Math.max(0,notice.expiresAt-Date.now()));
+    if(!notices.length)return;
+    const next=Math.min(...notices.map(notice=>notice.expiresAt+(notice.leaving?CHAT_NOTICE_CONFIG.exitMs:0)));
+    const timer=setTimeout(()=>setNotices(current=>advanceChatNotices(current,Date.now(),noticeLimit)),Math.max(0,next-Date.now()));
     return ()=>clearTimeout(timer);
-  },[notice]);
+  },[notices,noticeLimit]);
+  useEffect(()=>{
+    const media=matchMedia(`(max-width:${CHAT_NOTICE_CONFIG.mobileBreakpoint}px)`);
+    const resize=()=>{const limit=media.matches?CHAT_NOTICE_CONFIG.mobileLimit:CHAT_NOTICE_CONFIG.desktopLimit;setNoticeLimit(limit);setNotices(current=>advanceChatNotices(current,Date.now(),limit));};
+    media.addEventListener('change',resize);return()=>media.removeEventListener('change',resize);
+  },[]);
+  useLayoutEffect(()=>{
+    const next=new Map<string,DOMRect>();
+    for(const element of noticeRegion.current?.querySelectorAll<HTMLElement>('[data-message-id]')??[]){
+      const id=element.dataset.messageId!,rect=element.getBoundingClientRect(),before=noticeRects.current.get(id);next.set(id,rect);
+      if(before && before.top!==rect.top && !element.classList.contains('is-leaving') && !matchMedia('(prefers-reduced-motion: reduce)').matches && document.documentElement.dataset.motion!=='reduce'){
+        for(const animation of element.getAnimations())animation.cancel();
+        element.animate([{transform:`translateY(${before.top-rect.top}px)`},{transform:'translateY(0)'}],{duration:CHAT_NOTICE_CONFIG.stackMs,easing:'ease-out'});
+      }
+    }
+    noticeRects.current=next;
+  },[notices]);
   useLayoutEffect(() => {
     if (!open) return;
     if (initial.current || bottom.current) { scrollBottom(); initial.current = false; }
@@ -72,7 +91,7 @@ export function RoomChat({ room, community, connection, immersive, onRename }: {
   // A viewport overlay must not inherit any ancestor's transform/containment:
   // those turn fixed coordinates into page-local coordinates during scenes.
   return createPortal(<aside className={`room-community ${immersive ? 'in-race' : ''} ${open ? 'is-open' : ''}`} data-testid="room-community" onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setOpen(false); }}>
-    {!open&&notice&&<div className="chat-notice-region" aria-live="polite" aria-atomic="true"><ChatNoticeBubble notice={notice} onOpen={()=>setOpen(true)} /></div>}
+    {!open&&notices.length>0&&<div ref={noticeRegion} className="chat-notice-region" aria-live="polite" aria-relevant="additions" aria-label="新聊天消息">{notices.map(notice=><ChatNoticeBubble key={notice.message.id} notice={notice} onOpen={()=>setOpen(true)} />)}</div>}
     {!open && <button className="chat-toggle" aria-label={`房间聊天${unread ? `，${unread} 条未读` : ''}`} aria-expanded={false} onClick={() => setOpen(true)}>💬 聊天{unread > 0 && <b className="chat-unread">{unread}</b>}</button>}
     {open && <section className="room-chat" aria-label="房间聊天" data-testid="room-chat">
       <header><div><strong>房间聊天</strong><small>{community.connected ? '玩家与观战者 · 最近 100 条' : '连接中，消息将自动补齐'}</small></div><button aria-label="收起聊天" onClick={() => setOpen(false)}>−</button></header>

@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-saint-nick",
+  "node": "toy_extra-mile-saint-nick",
+  "url": "/models/extra-mile/extra-mile-saint-nick.glb",
+  "bytes": 49320,
+  "triangles": 3422,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.76373,
+    0.29127
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-saint-nick.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "red bishop mitre/coat, white beard, tan sack and golden crozier",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-saint-nick.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

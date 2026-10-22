@@ -5,10 +5,11 @@ import { appendChat, appendPlayerChat, chatBatch, deduplicateStoredNicknames, un
 import { immediateRoomAction } from '../shared/automation.js';
 import { projectRoom, reduceRoomAction, setRoomDeadline } from '../shared/room-core.js';
 import { createGame, startGame } from '../engine/index.js';
-import { automaticRoomAction as automaticAction, LEGACY_RULES_VERSION } from '../engine/runtime.js';
+import { timeoutRoomAction as timeoutAction, LEGACY_RULES_VERSION } from '../engine/runtime.js';
 import { Store } from './store.js';
 import { MAX_SPECTATORS, ROOM_TTL_MS } from '../shared/constants.js';
 import { roomExpiry, type RoomCloseReason, type RoomClosure } from '../shared/room-lifecycle.js';
+import { legacyRoomConfig, legacyPoolForConfig, validateRoomConfigForPlayers, type RoomConfig } from '../shared/room-config.js';
 
 export const PLAYER_COLORS = ['#df3c32','#175bd1','#159269','#b34fa6','#eb8a19','#6d57c7','#008eaa','#77503c'];
 export { ROOM_TTL_MS } from '../shared/constants.js';
@@ -46,7 +47,7 @@ export class Rooms {
   private closePersonal(room:Room,reason:RoomCloseReason,closedAt:number,actionId?:string):void {
     this.store.closeRoom({code:room.code,closedAt,reason,hostId:room.hostId,version:room.version,actionId});this.rooms.delete(room.code);
   }
-  get(code: string): Room { code=code.toUpperCase();this.expire(code);const room = this.rooms.get(code); if(!room) {const closed=this.closed(code);throw Error(closed?.reason==='host-away'?'房主连续离开超过30分钟，房间已关闭。':closed?'房间已关闭。请创建或加入其他房间。':'房间不存在或已过期，请检查房间码。');} return room; }
+  get(code: string): Room { code=code.toUpperCase();this.expire(code);const room = this.rooms.get(code); if(!room) {const closed=this.closed(code);throw Error(closed?.reason==='host-away'?'房主离线保留期限已到，房间已关闭。':closed?'房间已关闭。请创建或加入其他房间。':'房间不存在或已过期，请检查房间码。');} return room; }
   list(now=this.now()):RoomSummary[] {
     for(const code of this.rooms.keys())this.expire(code,now);
     return [...this.rooms.values()].filter(room=>room.closedAt===undefined&&room.mode!=='practice').sort((a,b)=>b.createdAt-a.createdAt).map(room=>({
@@ -56,7 +57,8 @@ export class Rooms {
     }));
   }
   player(name: string, seat: number): Player { return {id:randomUUID(),name,seat,color:PLAYER_COLORS[seat]!,ready:false,connected:false,score:0,hand:[],used:[],selection:[]}; }
-  create(name: string, maxPlayers: number, timeoutSeconds?: number, mode:GameMode='multiplayer', aiCount=3, characterPool:CharacterPool='original'): {identity:Identity;room:RoomView} {
+  capacity(){return this.store.capacity(this.now());}
+  create(name: string, maxPlayers: number, timeoutSeconds?: number, mode:GameMode='multiplayer', aiCount=3, characterPool:CharacterPool='original', config?:RoomConfig, requestId?:string): {identity:Identity;room:RoomView} {
     for(const code of this.rooms.keys())this.expire(code);
     if(this.rooms.size >= 500) throw Error('当前房间较多，请稍后重试。');
     let code: string; do { code = Array.from(randomBytes(6), b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 31]).join(''); } while(this.rooms.has(code)||this.closed(code));
@@ -64,13 +66,22 @@ export class Rooms {
     if(mode==='ai'&&(!Number.isInteger(aiCount)||aiCount<1||aiCount>7))throw Error('AI人数需为1～7。');
     if(mode!=='multiplayer')maxPlayers=mode==='practice'?1:aiCount+1;
     if(!['original','second-wind','mixed'].includes(characterPool))throw Error('角色牌池无效。');
+    if(requestId!==undefined&&!/^[a-zA-Z0-9_-]{16,100}$/.test(requestId))throw Error('建房请求编号无效。');
+    const rules=validateRoomConfigForPlayers(config??legacyRoomConfig(characterPool,mode==='practice'),maxPlayers,mode==='practice');
+    if(config)characterPool=legacyPoolForConfig(rules);
+    const request=JSON.stringify({name,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,mode,aiCount,characterPool,config:rules});
+    const prior=requestId?this.store.creationReceipt<{identity:Identity;room:RoomView}>(requestId):undefined;
+    if(prior){if(prior.request!==request)throw Error('同一建房请求编号不能用于不同设置。');return prior.result;}
     const p = this.player(uniqueNickname(name,[]),0); const now=this.now();
     const players=[p,...Array.from({length:mode==='ai'?aiCount:0},(_,i)=>({...this.player(`电脑${i+1}`,i+1),isAI:true,ready:true,connected:true}))];
     for(let i=1;i<players.length;i++)players[i]!.name=uniqueNickname(players[i]!.name,players.slice(0,i).map(person=>person.name));
     const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,secureRandomSeed(),mode,characterPool)};
-    if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);this.deadline(room);}
-    const token = randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(code,room);
-    return {identity:{roomCode:code,playerId:p.id,token,role:'player'},room:this.view(room,p.id)};
+    room.game.config=rules;room.configFrozen=false;
+    if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);room.configFrozen=true;this.deadline(room);}
+    const token = randomBytes(32).toString('base64url');
+    const result=this.store.createRoom(room,p.id,hash(token),{identity:{roomCode:code,playerId:p.id,token,role:'player' as const},room:this.view(room,p.id)},now,requestId,request);
+    if(result.identity.roomCode===code)this.rooms.set(code,room);
+    return result;
   }
   join(code: string, name: string,role:RoomRole='player'): {identity:Identity;room:RoomView} {
     const original=this.get(code); if(original.closedAt!==undefined) throw Error('房间已解散。请创建或加入其他房间。');
@@ -184,7 +195,7 @@ export class Rooms {
       if((original.mode==='ai'||original.mode==='practice')&&!original.game.players.some(p=>!p.isAI&&p.connected))continue;
       const immediate=immediateRoomAction(original,now);
       if(!immediate&&(!original.deadline||original.deadline>now))continue;
-      const a=immediate??automaticAction(original.game);if(!a)continue;
+      const a=immediate??timeoutAction(original.game);if(!a)continue;
       const result=this.act(original.code,a.playerId,{actionId:randomUUID(),expectedVersion:original.version,action:a.action},!immediate);
       if(result.ok)updated.push(original.code);
     }

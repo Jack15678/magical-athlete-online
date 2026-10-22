@@ -1,0 +1,32 @@
+{
+  "id": "leaf-filmmaker",
+  "node": "toy_leaf-filmmaker",
+  "url": "/models/leaf/leaf-filmmaker.glb",
+  "bytes": 51532,
+  "triangles": 3440,
+  "draws": 5,
+  "bounds": [
+    0.6,
+    0.80596,
+    0.45464
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/leaf/leaf-filmmaker.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / filmmaker",
+  "referenceDate": "2026-10-22",
+  "recognition": "green-haired filmmaker in white shirt/light-blue jeans, yellow boots and volumetric grey movie camera",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts.",
+  "avatar": "/models/leaf/avatars/leaf-filmmaker.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

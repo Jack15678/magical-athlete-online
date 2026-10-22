@@ -2,10 +2,11 @@ import {test,expect,type Browser,type BrowserContext,type Page} from '@playwrigh
 import {mkdirSync} from 'node:fs';
 import {createApplication} from '../../src/server/index.js';
 import {createGame,resolveTasks,systemAction} from '../../src/engine/index.js';
+import {SECOND_WIND_V2_RULES_VERSION,systemRoomAction} from '../../src/engine/runtime.js';
 import type {GameAction,GameState,Identity,Room} from '../../src/shared/types.js';
 
 let app:ReturnType<typeof createApplication>,url:string;
-test.beforeAll(async()=>{app=createApplication(':memory:');await new Promise<void>(resolve=>app.http.listen(0,'127.0.0.1',resolve));const address=app.http.address();if(!address||typeof address==='string')throw Error('Missing address');url=`http://127.0.0.1:${address.port}`;mkdirSync('docs/qa/athlete-feedback',{recursive:true});});
+test.beforeAll(async()=>{app=createApplication(':memory:');await new Promise<void>(resolve=>app.http.listen(0,'127.0.0.1',resolve));const address=app.http.address();if(!address||typeof address==='string')throw Error('Missing address');url=`http://127.0.0.1:${address.port}`;mkdirSync('docs/qa/fan-iteration',{recursive:true});});
 test.afterAll(async()=>{await app.close();});
 async function open(browser:Browser,identity:Identity,mobile=false){
   const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1280,height:900}});
@@ -32,7 +33,7 @@ test('six public dice are visible to the actor, another player and a spectator, 
   const f=await fixture(browser,['mr-dice-guy','coach','alchemist'],[4,10,15],[2,2,4,5,6,1],true);try{
     perform(f.code);
     for(const {page} of [f.actor,f.other,f.spectator]){const dice=page.locator('.dice-spotlight[data-dice-mode="multi"]');await expect(dice).toBeVisible();await expect(dice).toHaveAttribute('data-up-faces','2,2,4,5,6,1');await expect(page.getByTestId('multi-dice-value').locator('b')).toHaveCount(6);}
-    await f.other.page.screenshot({path:'docs/qa/athlete-feedback/six-dice-other-mobile.png'});
+    await f.other.page.screenshot({path:'docs/qa/fan-iteration/six-dice-other-mobile.png'});
     await expect(f.other.page.getByTestId('public-six-dice')).toBeVisible();await expect(f.spectator.page.getByTestId('public-six-dice')).toHaveText(/骰子先生.*2.*2.*4.*5.*6.*1/s);
     await expect(f.actor.page.getByTestId('skill-choice')).toBeVisible();expect(app.rooms.get(f.code).game.pending?.kind).toBe('mr-dice-pick');
   }finally{await dispose(f.contexts);}
@@ -44,7 +45,7 @@ test('Nemesis shows its own confirmed ability die and the camera stays with its 
     const board=f.spectator.page.getByTestId('board-3d');
     await expect(f.spectator.page.locator('.dice-spotlight[aria-label="宿敌正在掷跟掷骰"]')).toBeVisible({timeout:20000});
     await expect(f.spectator.page.getByTestId('dice-value')).toHaveText(/3.*即将结算能力/s);
-    await expect(board).toHaveAttribute('data-camera-target-ids','r1');await f.spectator.page.screenshot({path:'docs/qa/athlete-feedback/nemesis-die-desktop.png'});
+    await expect(board).toHaveAttribute('data-camera-target-ids','r1');await f.spectator.page.screenshot({path:'docs/qa/fan-iteration/nemesis-die-desktop.png'});
     await expect(board).toHaveAttribute('data-phase','idle',{timeout:25000});
     const target=await board.getAttribute('data-camera-target-ids');await f.spectator.page.waitForTimeout(1200);await expect(board).toHaveAttribute('data-camera-target-ids',target!);
   }finally{await dispose(f.contexts);}
@@ -57,7 +58,7 @@ test('The Hose waits for its second die and shows it before the trip animation',
     expect(app.rooms.get(f.code).game.racers[1]!.tripped).toBe(false);perform(f.code);
     expect(app.rooms.get(f.code).game.logs.some(event=>event.type==='trip'&&event.targets?.includes('r1'))).toBe(true);
     await expect(f.other.page.locator('.dice-spotlight[aria-label="水管正在掷回合结束 · 水管范围骰"]')).toBeVisible({timeout:20000});await expect(f.other.page.getByTestId('dice-value')).toHaveText(/3.*即将结算能力/s);
-    await expect(f.other.page.getByTestId('board-3d')).toHaveAttribute('data-phase','trip',{timeout:20000});await f.other.page.screenshot({path:'docs/qa/athlete-feedback/hose-trip-desktop.png'});
+    await expect(f.other.page.getByTestId('board-3d')).toHaveAttribute('data-phase','trip',{timeout:20000});await f.other.page.screenshot({path:'docs/qa/fan-iteration/hose-trip-desktop.png'});
     // The server may already begin the victim's recovery turn while this client
     // is still showing the earlier trip; the ordered event stream keeps both.
     const events=app.rooms.get(f.code).game.logs,trip=events.find(event=>event.type==='trip'&&event.targets?.includes('r1'))!;
@@ -84,26 +85,26 @@ test('six distinct faces stay public and wait for the controller to reroll the f
     expect(app.rooms.get(f.code).game.randomLog).toHaveLength(6);await f.actor.page.getByRole('button',{name:'六骰均不同，重掷六骰',exact:true}).click();
     await expect(f.other.page.locator('.dice-spotlight[data-dice-mode="multi"]')).toHaveAttribute('data-up-faces','2,2,3,3,4,4');
     expect(app.rooms.get(f.code).game.randomLog).toHaveLength(12);expect(app.rooms.get(f.code).game.pending?.kind).toBe('mr-dice-pick');
-    await f.other.page.screenshot({path:'docs/qa/athlete-feedback/six-distinct-reroll.png'});
+    await f.other.page.screenshot({path:'docs/qa/fan-iteration/six-distinct-reroll.png'});
   }finally{await dispose(f.contexts);}
 });
 
-test('an unavoidable forced cycle shows its project draw decision and preserves points before the next race',async({browser})=>{
+test('legacy v2 unavoidable forced cycle shows its project draw decision and preserves points before the next race',async({browser})=>{
   const f=await fixture(browser,['hopfrog','critic','diva'],[5,30,26],[],false,game=>{
-    game.track='wild';game.currentRacerId='r2';game.turn=2;game.turnCount=8;game.racers.forEach(racer=>racer.flags={turnsTaken:2});
+    game.rulesVersion=SECOND_WIND_V2_RULES_VERSION;game.track='wild';game.currentRacerId='r2';game.turn=2;game.turnCount=8;game.racers.forEach(racer=>racer.flags={turnsTaken:2});
     game.racers[1]!.finished=true;game.racers[1]!.rank=1;game.players[1]!.score=3;game.queue=[];
     game.flags={needsBegin:true,placements:[{racerId:'r1',playerId:game.players[1]!.id,characterId:'critic',rank:1,points:3}],nextOverride:[]};
   });try{
     await f.spectator.page.evaluate(()=>{localStorage.setItem('magical-athlete:animation-speed','4');localStorage.setItem('magical-athlete:reduced-motion','true');});await f.spectator.page.reload();await expect(f.spectator.page.getByTestId('board-3d')).toBeVisible();
     for(let index=0;index<40;index++){
       const room=app.rooms.get(f.code),game=room.game;if(game.phase!=='race')break;
-      const pending=game.pending,automatic=systemAction(game),actor=automatic?.playerId??pending!.playerId;
+      const pending=game.pending,automatic=systemRoomAction(game),actor=automatic?.playerId??pending!.playerId;
       const action=automatic?.action??{type:'choose',choiceId:pending!.id,optionId:pending!.options[0]!.id} as GameAction;
       const reply=app.rooms.act(f.code,actor,{actionId:crypto.randomUUID(),expectedVersion:room.version,action});expect(reply.ok,reply.error).toBe(true);
     }
     const result=app.rooms.get(f.code);expect(result.game.phase).toBe('results');expect(result.game.results.at(-1)?.drawReason).toBe('forced-cycle');expect(result.game.players.map(player=>player.score)).toEqual([0,3,0]);publish(f.code);
     await expect(f.spectator.page.getByTestId('skill-banner')).toContainText('强制循环 · 本场和局',{timeout:30000});
-    await expect(f.spectator.page.locator('.round-draw-notice')).toContainText('未完赛选手不追加名次分',{timeout:30000});await f.spectator.page.screenshot({path:'docs/qa/athlete-feedback/forced-cycle-draw.png'});
+    await expect(f.spectator.page.locator('.round-draw-notice')).toContainText('未完赛选手不追加名次分',{timeout:30000});await f.spectator.page.screenshot({path:'docs/qa/fan-iteration/forced-cycle-draw.png'});
     const room=app.rooms.get(f.code),reply=app.rooms.act(f.code,room.hostId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:{type:'next'}});expect(reply.ok).toBe(true);expect(app.rooms.get(f.code).game.round).toBe(2);
   }finally{await dispose(f.contexts);}
 });

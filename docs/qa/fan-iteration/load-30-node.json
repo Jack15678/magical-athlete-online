@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-22T05:32:13.515Z",
+  "backend": "local Node + SQLite + real WebSocket Socket.IO",
+  "rooms": 30,
+  "clients": 60,
+  "durationMs": 10000,
+  "elapsedMs": 11633,
+  "actions": 1330,
+  "snapshots": 3848,
+  "ackMs": {
+    "p50": 60.06,
+    "p95": 140.19,
+    "max": 305.44
+  },
+  "eventLoopMs": {
+    "mean": 32.03,
+    "p95": 95.75
+  },
+  "maxRssMiB": 266.4,
+  "errors": [],
+  "phases": [
+    "race",
+    "selection"
+  ],
+  "capacity": {
+    "used": 30,
+    "limit": 30
+  }
+}
