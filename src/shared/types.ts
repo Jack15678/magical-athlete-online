@@ -44,6 +44,8 @@ export interface GameState { characterPool?: CharacterPool; rulesVersion?: strin
 export interface Room { chat?: ChatState; }
 export interface RoomView { characterPool?: CharacterPool; rulesVersion?: string; chat?: ChatMessage[]; chatLatestId?: number; renameRemaining?: number; }
 export interface Racer { identityPlayerId?: string; }
+export interface GameState { randomStream?: import('./random.js').RandomStream }
+export interface RaceResult { drawReason?: 'forced-cycle' }
 
 /** Public snapshots for intermediate presentation beats, never hidden choice data. */
 export interface GameEvent { changes?: { racerId:string; playerId?:string; form?:string; mount?:string|null }[]; }

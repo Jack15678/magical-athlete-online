@@ -1,5 +1,7 @@
 # 胡闹运动会 · 好友联机
 
+2026-10-22 更新：[技能反馈、镜头跟随、聊天冒泡与随机数修复](docs/athlete-feedback-2026-10-22.md)。
+
 本轮新增 Second Wind 36 个角色的实验性规则与 Blender 模型接入，提供原作 / 续作 / 两代混合牌池、完整72张练习选牌，以及房间聊天、统一昵称去重和每局一次改名。**官方续作规则与部分边界尚待核实，目前不标记“完整支持72个角色”。** 本轮通过独立开发分支提交审阅，线上网站尚未随本轮发布。
 
 本轮的运行、测试、实际联机截图和待核实项目见 [Second Wind 接入验收](docs/second-wind-delivery.md)；[逐角色规则数据](src/shared/second-wind.ts)、[规则来源与缺口](docs/second-wind-rules.md)、[模型与可编辑源](docs/second-wind-models.md)、[聊天与旧局兼容](docs/chat-names-rules-version.md)可分别检查。

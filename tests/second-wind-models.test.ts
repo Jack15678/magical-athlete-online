@@ -80,3 +80,11 @@ test('Blender closed-volume audit describes the exact 38 editable sources and sh
     assert.equal(createHash('sha256').update(await readFile(new URL(`${source.id}.glb`, folder))).digest('hex'), source.glbSha256);
   }
 });
+
+test('Switcharoo muzzle, smile and nostrils stay centred on its head', async () => {
+  const audit = JSON.parse(await readFile(new URL('../docs/evidence/second-wind/source-audit.json', import.meta.url), 'utf8'));
+  const alignment = audit.sources.find((source: { id: string }) => source.id === 'switcharoo')?.facialAlignment;
+  assert.ok(alignment, 'the editable source must have an independently inspected face');
+  assert.equal(alignment.nostrils, 2);
+  for (const key of ['snoutX','smileX','nostrilMidpointX']) assert.ok(Math.abs(alignment[key]-alignment.headX)<.00001, `${key} must share the head centreline`);
+});

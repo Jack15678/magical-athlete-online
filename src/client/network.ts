@@ -149,11 +149,11 @@ export function connectRoom(identity: Identity, onSnapshot: (room: RoomView) => 
   if (BROWSER_HOST_MODE) return new BrowserRelayConnection(identity, onSnapshot, onStatus);
   const socket = io({ auth: identity, reconnection: true, reconnectionDelay: 800, reconnectionDelayMax: 5000, timeout: 10000 });
   const community = new CommunityFeed();
-  const chatSync = () => { socket.timeout(6500).emit('chat-sync', {afterId: 0}, (error: Error | null, reply: {ok: boolean; messages?: RoomView['chat']; latestId?: number}) => { if (!error && reply.ok) community.update({messages: reply.messages, latestId: reply.latestId}); }); };
-  socket.on('chat', (payload: {messages: NonNullable<RoomView['chat']>; latestId: number}) => community.update(payload));
+  const chatSync = () => { socket.timeout(6500).emit('chat-sync', {afterId: 0}, (error: Error | null, reply: {ok: boolean; messages?: RoomView['chat']; latestId?: number}) => { if (!error && reply.ok) community.update({messages: reply.messages, latestId: reply.latestId},'history'); }); };
+  socket.on('chat', (payload: {messages: NonNullable<RoomView['chat']>; latestId: number}) => community.update(payload,'live'));
   socket.on('connect', () => { community.update({connected: true}); chatSync(); });
   socket.on('disconnect', () => community.update({connected: false}));
-  socket.on('snapshot', (room: RoomView) => community.update({messages: room.chat, latestId: room.chatLatestId, renameRemaining: room.renameRemaining, name: room.players.find(player => player.id === identity.playerId)?.name ?? room.spectators?.find(viewer => viewer.id === identity.playerId)?.name}));
+  socket.on('snapshot', (room: RoomView) => community.update({messages: room.chat, latestId: room.chatLatestId, renameRemaining: room.renameRemaining, name: room.players.find(player => player.id === identity.playerId)?.name ?? room.spectators?.find(viewer => viewer.id === identity.playerId)?.name},'history'));
   let closed = false;
   let expired = false;
   let closedMessage='房间已解散，请创建或加入其他房间。';

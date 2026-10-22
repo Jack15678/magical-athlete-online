@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { OrthographicCamera, Vector3 } from 'three';
 import type { Racer, RoomView } from '../src/shared/types.js';
 import type { PresentationBeat } from '../src/client/presentation.js';
-import { actionFocus, advanceIntroStep, cameraFocusPoints, cameraFrame, cameraProject, cameraStep, cameraView, choiceFocus, claimRaceIntro, introFocus, introStepAt, INTRO_REDUCED_MS, INTRO_STEP_MS, ownFocus, pawnOccupancy, pawnWorldPoint, raceIntroEligible, raceIntroKey, resetRaceIntroForSetup, START_CENTER_OFFSET, START_EXTENSION, startPlacement } from '../src/client/scene/camera.js';
+import { actionFocus, idleFollowFocus, advanceIntroStep, cameraFocusPoints, cameraFrame, cameraProject, cameraStep, cameraView, choiceFocus, claimRaceIntro, introFocus, introStepAt, INTRO_REDUCED_MS, INTRO_STEP_MS, ownFocus, pawnOccupancy, pawnWorldPoint, raceIntroEligible, raceIntroKey, resetRaceIntroForSetup, START_CENTER_OFFSET, START_EXTENSION, startPlacement } from '../src/client/scene/camera.js';
 import { BOARD_CENTER_SPAN, boardPoint, TILE } from '../src/client/scene/math.js';
 
 const racer = (id: string, playerId: string, position: number): Racer => ({ id, playerId, characterId: 'coach', position, tripped: false, finished: false, eliminated: false, flags: {} });
@@ -42,15 +42,32 @@ test('distant swaps and reconnect gaps cannot cause an unbounded camera jump', (
   assert.equal(cameraStep(80, 160, 5, true), 1, 'reduced motion applies the new frame directly');
 });
 
-test('one confirmed chain frames its actor, full movement path and reactions, excluding later turns', () => {
+test('only the current confirmed action frames its actor and path; later reactions wait', () => {
   const move = beat('move', 'turn1', 'b', 14, 20);
   const reaction = beat('reaction', 'turn1', 'a', 2, 4);
   const otherTurn = beat('later', 'turn2', 'c', 7, 30);
   const focus = actionFocus(move, racers, [move, reaction, otherTurn]);
   assert.equal(focus.chainId, 'turn1');
-  assert.deepEqual(focus.ids, ['b', 'a']);
-  assert.ok(focus.positions.includes(14) && focus.positions.includes(20) && focus.positions.includes(2) && focus.positions.includes(4));
+  assert.deepEqual(focus.ids, ['b']);
+  assert.ok(focus.positions.includes(14) && focus.positions.includes(20));
+  assert.ok(!focus.positions.includes(2) && !focus.positions.includes(4));
   assert.ok(!focus.positions.includes(30));
+});
+
+test('between turns auto-follow stays with the latest actor, follows own reactions, and returns at own next turn',()=>{
+  const other=actionFocus(beat('move','turn1','b',14,20),racers);
+  assert.deepEqual(idleFollowFocus(room,racers,other).ids,['b']);
+  const ownReaction=actionFocus(beat('reaction','turn1','c',7,9),racers);
+  assert.deepEqual(idleFollowFocus(room,racers,ownReaction).ids,['c']);
+  assert.deepEqual(idleFollowFocus({...room,currentRacerId:'a'},racers,other),ownFocus({...room,currentRacerId:'a'},racers));
+  assert.deepEqual(idleFollowFocus({...room,logs:[{id:1,type:'ability-dice',source:'b',text:'宿敌跟掷'}]},racers).ids,['b']);
+});
+
+test('camera cruise is modestly faster in the middle while short landings and long jumps stay bounded',()=>{
+  const dt=1/60,distance=5,zoom=60;
+  const previous=Math.min(1-Math.exp(-dt*4.8),720*dt/(zoom*distance));
+  const faster=cameraStep(distance,zoom,dt);assert(faster>previous);assert(faster<previous*1.35);
+  for(const distance of [.01,.4,1,5,10,40,80])for(const zoom of [30,60,160])assert(distance*zoom*cameraStep(distance,zoom,dt)<=960*dt+1e-8);
 });
 
 test('a local pending choice shows all legal public targets and ignores another player choice', () => {

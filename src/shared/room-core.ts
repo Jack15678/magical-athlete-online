@@ -1,10 +1,11 @@
-import { createGame, startGame, abilityState } from '../engine/index.js';
-import { automaticRoomAction, LEGACY_RULES_VERSION, roomRules, rulesVersion } from '../engine/runtime.js';
+import { createGame, startGame } from '../engine/index.js';
+import { automaticRoomAction, LEGACY_RULES_VERSION, roomRules, rulesVersion, publicAbilityState } from '../engine/runtime.js';
 import { MAX_SPECTATORS, PLAYER_COLORS, RULES_STATUS } from './constants.js';
 import type { ActionEnvelope, GameAction, Player, Room, RoomView } from './types.js';
 import type { RelayMember, RelayMetadata } from './relay.js';
 import { personalRoom, roomExpiry } from './room-lifecycle.js';
 import { publicCopyCardIds } from './character-info.js';
+import type { RandomSeed } from './random.js';
 
 /** Pure room policy shared by browser authority and future server adapters.
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
@@ -38,7 +39,7 @@ export function validateMetadata(meta: RelayMetadata): void {
 export function memberPlayer(member: RelayMember): Player {
   return { ...member, connected:!!member.isAI||member.connected, color: PLAYER_COLORS[member.seat]!, ready: false, score: 0, hand: [], used: [], selection: [] };
 }
-export function createBrowserRoom(meta: RelayMetadata, seed: number, now: number): Room {
+export function createBrowserRoom(meta: RelayMetadata, seed: RandomSeed, now: number): Room {
   validateMetadata(meta);
   if (meta.phase !== 'lobby') throw Error('主持设备没有这局的本地存档，无法恢复已开始的比赛。请创建新房间。');
   const room:Room = { mode:meta.mode??'multiplayer', code: meta.code, hostId: meta.adminHostId, ownerId:meta.ownerId??meta.authorityId,hostLeftAt:meta.hostLeftAt,createdAt: meta.createdAt, updatedAt: now, version: 1, maxPlayers: meta.maxPlayers, timeoutSeconds: meta.timeoutSeconds, deadline: null,
@@ -90,7 +91,7 @@ export function reconcileRoster(original: Room, meta: RelayMetadata, now: number
 export function setRoomDeadline(room: Room, now: number): void {
   room.deadline = room.closedAt === undefined && room.timeoutSeconds > 0 && automaticRoomAction(room.game) ? now + room.timeoutSeconds*1000 : null;
 }
-export interface ReductionOptions { now: number; rematchSeed: number; automatic?: boolean }
+export interface ReductionOptions { now: number; rematchSeed: RandomSeed; automatic?: boolean }
 export function reduceRoomAction(original: Room, playerId: string, action: GameAction, options: ReductionOptions): Room {
   if (options.now >= roomExpiry(original)) throw Error('房主离开超过30分钟，房间已关闭。');
   if (original.closedAt !== undefined) throw Error('房间已解散，请创建或加入其他房间。');
@@ -171,7 +172,7 @@ export function projectRoom(room: Room, playerId: string, options: ProjectionOpt
   return { characterPool:g.characterPool??'original',rulesVersion:rulesVersion(g),chat:structuredClone(room.chat?.messages??[]),chatLatestId:room.chat?.latestId??0,renameRemaining:spectator?0:g.players.find(p=>p.id===playerId)?.renameUsed?0:1,role:spectator?'spectator':'player',spectators:structuredClone(room.spectators??[]),createdAt:room.createdAt,expiresAt:room.hostLeftAt===undefined?undefined:expiry,ownerId:room.ownerId??room.hostId,hostLeftAt:room.hostLeftAt,closeReason:room.closeReason,mode:room.mode??'multiplayer',turnStage:g.phase==='race'?(pending?'choice':g.flags.needsBegin?'starting':g.flags.awaitRoll?'roll':'resolving'):undefined, code:room.code, version:room.version, hostId:room.hostId, selfId:playerId, maxPlayers:room.maxPlayers, timeoutSeconds:room.timeoutSeconds, deadline:room.deadline,
     phase:g.phase, round:g.round, track:g.track, hosting:'browser', authorityId:options.authorityId, authorityOnline:room.closedAt === undefined && options.authorityOnline, ...(room.closedAt === undefined ? {} : {closedAt:room.closedAt}),
     players:g.players.map(({hand,selection,renameRequestId,...p}) => ({ ...p, handCount:hand.length, selected:selection.length>0, ...(p.id===playerId ? {hand:[...hand],selection:[...selection]} : {}) })),
-    draft:g.draft ? structuredClone(g.draft) : undefined, racers:g.racers.map(r=>({...structuredClone(r),flags:{...publicRacerFlags(r.flags),...publicCopyCardIds(r,g.logs),publicAbilities:abilityState(g,r)}})), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
+    draft:g.draft ? structuredClone(g.draft) : undefined, racers:g.racers.map(r=>({...structuredClone(r),flags:{...publicRacerFlags(r.flags),...publicCopyCardIds(r,g.logs),publicAbilities:publicAbilityState(g,r)}})), baseTurnOrder:g.baseTurnOrder?[...g.baseTurnOrder]:undefined, currentRacerId:g.currentRacerId,
     pending:pending?.playerId===playerId ? {id:pending.id,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,options:structuredClone(pending.options),optional:pending.optional,kind:pending.kind} : undefined,
     waitingFor:pending?.playerId, logs:structuredClone(g.logs.slice(-120)), results:structuredClone(g.results), lastRoll:g.lastRoll ? {...g.lastRoll} : undefined, rulesStatus:typeof (g.flags.ruleHold as {message?:unknown}|undefined)?.message==='string'?String((g.flags.ruleHold as {message:string}).message):RULES_STATUS };
 }

@@ -311,10 +311,21 @@ def build(id):
             a=i*math.pi*2/5; O('orange',(math.cos(a)*.1,.5,math.sin(a)*.1),(.13,.31,.13),'pepper-lobe')
         K('brown',(0,.86,0),.052,.04,.16,'pepper-stem',rot=(0,0,-.25)); E(y=.61,z=.23,gap=.075,s=.034); O('red',(0,.43,.25),(.058,.025,.015),'red-lips'); O('red',(0,.407,.247),(.043,.017,.015),'lower-lip'); L('orange',[(-.17,.53,-.04),(-.32,.61,0),(-.27,.74,.03)],.04,'bent-pepper-arm'); notes('Orange bell pepper with five thick lobes, brown bent stalk, lashes, red lips, pink feet and coy raised arm.')
     elif id=='switcharoo':
-        O('yellow',(0,.39,-.03),(.2,.25,.17),'kangaroo-haunch'); O('yellow',(0,.65,0),(.14,.24,.11),'kangaroo-neck'); O('yellow',(0,.84,.03),(.15,.15,.12),'kangaroo-head'); O('yellow',(.09,.8,.13),(.14,.055,.07),'kangaroo-snout')
+        O('yellow',(0,.39,-.03),(.2,.25,.17),'kangaroo-haunch'); O('yellow',(0,.65,0),(.14,.24,.11),'kangaroo-neck'); O('yellow',(0,.84,.03),(.15,.15,.12),'kangaroo-head')
+        # The reference is a three-quarter drawing; its lateral snout offset must
+        # not become a crooked mouth on a frontal, fully volumetric game model.
+        O('yellow',(0,.8,.145),(.135,.07,.105),'kangaroo-snout')
+        # Place the mirrored smile directly on the ellipsoid surface, including
+        # its depth at each point, so the mouth does not float in a side view.
+        mouth=[]
+        for x,y in [(-.09,.786),(-.045,.766),(0,.758),(.045,.766),(.09,.786)]:
+            z=.145+.105*math.sqrt(1-(x/.135)**2-((y-.8)/.07)**2)+.004
+            mouth.append((x,y,z))
+        L('ink',mouth,.007,'centred-smile')
+        for d in (-1,1): O('ink',(d*.039,.826,.242),(.007,.011,.003),'nostril')
         for d in (-1,1): K('yellow',(d*.09,1.08,0),.055,0,.32,'long-ear',rot=(0,0,d*.15)); O('yellow',(d*.15,.12,.1),(.075,.13,.17),'long-foot'); L('yellow',[(d*.09,.65,.03),(d*.2,.58,.09),(d*.12,.54,.17)],.025,'small-arm')
         for d in (-1,1): O('pink',(d*.065,.89,.134),(.053,.047,.014),'round-glasses'); O('paper',(d*.065,.89,.146),(.033,.03,.009),'lens'); O('ink',(d*.065,.89,.156),.013,'pupil')
-        L('yellow',[(0,.3,-.13),(.22,.17,-.3),(.37,.1,-.31)],.055,'large-kangaroo-tail'); O('cream',(0,.42,.12),(.11,.13,.028),'pouch'); notes('Yellow kangaroo, very long ears/feet/tail, pink round glasses, cream pouch, slender tucked forearms.')
+        L('yellow',[(0,.3,-.13),(.22,.17,-.3),(.37,.1,-.31)],.055,'large-kangaroo-tail'); O('cream',(0,.42,.12),(.11,.13,.028),'pouch'); notes('Yellow kangaroo, very long ears/feet/tail, pink round glasses, centred symmetric snout and surface-following smile, cream pouch, slender tucked forearms.')
     elif id=='tail':
         # A tail is the character: no invented torso or humanoid appendages.
         L('green',[(-.31,.1,-.01),(-.12,.16,0),(.04,.35,0),(.14,.61,0),(.14,.8,0)],.15,'tail-body',taper=[.12,.55,.9,1,1])

@@ -1,0 +1,14 @@
+{
+  "renderer": "actual game / React Three Fiber",
+  "mode": "practice",
+  "browser": "Microsoft Edge",
+  "assetBytes": 37680,
+  "assetSha256": "d327f857cb6edca22ef71044561bbe0a6a1c6eeaa46ca90ce4fb1925ea916c23",
+  "requests": [
+    "http://127.0.0.1:8732/models/second-wind/switcharoo.glb?v=second-wind-20261021"
+  ],
+  "loadedModels": "1",
+  "fallbackModels": "0",
+  "errors": [],
+  "rollVisible": true
+}

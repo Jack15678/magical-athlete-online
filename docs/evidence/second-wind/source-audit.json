@@ -548,9 +548,9 @@
     {
       "id": "switcharoo",
       "source": "assets/blender/second-wind/switcharoo.blend",
-      "sourceSha256": "66cd023653e60ef09e465c6df107195b534a78ca40f1b0d0fd93627494ea6b15",
-      "glbSha256": "37e061aca9fc0fee96c33ad8875e1c1b9d7010ec92b182fb175e70a2bab08b4a",
-      "editableParts": 18,
+      "sourceSha256": "512bde2e1e3df3485993ccbf006b5d304e926d42cbbdb360ce3b9d6a4fe5b891",
+      "glbSha256": "d327f857cb6edca22ef71044561bbe0a6a1c6eeaa46ca90ce4fb1925ea916c23",
+      "editableParts": 21,
       "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
@@ -560,7 +560,14 @@
         "move",
         "recover",
         "skill"
-      ]
+      ],
+      "facialAlignment": {
+        "headX": -0.06611163914203644,
+        "snoutX": -0.06611166149377823,
+        "smileX": -0.06611163169145584,
+        "nostrilMidpointX": -0.06611162982881069,
+        "nostrils": 2
+      }
     },
     {
       "id": "tail",

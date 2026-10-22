@@ -1,17 +1,34 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { RoomView } from '../shared/types.js';
 import type { RoomConnection } from './network.js';
 import type { CommunityState } from './community.js';
+import { ChatNoticeBubble, nextChatNotice, type ChatNotice } from './chat-notices.js';
 
 export function RoomChat({ room, community, connection, immersive, onRename }: { room: RoomView; community: CommunityState; connection: RoomConnection | null; immersive: boolean; onRename: () => void }) {
   const [open, setOpen] = useState(false), [text, setText] = useState(''), [sending, setSending] = useState(false), [error, setError] = useState('');
   const [seen, setSeen] = useState(() => { try { return Number(sessionStorage.getItem(`magical-athlete:chat-read:${room.code}`)) || community.latestId; } catch { return community.latestId; } });
   const [newBelow, setNewBelow] = useState(false);
+  const [notice,setNotice]=useState<ChatNotice|null>(null);
+  const noticed=useRef(community.liveRevision??0);
+  const noticedMessage=useRef(community.liveMessages?.at(-1)?.id??0);
   const list = useRef<HTMLDivElement>(null), bottom = useRef(true), initial = useRef(true);
   const retry = useRef<{ text: string; clientMessageId: string } | null>(null);
   const unread = community.messages.filter(message => message.id > seen && message.senderId !== room.selfId).length;
   const markRead = () => { setSeen(community.latestId); try { sessionStorage.setItem(`magical-athlete:chat-read:${room.code}`, String(community.latestId)); } catch { /* Optional read marker. */ } };
   const scrollBottom = () => { if (list.current) list.current.scrollTop = list.current.scrollHeight; bottom.current = true; setNewBelow(false); markRead(); };
+  useEffect(()=>{
+    const revision=community.liveRevision??0;
+    if(open||!community.connected)setNotice(null);
+    else if(revision>noticed.current){const fresh=(community.liveMessages??[]).filter(message=>message.id>noticedMessage.current);setNotice(previous=>nextChatNotice(previous,fresh,room.selfId,Date.now()));}
+    noticed.current=revision;
+    noticedMessage.current=community.liveMessages?.at(-1)?.id??noticedMessage.current;
+  },[community.liveRevision,community.connected,open,room.selfId]);
+  useEffect(()=>{
+    if(!notice)return;
+    const timer=setTimeout(()=>setNotice(current=>current&&current.expiresAt<=Date.now()?null:current),Math.max(0,notice.expiresAt-Date.now()));
+    return ()=>clearTimeout(timer);
+  },[notice]);
   useLayoutEffect(() => {
     if (!open) return;
     if (initial.current || bottom.current) { scrollBottom(); initial.current = false; }
@@ -20,8 +37,8 @@ export function RoomChat({ room, community, connection, immersive, onRename }: {
   useEffect(() => {
     const viewport = window.visualViewport;
     const update = () => { document.documentElement.style.setProperty('--chat-keyboard-offset', `${Math.max(0, innerHeight - (viewport?.height ?? innerHeight) - (viewport?.offsetTop ?? 0))}px`); };
-    viewport?.addEventListener('resize', update); update();
-    return () => { viewport?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--chat-keyboard-offset'); };
+    viewport?.addEventListener('resize', update); viewport?.addEventListener('scroll',update); window.addEventListener('resize',update); update();
+    return () => { viewport?.removeEventListener('resize', update); viewport?.removeEventListener('scroll',update); window.removeEventListener('resize',update); document.documentElement.style.removeProperty('--chat-keyboard-offset'); };
   }, []);
   useEffect(() => {
     if (!immersive) return;
@@ -52,7 +69,10 @@ export function RoomChat({ room, community, connection, immersive, onRename }: {
     } catch (cause) { setError(cause instanceof Error ? cause.message : '尚未确认发送，请重试。'); }
     finally { setSending(false); }
   };
-  return <aside className={`room-community ${immersive ? 'in-race' : ''} ${open ? 'is-open' : ''}`} data-testid="room-community" onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setOpen(false); }}>
+  // A viewport overlay must not inherit any ancestor's transform/containment:
+  // those turn fixed coordinates into page-local coordinates during scenes.
+  return createPortal(<aside className={`room-community ${immersive ? 'in-race' : ''} ${open ? 'is-open' : ''}`} data-testid="room-community" onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setOpen(false); }}>
+    {!open&&notice&&<div className="chat-notice-region" aria-live="polite" aria-atomic="true"><ChatNoticeBubble notice={notice} onOpen={()=>setOpen(true)} /></div>}
     {!open && <button className="chat-toggle" aria-label={`房间聊天${unread ? `，${unread} 条未读` : ''}`} aria-expanded={false} onClick={() => setOpen(true)}>💬 聊天{unread > 0 && <b className="chat-unread">{unread}</b>}</button>}
     {open && <section className="room-chat" aria-label="房间聊天" data-testid="room-chat">
       <header><div><strong>房间聊天</strong><small>{community.connected ? '玩家与观战者 · 最近 100 条' : '连接中，消息将自动补齐'}</small></div><button aria-label="收起聊天" onClick={() => setOpen(false)}>−</button></header>
@@ -67,7 +87,7 @@ export function RoomChat({ room, community, connection, immersive, onRename }: {
       {error && <p className="chat-error" role="alert">{error}</p>}
       <form onSubmit={send}><label className="sr-only" htmlFor="room-chat-input">聊天消息</label><textarea id="room-chat-input" rows={1} maxLength={500} value={text} onChange={event => setText(event.target.value)} placeholder="说点什么…" onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} /><button disabled={sending || !community.connected || !text.trim()}>{sending ? '发送中' : '发送'}</button></form>
     </section>}
-  </aside>;
+  </aside>,document.body);
 }
 
 export function RenameForm({ room, community, connection, onSuccess }: { room: RoomView; community: CommunityState; connection: RoomConnection | null; onSuccess: (name: string) => void }) {

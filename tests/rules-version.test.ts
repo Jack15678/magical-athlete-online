@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../src/engine/index.js';
-import { automaticRoomAction, CURRENT_RULES_VERSION, LEGACY_RULES_VERSION, roomRules } from '../src/engine/runtime.js';
+import { automaticRoomAction, CURRENT_RULES_VERSION, LEGACY_RULES_VERSION, SECOND_WIND_V1_RULES_VERSION, roomRules } from '../src/engine/runtime.js';
 import { reduceRoomAction } from '../src/shared/room-core.js';
 import { Rooms } from '../src/server/rooms.js';
 import { immediateRoomAction } from '../src/shared/automation.js';
@@ -10,6 +10,15 @@ import type { Player, Room } from '../src/shared/types.js';
 
 const players:Player[]=Array.from({length:2},(_,seat)=>({id:`p${seat}`,name:`玩家${seat}`,seat,color:'#000',ready:true,connected:true,score:0,hand:[],used:[],selection:[]}));
 function room():Room { return {code:'ABC234',hostId:'p0',createdAt:1,updatedAt:1,version:1,maxPlayers:2,timeoutSeconds:0,deadline:null,game:createGame(players,71)}; }
+
+test('Second Wind v1 rooms retain their original RNG and rules until a complete rematch',()=>{
+  const original=room();original.game.rulesVersion=SECOND_WIND_V1_RULES_VERSION;
+  assert.notEqual(roomRules(original.game),roomRules(room().game));
+  const started=reduceRoomAction(original,'p0',{type:'start'},{now:2,rematchSeed:0});
+  assert.equal(started.game.rulesVersion,SECOND_WIND_V1_RULES_VERSION);assert.equal(started.game.randomStream,undefined);
+  started.game.phase='finished';const newer=reduceRoomAction(started,'p0',{type:'rematch'},{now:3,rematchSeed:Array.from({length:11},(_,index)=>index)});
+  assert.equal(newer.game.rulesVersion,CURRENT_RULES_VERSION);assert.equal(newer.game.randomStream!.algorithm,'chacha20-v1');
+});
 
 test('旧存档固定使用原36角色规则，更新后续局才切换到当前规则',()=>{
   const old=room();delete old.game.rulesVersion;old.game.characterPool='mixed';

@@ -51,6 +51,8 @@ export class BrowserRelayConnection implements RoomConnection {
   private tickBusy = false;
   private replies = new Map<string, AwaitingReply>();
   private community = new CommunityFeed();
+  private chatHydrating=true;
+  private chatSyncIds=new Set<string>();
   private communityReplies = new Map<string, {resolve: (reply: ChatReply | RenameReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>}>();
   subscribeCommunity = this.community.subscribe;
   sendChat(message: ChatSend): Promise<ChatReply> { return this.communityRequest({type: 'chat-send', requestId: crypto.randomUUID(), ...message}) as Promise<ChatReply>; }
@@ -204,7 +206,10 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private receive(message: RelayServerMessage) {
     if (message.type === 'chat') {
-      this.community.update({messages: message.messages, latestId: message.latestId});
+      const synchronized=!!message.requestId&&this.chatSyncIds.delete(message.requestId);
+      const history=this.chatHydrating||synchronized;
+      this.community.update({messages: message.messages, latestId: message.latestId},history?'history':message.result?'update':'live');
+      this.chatHydrating=false;
       const pending = message.requestId ? this.communityReplies.get(message.requestId) : undefined;
       if (pending && message.requestId && message.result) { clearTimeout(pending.timer); this.communityReplies.delete(message.requestId); pending.resolve(message.result); }
     } else if (message.type === 'rename-result') {
@@ -215,7 +220,9 @@ export class BrowserRelayConnection implements RoomConnection {
       if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.roomClosedMessage=message.reason==='host-away'?'房主连续离开超过30分钟，房间已关闭。':ROOM_CLOSED; this.finishClosed(); }
     } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
-      this.community.update({connected: true}); this.communityRoster(message.meta); this.send({type: 'chat-sync', afterId: 0});
+      this.chatHydrating=true;this.chatSyncIds.clear();
+      this.community.update({connected: true}); this.communityRoster(message.meta);
+      const chatRequestId=crypto.randomUUID();this.chatSyncIds.add(chatRequestId);this.send({type:'chat-sync',requestId:chatRequestId,afterId:0});
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
       this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
       if (this.requestedRole && (!message.authority || !this.authority)) { this.fail('中继未确认本页的计算资格，已停止计算。'); return; }
