@@ -28,7 +28,7 @@ function publicRoom(room:Room){
 const snapshots=new Map<string,Map<string,RoomView>>();
 type VersionedViews=Map<number,Map<string,RoomView>>;
 const snapshotVersions=new Map<string,VersionedViews>();
-const snapshotWaits=new Map<string,ReturnType<typeof snapshotWait>>();
+const snapshotWaits=new Map<string,ReturnType<typeof snapshotWait>&{initialCandidateVersion:number;rebasedVersions:number[]}>();
 function rememberSnapshot(known:Map<string,RoomView>,versions:VersionedViews,view:RoomView):void{
   if((known.get(view.selfId)?.version??0)<=view.version)known.set(view.selfId,view);
   const peers=versions.get(view.version)??new Map<string,RoomView>();peers.set(view.selfId,view);versions.set(view.version,peers);
@@ -53,6 +53,21 @@ function completeViews(candidate:RoomView|undefined,versions:VersionedViews|unde
   if(candidate.turnStage==='choice'&&!candidate.waitingFor)return;
   return{latest:candidate,views};
 }
+function rebaseCandidate(initial:RoomView,known:Map<string,RoomView>|undefined,versions:VersionedViews|undefined):RoomView{
+  let candidate=initial;
+  while(candidate.waitingFor){
+    const acting=known?.get(candidate.waitingFor);
+    // Reconnection can skip a broadcast entirely. Advance only along the
+    // required actor's newer whole view, never an unrelated peer's latest frame.
+    // Every loop increases the version, so an actor handoff cannot cycle.
+    if(acting&&acting.version>candidate.version){candidate=acting;continue;}
+    const coherent=completeViews(candidate,versions);
+    // Prefer the complete authorized view itself over merging its private
+    // pending into another reader's public snapshot, even at the same version.
+    return coherent?.views.find(view=>view.selfId===candidate.waitingFor)??candidate;
+  }
+  return candidate;
+}
 function snapshotWait(candidate:RoomView,known:Map<string,RoomView>|undefined,versions:VersionedViews|undefined){
   const peers=versions?.get(candidate.version),actor=candidate.waitingFor?known?.get(candidate.waitingFor):undefined;
   return{candidateVersion:candidate.version,latestObservedVersion:latestView(known)?.version,candidatePhase:candidate.phase,candidateTurnStage:candidate.turnStage,
@@ -63,21 +78,25 @@ function snapshotWait(candidate:RoomView,known:Map<string,RoomView>|undefined,ve
 }
 async function saved(_page:Page,code:string):Promise<Room>{
   await expect.poll(()=>!!latestView(snapshots.get(code))).toBe(true);
-  // Pin once per read. Following a moving latest version while waiting for a
-  // private actor can starve even though that candidate's own frame has arrived.
-  const candidate=latestView(snapshots.get(code))!;
+  // Start from public progress, then advance only when the required actor has a
+  // newer whole view. An unrelated fast peer cannot keep moving this target.
+  let candidate=latestView(snapshots.get(code))!;
+  const initialCandidateVersion=candidate.version,rebasedVersions:number[]=[];
   let coherent:ReturnType<typeof completeViews>;
   await expect.poll(()=>{
-    coherent=completeViews(candidate,snapshotVersions.get(code));snapshotWaits.set(code,snapshotWait(candidate,snapshots.get(code),snapshotVersions.get(code)));
+    const next=rebaseCandidate(candidate,snapshots.get(code),snapshotVersions.get(code));
+    if(next.version>candidate.version)rebasedVersions.push(next.version);
+    candidate=next;
+    coherent=completeViews(candidate,snapshotVersions.get(code));snapshotWaits.set(code,{...snapshotWait(candidate,snapshots.get(code),snapshotVersions.get(code)),initialCandidateVersion,rebasedVersions});
     return!!coherent;
-  },{message:`authorized actor snapshot for fixed room version ${candidate.version} must arrive`}).toBe(true);
+  },{message:`authorized actor snapshot must arrive or advance beyond room version ${initialCandidateVersion}`}).toBe(true);
   const {latest,views}=coherent!;
   const pending=latest.waitingFor?views.find(view=>view.selfId===latest.waitingFor)!.pending:undefined;
   const players=latest.players.map(player=>{const own=views.find(view=>view.selfId===player.id)?.players.find(p=>p.id===player.id);return {...player,hand:player.handCount===0?[]:own?.hand??[],selection:player.selected?(own?.selection?.length?own.selection:Array.from({length:latest.players.length===2?2:1},()=> 'locked')):[]};});
   return {code,hostId:latest.hostId,ownerId:latest.ownerId,version:latest.version,mode:latest.mode,createdAt:latest.createdAt??0,updatedAt:0,maxPlayers:latest.maxPlayers,timeoutSeconds:latest.timeoutSeconds,deadline:latest.deadline,game:{mode:latest.mode,phase:latest.phase,round:latest.round,players,deck:[],discard:[],draft:latest.draft,racers:latest.racers,baseTurnOrder:latest.baseTurnOrder,turn:0,turnCount:0,currentRacerId:latest.currentRacerId,pending,queue:[],logs:latest.logs,results:latest.results,rngState:0,randomLog:[],lastRoll:latest.lastRoll,track:latest.track,flags:{needsBegin:latest.turnStage==='starting',continuation:latest.turnStage==='resolving',awaitRoll:latest.turnStage==='roll'}}} as Room;
 }
 
-test('snapshot aggregation waits only for its fixed private actor and never combines independent versions',()=>{
+test('snapshot aggregation waits only for its required private actor and never combines independent versions',()=>{
   const players=[{id:'a',seat:0},{id:'b',seat:1},{id:'slow',seat:2}] as RoomView['players'];
   const view=(selfId:string,version:number,actor:string):RoomView=>({selfId,version,players,turnStage:'choice',waitingFor:actor,...(selfId===actor?{pending:{id:'choice-'+version,playerId:actor,kind:'alchemist',options:[]}}:{})}) as RoomView;
   const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();
@@ -88,7 +107,27 @@ test('snapshot aggregation waits only for its fixed private actor and never comb
   rememberSnapshot(known,versions,view('b',2,'b'));
   const complete=completeViews(fixed,versions)!;expect(complete.latest.version).toBe(2);expect(complete.views.find(v=>v.selfId==='b')?.pending?.id).toBe('choice-2');
   expect(known.get('slow')?.version).toBe(1);expect(snapshotWait(fixed,known,versions).requiredActorMissing).toBe(false);
-  rememberSnapshot(known,versions,view('b',4,'b'));expect(completeViews(fixed,versions)?.latest.version).toBe(2);
+  rememberSnapshot(known,versions,view('b',4,'b'));expect(rebaseCandidate(fixed,known,versions).version).toBe(4);
+});
+
+test('snapshot aggregation advances a missing private version 70 to its actor complete version 71 after reconnect',()=>{
+  const players=[{id:'host',seat:0},{id:'copycat',seat:5}] as RoomView['players'];
+  const candidate={selfId:'host',version:70,players,phase:'race',turnStage:'choice',waitingFor:'copycat',currentRacerId:'old-racer',logs:[{id:10,type:'system',text:'old public state'}]} as RoomView;
+  const authorized={...candidate,selfId:'copycat',version:71,currentRacerId:'new-racer',logs:[{id:11,type:'system',text:'reconnected complete state'}],pending:{id:'copycat-71',playerId:'copycat',kind:'copycat',title:'Copycat',optional:false,options:[]}} as RoomView;
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();rememberSnapshot(known,versions,candidate);rememberSnapshot(known,versions,authorized);
+  expect(completeViews(candidate,versions)).toBeUndefined();
+  const rebased=rebaseCandidate(candidate,known,versions);expect(rebased).toBe(authorized);expect(rebased.version).toBe(71);
+  const complete=completeViews(rebased,versions)!;expect(complete.latest.currentRacerId).toBe('new-racer');expect(complete.latest.logs[0]?.id).toBe(11);expect(complete.latest.pending?.id).toBe('copycat-71');
+});
+
+test('snapshot aggregation follows a monotonic actor handoff chain without chasing an unrelated newer peer',()=>{
+  const players=['host','first','second','third','unrelated'].map((id,seat)=>({id,seat})) as RoomView['players'];
+  const view=(selfId:string,version:number,actor:string):RoomView=>({selfId,version,players,phase:'race',turnStage:'choice',waitingFor:actor,...(selfId===actor?{pending:{id:`choice-${actor}-${version}`,playerId:actor,kind:'copycat',options:[]}}:{})}) as RoomView;
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map(),candidate=view('host',70,'first');rememberSnapshot(known,versions,candidate);
+  for(const frame of [view('first',71,'second'),view('second',72,'third'),view('third',72,'third'),view('unrelated',99,'unrelated')])rememberSnapshot(known,versions,frame);
+  const rebased=rebaseCandidate(candidate,known,versions);expect(rebased.version).toBe(72);expect(rebased.selfId).toBe('third');expect(rebased.pending?.id).toBe('choice-third-72');
+  expect(latestView(known)?.version).toBe(99);expect(completeViews(rebased,versions)?.latest).toBe(rebased);
+  const publicProgress={...rebased,version:73,waitingFor:undefined,pending:undefined,turnStage:'roll' as const};expect(rebaseCandidate(publicProgress,known,versions)).toBe(publicProgress);
 });
 
 test('snapshot aggregation uses public progress immediately and keeps private history bounded',()=>{
