@@ -1,4 +1,4 @@
-import { Component, Suspense, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react';
+import { Component, Suspense, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { AnimationMixer, LoopOnce, LoopRepeat, Mesh, MeshStandardMaterial, type AnimationClip, type Group } from 'three';
@@ -56,7 +56,7 @@ class ModelBoundary extends Component<{ recovery: AssetRecovery; revision: numbe
 
 function FailedToy({ color, castShadow, revision, recovery }: { color: string; castShadow: boolean; revision: number; recovery: AssetRecovery }) {
   useEffect(() => { recovery.failure(); }, [revision, recovery]);
-  return <LoadingToy color={color} castShadow={castShadow} />;
+  return <LoadingToy color={color} castShadow={castShadow} failed />;
 }
 
 function CharacterAsset({ revision, recovery, color, url, rootName, ...props }: ToyCharacterProps & { revision: number; recovery: AssetRecovery; url: string; rootName?: string }) {
@@ -79,6 +79,7 @@ function CharacterModel({ scene, recovery, characterId, lowQuality = false, cast
   const model = useMemo(() => {
     const source = scene.getObjectByName(rootName ?? `toy_${characterId}`) ?? scene.children[0];
     const instance = cloneToyModel(source!, motionEnabled);
+    instance.userData.sculptureState = 'ready';
     instance.traverse(object => {
       if (object instanceof Mesh) {
         object.castShadow = castShadow;
@@ -106,8 +107,16 @@ function CharacterModel({ scene, recovery, characterId, lowQuality = false, cast
   return <primitive object={model} dispose={null} />;
 }
 
-function LoadingToy({ color, castShadow }: { color: string; castShadow: boolean }) {
-  return <group name="procedural-racer-fallback">
+function LoadingToy({ color, castShadow, failed = false }: { color: string; castShadow: boolean; failed?: boolean }) {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(()=>{
+    if(failed)return;
+    // A never-settling loader can use the visible fallback after a bounded
+    // wait. A successful late request still replaces it through Suspense.
+    const timer=setTimeout(()=>setTimedOut(true),12_000);
+    return()=>clearTimeout(timer);
+  },[failed]);
+  return <group name="procedural-racer-fallback" userData={{sculptureState:failed||timedOut?'failed':'pending',...(failed||timedOut?{fallbackReason:failed?'load-error':'load-timeout'}:{})}}>
     <mesh position={[0, 0.38, 0]} castShadow={castShadow}>
       <capsuleGeometry args={[0.18, 0.3, 3, 8]} />
       <meshStandardMaterial color={color} roughness={0.45} />
@@ -124,18 +133,18 @@ function Sculpture({ characterId, color, lowQuality = false, castShadow = true, 
   const recovery = recoveryFor(url);
   const revision = useSyncExternalStore(recovery.subscribe, recovery.snapshot, recovery.snapshot);
   const fallback = <LoadingToy color={color} castShadow={castShadow && !lowQuality} />;
-  return <ModelBoundary key={url} recovery={recovery} revision={revision} fallback={fallback}><Suspense fallback={fallback}><CharacterAsset url={url} rootName={rootName} revision={revision} recovery={recovery} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow && !lowQuality} animation={animation} motionEnabled={motionEnabled} /></Suspense></ModelBoundary>;
+  return <ModelBoundary key={url} recovery={recovery} revision={revision} fallback={<LoadingToy color={color} castShadow={castShadow && !lowQuality} failed />}><Suspense fallback={fallback}><CharacterAsset url={url} rootName={rootName} revision={revision} recovery={recovery} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow && !lowQuality} animation={animation} motionEnabled={motionEnabled} /></Suspense></ModelBoundary>;
 }
 
 export function ToyCharacter({ characterId, color, lowQuality = false, castShadow = true, form, mount, animation, motionEnabled }: ToyCharacterProps) {
   const geometry = toyResources.baseGeometry(lowQuality);
   const modelId = characterId === 'bite-mark' && form === 'were-mouth' ? 'bite-mark-were' : characterId;
   const url = characterId==='banana' ? `/models/banana/${lowQuality?'banana-economy':'banana'}.glb?v=reference-mouth-v2-20261022` : expansionModels[characterId] ?? (secondWind.has(characterId) ? `/models/second-wind/${modelId}.glb?v=mouth-surface-v2-20261022` : lowQuality ? ECONOMY_URL : MODEL_URL);
-  return <group name={`racer-model-${characterId}`}>
+  return <group name={`racer-model-${characterId}`} userData={{racerModel:true}}>
     <mesh geometry={geometry.body} material={toyResources.baseMaterial(color, lowQuality)} receiveShadow={!lowQuality} castShadow={castShadow && !lowQuality} dispose={null} />
     <mesh geometry={geometry.cap} material={toyResources.baseMaterial(color, lowQuality, true)} receiveShadow={!lowQuality} dispose={null} />
     {mount && <group position={[0, .164, 0]}><Sculpture characterId="hog-knight-hog" rootName="toy_hog-knight-hog" url="/models/second-wind/hog-knight-hog.glb?v=mouth-surface-v2-20261022" color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} motionEnabled={motionEnabled} /></group>}
-    <group position={[0, .164 + (mount ? .34 : 0), mount ? -.07 : 0]} scale={mount ? .7 : 1}>
+    <group position={[0, .164 + (mount ? .34 : 0), mount ? -.07 : 0]} scale={mount ? .7 : 1} userData={{racerMainSculpture:true}}>
       <Sculpture url={url} rootName={`toy_${modelId}`} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} motionEnabled={motionEnabled} />
     </group>
   </group>;

@@ -2,7 +2,8 @@ import * as rulesV2 from './rules-v2.js';
 import * as current from './index.js';
 import * as legacy from './legacy-v1.js';
 import * as secondWindV1 from './second-wind-v1.js';
-import type { GameState, Racer } from '../shared/types.js';
+import { CHARACTERS } from '../shared/characters.js';
+import type { GameState, PublicAbilityEntry, PublicAbilityState, Racer } from '../shared/types.js';
 
 /** These identifiers select executable rules, not just a displayed label.
  * Missing versions are saves created before Second Wind was installed. */
@@ -29,8 +30,28 @@ export function systemRoomAction(game: GameState) {
   return roomRules(game).systemAction(game);
 }
 
-export function publicAbilityState(game:GameState,racer:Racer) {
-  return rulesVersion(game)===SECOND_WIND_V1_RULES_VERSION ? secondWindV1.abilityState(game,racer) : rulesVersion(game)===SECOND_WIND_V2_RULES_VERSION?rulesV2.abilityState(game,racer):current.abilityState(game,racer);
+const publicCardIds=new Set(CHARACTERS.map(card=>card.id));
+const publicPowerIds=(value:unknown):string[]=>Array.isArray(value)?[...new Set(value.filter((id):id is string=>typeof id==='string'&&publicCardIds.has(id)))]:[];
+const publicString=(value:unknown):string|undefined=>typeof value==='string'?value:undefined;
+const publicCard=(value:unknown):string|undefined=>typeof value==='string'&&publicCardIds.has(value)?value:undefined;
+export function publicAbilityState(game:GameState,racer:Racer):PublicAbilityState {
+  const raw=rulesVersion(game)===SECOND_WIND_V1_RULES_VERSION ? secondWindV1.abilityState(game,racer) : rulesVersion(game)===SECOND_WIND_V2_RULES_VERSION?rulesV2.abilityState(game,racer):current.abilityState(game,racer);
+  // Frozen engines retain their original flag shapes. Project a typed allowlist
+  // rather than leaking arbitrary stored metadata into a new detail component.
+  const state:Record<string,unknown>=raw;
+  const entries:PublicAbilityEntry[]|undefined=Array.isArray(state.entries)?state.entries.flatMap((value:unknown)=>{
+    if(!value||typeof value!=='object'||Array.isArray(value))return[];
+    const entry=value as Record<string,unknown>,id=publicCard(entry.id);
+    if(!id||!['printed','copy','draw','acquired','temporary'].includes(String(entry.origin))||!['race','next-turn','source-change'].includes(String(entry.duration)))return[];
+    return[{id,origin:entry.origin as PublicAbilityEntry['origin'],duration:entry.duration as PublicAbilityEntry['duration'],
+      ...(publicCard(entry.sourceCardId)?{sourceCardId:publicCard(entry.sourceCardId)}:{}),
+      ...(publicString(entry.sourceRacerId)?{sourceRacerId:publicString(entry.sourceRacerId)}:{}),
+      ...(publicCard(entry.via)?{via:publicCard(entry.via)}:{})}];
+  }):undefined;
+  return{powers:publicPowerIds(state.powers),disabledBy:Array.isArray(state.disabledBy)?state.disabledBy.filter((id):id is string=>typeof id==='string'):[],
+    copiedFrom:publicString(state.copiedFrom),acquired:publicPowerIds(state.acquired),krakenRemaining:typeof state.krakenRemaining==='number'?state.krakenRemaining:1,
+    form:publicString(state.form)??'normal',mount:publicString(state.mount),stepTargetId:publicString(state.stepTargetId),stepTargetControllerId:publicString(state.stepTargetControllerId),
+    ...(Array.isArray(state.ownedPowers)?{ownedPowers:publicPowerIds(state.ownedPowers)}:{}),...(entries?{entries}:{})};
 }
 
 /** Deadline-only policy. Never use this to advance a human choice immediately.

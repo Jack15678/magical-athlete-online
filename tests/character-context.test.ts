@@ -56,6 +56,9 @@ test('public acquired or copied ability holders are shown separately from printe
   const view=room(),copy=racer('copy','p1','understudy');copy.flags.publicAbilities={powers:['coach'],copiedFrom:'original'};view.racers=[racer('original','p0','coach'),copy];
   const context=characterContext(view,'coach');assert.deepEqual(context.racers.map(r=>r.id),['original']);assert.deepEqual(context.abilityHolders.map(r=>r.id),['copy']);
   const output=html(view,'coach');assert.match(output,/也掌握此能力的选手/);assert.match(output,/替补.*2号 · 乙/);assert.match(output,/复制或额外能力不会改变/);
+  copy.flags.publicAbilities={powers:[],ownedPowers:['coach'],disabledBy:['null-id'],copiedFrom:'original'};
+  assert.deepEqual(characterContext(view,'coach').abilityHolders.map(r=>r.id),['copy']);
+  assert.match(copiedAbilitySource(view,copy,'coach')!,/教练.*甲/);
 });
 
 test('draft market and catalog details do not invent a player owner',()=>{

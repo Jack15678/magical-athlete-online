@@ -11,6 +11,8 @@ export interface UsePresentationResult {
   startedAt: number;
   durationMs: number;
   displayRoom: RoomView | null;
+  startIntro: (key:string) => void;
+  introReady: boolean;
 }
 
 /** A visual clock only. Its timers never advance the rule engine or room service. */
@@ -29,17 +31,20 @@ export function usePresentation(room: RoomView | null, options: PresentationOpti
     setState(previous => !room ? null : !previous ? createPlayback(room) : receiveRoom(previous, room, { reconnect }));
   }, [room, options.reconnect]);
   const beat = state?.queue[0];
+  const [introReadyKey, setIntroReadyKey] = useState<string>();
+  const startIntro = useCallback((key:string)=>setIntroReadyKey(key),[]);
+  const introReady = beat?.kind !== 'intro' || introReadyKey === beat.key;
   const durationMs = beat ? beatDuration(beat, options) : 0;
   // Bind the visible clock to the beat in the same render. An effect-set clock
   // lets a new die/pawn render once with the preceding beat's completed time.
-  const startedAt = useMemo(() => performance.now(), [beat?.key]);
+  const startedAt = useMemo(() => performance.now(), [beat?.key,beat?.kind==='intro'?introReadyKey:undefined]);
   useEffect(() => {
-    if (!beat) return;
+    if (!beat || !introReady) return;
     const timer = setTimeout(() => setState(previous => previous?.queue[0]?.key === beat.key ? completeBeat(previous) : previous), Math.max(0, durationMs - (performance.now() - startedAt)));
     return () => clearTimeout(timer);
-  }, [beat?.key, durationMs, startedAt]);
-  const skip = useCallback(() => setState(previous => previous && latestRoom.current ? skipPlayback(previous, latestRoom.current) : previous), []);
+  }, [beat?.key, durationMs, startedAt, introReady]);
+  const skip = useCallback(() => setState(previous => previous?.queue[0]?.kind === 'intro' ? completeBeat(previous) : previous && latestRoom.current ? skipPlayback(previous, latestRoom.current) : previous), []);
   // While a completed action is still being shown, the action prompt must wait.
   const displayRoom: RoomView | null = state ? { ...state.confirmed, players: state.confirmed.players.map(player => ({...player, name: room?.players.find(current => current.id === player.id)?.name ?? player.name})), spectators: room?.spectators ?? state.confirmed.spectators, racers: state.racers, ...(state.queue.length && ['results', 'finished'].includes(state.confirmed.phase) ? { phase: 'race' as const } : {}) } : room;
-  return { state, beat, racers: state?.racers ?? room?.racers ?? [], playing: (state?.queue.length ?? 0) > 0, skip, startedAt, durationMs, displayRoom };
+  return { state, beat, racers: state?.racers ?? room?.racers ?? [], playing: (state?.queue.length ?? 0) > 0, skip, startedAt, durationMs, displayRoom, startIntro, introReady };
 }

@@ -142,9 +142,9 @@ test('race reveal reconstructs the start; a new round waits for the current boar
   const raced = view(2, [{ id: 1, type: 'reveal', text: '运动员揭示' }, { id: 2, type: 'power', text: '技能发动', source: 'a' }, motion(3, ['a'], [0], [3])], [racer('a', 3), racer('b')]);
   let state = receiveRoom(createPlayback(selection), raced);
   assert.equal(state.racers[0]?.position, 0);
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   state = receiveRoom(state, { ...raced, version: 3, round: 2, phase: 'selection' });
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   assert.equal(state.round, 1);
   while (state.queue.length) state = completeBeat(state);
   assert.equal(state.queue.length, 0);
@@ -349,7 +349,7 @@ test('a batched next race preserves the preceding final motion and reconstructs 
   state = completeBeat(state);
   assert.equal(state.round, 2);
   assert.equal(state.confirmed.track, 'wild');
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   assert.equal(state.racers[0]!.position, 0);
   while (state.queue.length) state = completeBeat(state);
   assert.deepEqual(state.racers, nextRacers);
@@ -377,7 +377,7 @@ test('an entire later race already at results still replays after the preceding 
   state = completeBeat(state);
   assert.equal(state.round, 2);
   assert.equal(state.racers[0]!.position, 0);
-  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [4, 5, 6]);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [3, 4, 5, 6]);
   while (state.queue.length) state = completeBeat(state);
   assert.equal(state.confirmed.phase, 'results');
   assert.deepEqual(state.racers, next.racers);

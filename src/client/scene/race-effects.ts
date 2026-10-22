@@ -1,14 +1,14 @@
 import type { Racer } from '../../shared/types.js';
 import type { PresentationBeat } from '../presentation.js';
 
-export type MarkerKind = Exclude<PresentationBeat['kind'], 'dice' | 'duel-dice' | 'move'>;
+export type MarkerKind = Exclude<PresentationBeat['kind'], 'intro' | 'dice' | 'duel-dice' | 'move'>;
 export interface RaceEffectMarker { racerId: string; position: number; kind: MarkerKind; endpoint?: 'departure' | 'arrival' }
 export interface RacePathMark { racerId: string; position: number; previous: number; backwards: boolean }
 
 /** Public event semantics only: a trip's source caused it; its targets fell. */
 export function raceEffectDescriptors(beat: PresentationBeat | undefined, racers: Racer[]) {
   const markers: RaceEffectMarker[] = [], path: RacePathMark[] = [];
-  if (!beat || beat.kind === 'dice' || beat.kind === 'duel-dice') return { markers, path };
+  if (!beat || beat.kind === 'intro' || beat.kind === 'dice' || beat.kind === 'duel-dice') return { markers, path };
   const known = new Map(racers.map(racer => [racer.id, racer]));
   if (beat.kind === 'move') {
     const routes = beat.motions.filter(motion => known.has(motion.racerId) && motion.path.length > 1);

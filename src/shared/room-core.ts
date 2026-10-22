@@ -187,7 +187,7 @@ export function validateActionEnvelope(value: unknown): ActionEnvelope {
 }
 export interface ProjectionOptions { authorityId: string; authorityOnline: boolean }
 function publicRacerFlags(flags: Room['game']['racers'][number]['flags']) {
-  return Object.fromEntries(Object.entries(structuredClone(flags)).filter(([key]) => key !== 'cheatahSecret' && !key.toLowerCase().startsWith('secret')));
+  return Object.fromEntries(Object.entries(structuredClone(flags)).filter(([key]) => key !== 'cheatahSecret' && key !== 'acquiredPowerSources' && !key.toLowerCase().startsWith('secret')));
 }
 export function projectRoom(room: Room, playerId: string, options: ProjectionOptions): RoomView {
   const spectator = room.spectators?.some(p => p.id === playerId) ?? false;
