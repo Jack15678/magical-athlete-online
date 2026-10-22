@@ -6,6 +6,18 @@ const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
 const smoke=process.env.RELAY_SMOKE==='1';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await boundedRead(page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))),'capture-frame read');await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
+async function skipQueuedPlayback(page:Page){
+  const skip=page.getByRole('button',{name:'跳过动画',exact:true});
+  await expect(async()=>{
+    if(await skip.isVisible()){
+      // An optional control may disappear naturally during actionability checks.
+      // Recheck it promptly instead of spending 15s waiting for it to reappear.
+      try{await skip.click({timeout:1_000});}
+      catch(error){if(await skip.isVisible())throw error;}
+    }
+    await expect(skip).toBeHidden({timeout:1_000});
+  }).toPass({timeout:20_000,intervals:[100,250,500]});
+}
 async function boundedRead<T>(operation:Promise<T>,label:string,timeoutMs=20_000):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
   try{return await Promise.race([operation,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error(`${label} exceeded ${timeoutMs}ms`)),timeoutMs);})]);}
@@ -137,6 +149,14 @@ test('snapshot aggregation uses public progress immediately and keeps private hi
   expect(snapshotWait(latest,known,versions).peers[0]?.latestVersion).toBeUndefined();
 });
 
+test('playback skip accepts natural completion while its optional button is moving and disappears',async({page})=>{
+  await page.setContent('<style>@keyframes slide{from{transform:translateX(0)}to{transform:translateX(100px)}}#skip{animation:slide 1s linear infinite}</style><button id="skip" aria-label="跳过动画">跳过</button><button id="action">掷骰子</button>');
+  await page.evaluate(()=>setTimeout(()=>document.getElementById('skip')?.remove(),150));
+  const started=Date.now();await skipQueuedPlayback(page);
+  expect(Date.now()-started).toBeLessThan(5_000);
+  await expect(page.getByRole('button',{name:'掷骰子',exact:true})).toBeEnabled();
+});
+
 for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
   // CI smoke completes one full race on eight isolated software WebGL clients.
   // The default manual mode retains the complete four-race game and rematch.
@@ -253,17 +273,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
       // player may legitimately have more than 15s of earlier events queued.
       // Use the actual local skip control before the actual action control.
       // No action is forced and the server acknowledgement is still required.
-      const skip=p.getByRole('button',{name:'跳过动画',exact:true});
-      if(await skip.isVisible()){
-        try{await skip.click({timeout:15_000});}
-        catch(error){
-          // The final beat can finish while click waits for two stable frames.
-          // Its disappearing optional control already means playback is done.
-          // An error with the control still present must remain a real failure.
-          if(await skip.isVisible())throw error;
-        }
-        await expect(skip).toBeHidden();
-      }
+      await skipQueuedPlayback(p);
       if(n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
       const beforeAction=uiActions.get(p)!.at(-1)?.sequence??0;
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click({timeout:15_000});
