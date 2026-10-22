@@ -248,6 +248,13 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
       const actionLabel=action.type==='choose'?`choose-${g.pending!.kind}-${action.optionId}`:action.type;
       mark('submit',actionLabel,room,steps);
       const p=pages[ids.indexOf(playerId)]!;await synced(p,room.version);
+      // This suite checks the live protocol, not the duration of an accumulated
+      // visual chain. Skills retain a 1.5s reading minimum even at 4x speed; a
+      // player may legitimately have more than 15s of earlier events queued.
+      // Use the actual local skip control before the actual action control.
+      // No action is forced and the server acknowledgement is still required.
+      const skip=p.getByRole('button',{name:'跳过动画',exact:true});
+      if(await skip.isVisible()){await skip.click({timeout:15_000});await expect(skip).toBeHidden();}
       if(n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
       const beforeAction=uiActions.get(p)!.at(-1)?.sequence??0;
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click({timeout:15_000});
