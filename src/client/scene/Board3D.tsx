@@ -11,13 +11,12 @@ import { DioramaStadium } from './DioramaStadium.js';
 import { CameraRig } from './CameraRig.js';
 import { StudioLighting, AdaptiveQuality, PawnContact } from './StudioLighting.js';
 import { RaceEffects } from './RaceEffects.js';
-import { useRaceIntro } from './useRaceIntro.js';
 import { boardPoint, TILE } from './math.js';
 import { DiceSpotlight } from './DiceSpotlight.js';
 import { pawnRoute, strideLift, strideProgress } from './pawn-motion.js';
 import { pawnFallPose } from './pawn-fall.js';
 
-import { actionFocus, choiceFocus, idleFollowFocus, ownFocus, pawnOccupancy, pawnWorldPoint, type CameraFocus, type CameraMode } from './camera.js';
+import { actionFocus, choiceFocus, idleFollowFocus, introFocus, ownFocus, pawnOccupancy, pawnWorldPoint, type CameraFocus, type CameraMode } from './camera.js';
 import './scene.css';
 
 export interface ScenePlayback {
@@ -33,6 +32,9 @@ interface Props extends ScenePlayback {
   reducedMotion: boolean;
   muted: boolean;
   onDetail: (id: string, racerId?: string) => void;
+  onSkipIntro?: () => void;
+  onIntroReady?: (key:string) => void;
+  introReady?: boolean;
 }
 const characterName = (id: string) => CHARACTERS.find(c => c.id === id)?.nameZh ?? id;
 /** Presentation captions describe the existing effect; they are not new rule names. */
@@ -55,7 +57,7 @@ class SceneBoundary extends Component<{ children: ReactNode; resetKey: number; r
   render() { return this.state.failed ? <div className="scene-fallback" role="status"><strong>3D 场景暂时无法显示</strong><p>选手位置与操作仍可在下方查看。</p><button onClick={this.props.retry}>重新载入 3D</button></div> : this.props.children; }
 }
 
-export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQuality, reducedMotion, muted, onDetail }: Props) {
+export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQuality, reducedMotion, muted, onDetail, onSkipIntro, onIntroReady, introReady = true }: Props) {
   const [automaticLow, setAutomaticLow] = useState(false);
   lowQuality = lowQuality || automaticLow;
   const spectator = room.role === 'spectator';
@@ -68,6 +70,18 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const [heldFocus, setHeldFocus] = useState<CameraFocus | null>(null);
   const [dismissedChain, setDismissedChain] = useState<string>();
   const [lost, setLost] = useState(false);
+  const [introStep, setIntroStep] = useState({key:'',index:0});
+  useEffect(()=>{
+    if(beat?.kind!=='intro'||!introReady)return;
+    let timer:ReturnType<typeof setTimeout>;
+    const update=()=>{
+      const elapsed=Math.max(0,performance.now()-startedAt),step=durationMs/Math.max(1,beat.targets.length);
+      const index=reducedMotion?0:Math.min(beat.targets.length-1,Math.floor(elapsed/step));
+      setIntroStep({key:beat.key,index});
+      if(!reducedMotion&&index<beat.targets.length-1)timer=setTimeout(update,Math.max(1,step-elapsed%step));
+    };
+    update();return()=>clearTimeout(timer);
+  },[beat?.key,startedAt,durationMs,reducedMotion,introReady]);
   const root = useRef<HTMLElement>(null);
   const labels = useRef(new Map<string, HTMLSpanElement>());
   const scoreLabel = useRef<HTMLSpanElement>(null);
@@ -78,16 +92,17 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
   const dice = beat?.kind === 'dice' || beat?.kind === 'duel-dice';
   const duelContenders = beat?.kind === 'duel-dice' && beat.faces?.length === 2 ? beat.targets.slice(0, 2).flatMap((id, index) => { const racer = racers.find(value => value.id === id); return racer ? [{ racerId: id, characterId: racer.characterId, name: characterName(racer.characterId), face: beat.faces![index]! }] : []; }) : undefined;
   useEffect(() => {
-    if (beat) setHeldFocus(actionFocus(beat, racers));
+    if (beat && beat.kind !== 'intro') setHeldFocus(actionFocus(beat, racers));
   }, [beat?.key]);
-  const action = beat ? actionFocus(beat, racers) : null;
+  const action = beat && beat.kind !== 'intro' ? actionFocus(beat, racers) : null;
   const myAction = action?.ids.some(id => racers.some(racer => racer.id === id && racer.playerId === room.selfId));
   const choosing = !beat && !(queue?.length) ? choiceFocus(room, racers) : undefined;
-  const intro = useRaceIntro(room, racers, reducedMotion, !!beat || !!queue?.length || !!choosing);
+  const introIndex = introStep.key === beat?.key ? introStep.index : 0;
+  const intro = {focus:beat?.kind==='intro'?introFocus(racers,introIndex,reducedMotion):undefined,racer:beat?.kind==='intro'&&!reducedMotion?racers[introIndex]:undefined,index:introIndex,total:racers.length,reducedMotion,skip:()=>{if(beat?.kind==='intro')onSkipIntro?.();}};
   const idleFocus = autoWatch && heldFocus && heldFocus.chainId !== dismissedChain ? idleFollowFocus(room, racers, heldFocus) : ownFocus(room, racers);
   const focus: CameraFocus = cameraMode === 'overview' ? { state: 'overview', ids: active ? [active] : [], positions: [] } : choosing ?? (manualCamera ? { state: 'manual', ids: [], positions: [] } : intro.focus ?? (action && action.chainId !== dismissedChain && (autoWatch || myAction) ? action : idleFocus));
   const returnSelf = () => { intro.skip(); setCameraMode('self'); setManualCamera(false); setDismissedChain(action?.chainId ?? heldFocus?.chainId ?? 'manual-self'); setCameraReset(value => value + 1); };
-  return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-frameloop={beat && !dice && !reducedMotion ? 'always' : 'demand'} data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
+  return <section ref={root} className={`board-scene ${compact ? 'compact-scene' : ''}`} data-testid="board-3d" data-phase={beat?.kind ?? 'idle'} data-intro-ready={String(introReady)} data-event-ids={beat?.events.map(e => e.id).join(',') ?? ''} data-motion-count={beat?.motions.length ?? 0} data-renderer="react-three-fiber" data-frameloop={beat && beat.kind!=='intro' && !dice && !reducedMotion ? 'always' : 'demand'} data-camera-mode={cameraMode} data-camera-state={focus.state} data-camera-target-ids={focus.ids.join(',')} data-camera-chain-id={focus.chainId ?? ''} aria-label={`${TRACKS[room.track].name}立体棋盘`}>
     <div className="scene-camera-toolbar">
       <div className="scene-camera-modes" role="group" aria-label="棋盘视角"><button aria-pressed={cameraMode === 'self'} aria-label={spectator ? '跟随当前选手' : undefined} onClick={returnSelf}>{spectator ? '跟随' : '自己'}</button><button aria-pressed={cameraMode === 'overview'} onClick={() => { intro.skip(); setCameraMode('overview'); setManualCamera(false); setCameraReset(value => value + 1); }}>总览</button></div>
       <button className="camera-home" onClick={returnSelf} aria-label="恢复默认视角" title={spectator ? '跟随当前选手' : '回到自己的棋子'}>⌖ <span>{spectator ? '跟随选手' : '回到自己'}</span></button>
@@ -96,14 +111,14 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
     </div>
     {intro.focus && <div className="race-intro" data-testid="race-intro" data-intro-index={intro.index} role="status">
       {intro.racer && <button type="button" className="race-intro-avatar board-avatar-button" onClick={() => onDetail(intro.racer!.characterId, intro.racer!.id)} aria-label={`查看${characterName(intro.racer.characterId)}技能与当前玩家`}><Avatar id={intro.racer.characterId} /></button>}
-      <div><small>{intro.reducedMotion ? '全体选手就位' : `选手亮相 · ${intro.index + 1} / ${intro.total}`}</small><strong>{intro.racer ? characterName(intro.racer.characterId) : '准备开赛！'}</strong></div>
+      <div><small>{!introReady ? '正在载入选手模型' : intro.reducedMotion ? '全体选手就位' : `选手亮相 · ${intro.index + 1} / ${intro.total}`}</small><strong>{intro.racer ? characterName(intro.racer.characterId) : '准备开赛！'}</strong></div>
       <button onClick={returnSelf} aria-label="跳过选手介绍">跳过 ›</button>
     </div>}
     <Minimap room={room} racers={racers} active={active} beat={beat} startedAt={startedAt} durationMs={durationMs} reducedMotion={reducedMotion} onDetail={onDetail} />
     <PredictionHud room={room} racers={racers} choosing={!!choosing} onDetail={onDetail} />
     {!beat && !queue?.length && <PublicDiceSummary room={room} racers={racers} onDetail={onDetail} />}
     <SceneBoundary resetKey={resetKey} retry={() => setResetKey(n => n + 1)}>
-      <Canvas className="board-webgl" key={resetKey} frameloop={beat && !dice && !reducedMotion ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, compact ? 1.25 : 1.5]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c7dfd3'); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.1; gl.shadowMap.type = THREE.PCFShadowMap; gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
+      <Canvas className="board-webgl" key={resetKey} frameloop={beat && beat.kind!=='intro' && !dice && !reducedMotion ? 'always' : 'demand'} orthographic shadows={!lowQuality} dpr={lowQuality ? 1 : [1, compact ? 1.25 : 1.5]} camera={{ position: [3, 16, 16], near: .1, far: 100, zoom: 35 }} gl={{ antialias: !lowQuality, alpha: false, powerPreference: 'high-performance' }} onCreated={({ gl }) => { gl.setClearColor('#c7dfd3'); gl.outputColorSpace = THREE.SRGBColorSpace; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.1; gl.shadowMap.type = THREE.PCFShadowMap; gl.domElement.addEventListener('webglcontextlost', event => { event.preventDefault(); setLost(true); }); gl.domElement.addEventListener('webglcontextrestored', () => setLost(false)); }}>
         <StudioLighting compact={compact} lowQuality={lowQuality} />
         <AdaptiveQuality lowQuality={lowQuality} onSlow={() => setAutomaticLow(true)} root={root} />
         <CameraRig racers={racers} compact={compact} reset={cameraReset} focus={focus} reducedMotion={reducedMotion} onManual={() => { intro.skip(); setManualCamera(true); }} root={root} />
@@ -112,6 +127,7 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
         <RaceEffects {...{ beat, racers, compact, startedAt, durationMs, reducedMotion, lowQuality }} />
         <ScoreProjector beat={beat} racers={racers} compact={compact} label={scoreLabel} />
         <PerformanceProbe root={root} />
+        <IntroReadiness beat={beat} count={racers.filter(racer=>!racer.eliminated).length} onReady={onIntroReady} root={root} />
       </Canvas>
     </SceneBoundary>
     <div className="scene-labels" aria-hidden="true">{racers.filter(r => !r.eliminated).map(racer => { const owner = room.players.find(p => p.id === racer.playerId), scale = occupancy(racer, racers, racer.position).scale; return <span key={racer.id} data-racer-id={racer.id} ref={element => { if (element) labels.current.set(racer.id, element); else labels.current.delete(racer.id); }} className={`pawn-seat ${active === racer.id ? 'is-active' : ''} ${scale < .5 ? 'is-crowded' : scale < .9 ? 'is-shared' : ''}`} style={{ borderColor: owner?.color }}>{(owner?.seat ?? 0) + 1}</span>; })}<span ref={scoreLabel} className="score-float" style={{ display: beat?.kind === 'score' || beat?.kind === 'finish' ? undefined : 'none' }}>{beat?.events[0]?.text.match(/[+＋-]\d+分/)?.[0] ?? (beat?.kind === 'finish' ? '冲线！' : '得分！')}</span></div>
@@ -120,6 +136,27 @@ export function Board3D({ room, racers, beat, queue, startedAt, durationMs, lowQ
     <ActionBanner beat={beat} racers={racers} onDetail={onDetail} />
     <ul className="sr-only" aria-label="立体棋盘选手位置">{racers.map(r => <li key={r.id} data-testid="scene-racer" data-racer-id={r.id} data-position={r.position} data-target-position={beat?.motions.find(m => m.racerId === r.id)?.to ?? r.position}>{characterName(r.characterId)} · {r.position} 格{r.tripped ? ' · 绊倒' : ''}</li>)}</ul>
   </section>;
+}
+
+/** Readiness is local to this canvas, never an acknowledgement to authority.
+ * Slow chunk/model loading cannot consume the entrants' visible screen time. */
+function IntroReadiness({beat,count,onReady,root}:{beat?:PresentationBeat;count:number;onReady?:Props['onIntroReady'];root:React.RefObject<HTMLElement|null>}) {
+  const {scene}=useThree();const sent=useRef<string|undefined>(undefined);
+  useFrame(()=>{
+    if(beat?.kind!=='intro'||sent.current===beat.key)return;
+    let ready=0,failed=0,pending=0;
+    scene.traverse(object=>{
+      if(!object.userData.racerModel)return;
+      // Count exactly one main sculpture per racer. Mounts and pending
+      // Suspense placeholders cannot satisfy another racer's readiness.
+      const main=object.children.find(child=>child.userData.racerMainSculpture);
+      const state=main?.children.find(child=>child.userData.sculptureState)?.userData.sculptureState;
+      if(state==='ready')ready++;else if(state==='failed')failed++;else pending++;
+    });
+    if(root.current){root.current.dataset.readyModels=String(ready);root.current.dataset.failedModels=String(failed);root.current.dataset.pendingModels=String(pending);}
+    if(ready+failed>=count){sent.current=beat.key;onReady?.(beat.key);}
+  });
+  return null;
 }
 
 function PerformanceProbe({ root }: { root: React.RefObject<HTMLElement | null> }) {
@@ -221,7 +258,7 @@ function PredictionHud({ room, racers, choosing, onDetail }: { room: RoomView; r
 
 function ActionBanner({ beat, racers, onDetail }: { beat?: PresentationBeat; racers: Racer[]; onDetail:Props['onDetail'] }) {
   const skillMove = beat?.kind === 'move' && !!beat.cause && beat.cause !== 'main';
-  if (!beat || !skillMove && !['skill', 'trip', 'recover', 'score', 'finish', 'warp', 'swap'].includes(beat.kind)) return null;
+  if (!beat || beat.abilityReveal || !skillMove && !['skill', 'trip', 'recover', 'score', 'finish', 'warp', 'swap'].includes(beat.kind)) return null;
   const affected = racers.filter(racer => beat.targets.includes(racer.id));
   const actor = skillMove ? affected[0] : racers.find(racer => racer.id === beat.source) ?? affected[0];
   const distances = [...new Set(beat.motions.map(motion => motion.to - motion.from))];

@@ -35,6 +35,30 @@ function shuffle(s: GameState, input: string[]) {
   for (let i = cards.length - 1; i > 0; i--) { const j = random(s, '洗牌', i + 1) - 1; [cards[i], cards[j]] = [cards[j]!, cards[i]!]; }
   return cards;
 }
+/** All ability draws use the same physical card zones. A private film hand,
+ * current display, draft/selection card or reserved reference is never another
+ * draw source, even in a recovered state with duplicated zone entries. */
+function drawUnchosen(s:GameState,count:number):string[] {
+  const enabled=new Set(enabledCharacterIds(s.config,s.characterPool,s.mode==='practice'));
+  const held=new Set(s.players.flatMap(p=>[...p.hand,...p.used,...p.selection]));
+  for(const r of s.racers){
+    held.add(r.characterId);
+    for(const id of ((r.flags.secretLeafHand??[]) as string[]))held.add(id);
+    const displays=Array.isArray(r.flags.leafDisplayedCards)?r.flags.leafDisplayedCards as BorrowedPower[]:typeof r.flags.leafDisplayedCard==='string'?[{power:r.flags.leafDisplayedCard,source:''}]:[];
+    for(const item of displays)held.add(item.power);
+  }
+  for(const id of s.draft?.market??[])held.add(id);
+  if(s.pending?.kind==='egg')for(const id of ((s.pending.context as {cards?:string[]}).cards??[]))held.add(id);
+  const cards:string[]=[],seen=new Set<string>();
+  s.deck=s.deck.filter(id=>enabled.has(id)&&!held.has(id)&&!seen.has(id)&&Boolean(seen.add(id)));
+  const inDeck=new Set(s.deck),discardSeen=new Set<string>();
+  s.discard=s.discard.filter(id=>enabled.has(id)&&!held.has(id)&&!inDeck.has(id)&&!discardSeen.has(id)&&Boolean(discardSeen.add(id)));
+  for(let i=0;i<count;i++){
+    if(!s.deck.length&&s.discard.length){s.deck=shuffle(s,s.discard);s.discard=[];log(s,'shuffle','未选角色牌堆耗尽，洗公共弃牌堆。',{cause:'ability-deck'});}
+    const id=s.deck.shift();if(!id)break;cards.push(id);
+  }
+  return cards;
+}
 function rollOff(s: GameState, ids: string[]) {
   let candidates = [...ids];
   for (;;) {
@@ -67,22 +91,55 @@ function printedPower(s: GameState, r: Racer): string {
   return copyPower(s,r);
 }
 function copyPower(s:GameState,r:Racer):string {
-  const competitors = active(s); if (!competitors.length) return 'copycat';
+  const model=copyModel(s,r);
+  if(model)return model.characterId;
+  // A tied leader is a real controller choice. Until it is confirmed, keep
+  // the last confirmed text (or Copycat's own text on its first choice).
+  return copyCandidates(s,r).length>1&&typeof r.flags.copyPower==='string'?r.flags.copyPower:'copycat';
+}
+function copyCandidates(s:GameState,r:Racer):Racer[] {
+  const competitors = active(s); if (!competitors.length) return [];
   const lead = Math.max(...competitors.map(x => x.position));
-  const leaders = competitors.filter(x => x.position === lead && x.id !== r.id && x.characterId !== 'copycat');
-  const model = leaders.find(x => x.id === r.flags.copyTarget) ?? leaders[0];
+  return competitors.filter(x => x.position === lead && x.id !== r.id && x.characterId !== 'copycat');
+}
+function copyModel(s:GameState,r:Racer):Racer|undefined {
+  const leaders=copyCandidates(s,r);
   // Copycat copies printed text. In particular, Twin's selected power is not
   // recursively inherited, and a passed before-race window never reopens.
-  return model?.characterId ?? 'copycat';
+  return leaders.find(x=>x.id===r.flags.copyTarget)??(leaders.length===1?leaders[0]:undefined);
 }
 const dispatchPowers = new WeakMap<Racer,string>();
-function rawPowers(s:GameState,r:Racer):string[] {
-  const result=[printedPower(s,r)];
-  for(const acquired of ((r.flags.acquiredPowers??[]) as string[])){
-    const power=acquired==='copycat'?String(r.flags.copyPower??copyPower(s,r)):acquired;
-    if(!result.includes(power))result.push(power);
-  }
-  return result.filter(power=>!executionBlocks.get(s)?.has(`${r.id}:${power}`));
+type BorrowedPower={power:string;source:string};
+type PowerSource={sourceCardId?:string;sourceRacerId?:string;via?:string};
+/** Old v3 saves stored the temporary card in acquiredPowers as well. Read that
+ * representation without confusing it with a later, permanent acquisition. */
+function permanentPowers(r:Racer):string[] {
+  return [...new Set(((r.flags.acquiredPowers??[]) as string[]).filter(power=>
+    Array.isArray(r.flags.leafBorrowedPowers)||r.flags.leafBorrowAlreadyPresent||power!==r.flags.leafBorrowedPower))];
+}
+function borrowedPowers(r:Racer):BorrowedPower[] {
+  if(Array.isArray(r.flags.leafBorrowedPowers))return r.flags.leafBorrowedPowers as BorrowedPower[];
+  const permanent=[String(r.flags.power??r.flags.copiedPower??r.characterId),...permanentPowers(r)];
+  const source=typeof r.flags.leafBorrowSource==='string'?r.flags.leafBorrowSource:permanent.includes('leaf-thespian')?'leaf-thespian':permanent.includes('leaf-filmmaker')?'leaf-filmmaker':'';
+  return typeof r.flags.leafBorrowedPower==='string'?[{power:r.flags.leafBorrowedPower,source}]:[];
+}
+function powerTokens(r:Racer):string[] { return [String(r.flags.power??r.flags.copiedPower??r.characterId),...permanentPowers(r),...borrowedPowers(r).map(item=>item.power)]; }
+function ownedPowers(s:GameState,r:Racer):string[] { return [...new Set(powerTokens(r).map(power=>power==='copycat'?String(r.flags.copyPower??copyPower(s,r)):power))]; }
+function rawPowers(s:GameState,r:Racer):string[] { return ownedPowers(s,r).filter(power=>!executionBlocks.get(s)?.has(`${r.id}:${power}`)); }
+function preparePowerGrant(r:Racer,power:string) {
+  // A cache belongs to a continuously owned Copycat layer. An expired borrow
+  // cannot choose a target on behalf of a newly acquired, independent layer.
+  if(power==='copycat'&&!powerTokens(r).includes('copycat')){delete r.flags.copyPower;delete r.flags.copyTarget;delete r.flags.lastCopyPower;}
+}
+function acquirePower(r:Racer,power:string,source:PowerSource={}) {
+  preparePowerGrant(r,power);
+  r.flags.acquiredPowers=[...new Set([...permanentPowers(r),power])];
+  // Preserve provenance even when the same text is also temporarily borrowed.
+  const sources=(r.flags.acquiredPowerSources??={}) as Record<string,PowerSource|PowerSource[]>;
+  const previous=sources[power],grants=Array.isArray(previous)?previous:previous?[previous]:[];
+  if(!grants.some(grant=>grant.sourceCardId===source.sourceCardId&&grant.sourceRacerId===source.sourceRacerId&&grant.via===source.via))grants.push(source);
+  sources[power]=grants;
+  if(r.flags.leafBorrowedPower===power)r.flags.leafBorrowAlreadyPresent=true;
 }
 const executionBlocks = new WeakMap<GameState,Set<string>>();
 /** Null is evaluated from the rear forwards: a disabled Null cannot disable another racer. */
@@ -95,7 +152,17 @@ export function disabledBy(s:GameState,r:Racer):string[] {
 }
 export function effectivePowers(s:GameState,r:Racer):string[] { return disabledBy(s,r).length?[]:rawPowers(s,r); }
 export function effectivePower(s:GameState,r:Racer):string { return disabledBy(s,r).length?'disabled':dispatchPowers.get(r)??printedPower(s,r); }
-export function abilityState(s:GameState,r:Racer) { const target=rawPowers(s,r).includes('stepdad')?stepdadTarget(s,r):undefined;return { powers:effectivePowers(s,r),disabledBy:disabledBy(s,r),copiedFrom:r.flags.copiedFrom,acquired:r.flags.acquiredPowers??[],krakenRemaining:r.flags.krakenUsed?0:1,form:r.flags.form??'normal',mount:r.flags.hogOwnerId,stepTargetId:target?.id,stepTargetControllerId:target?.playerId }; }
+export function abilityState(s:GameState,r:Racer) {
+  const target=ownedPowers(s,r).includes('stepdad')?stepdadTarget(s,r):undefined;
+  type Entry={id:string;origin:'printed'|'copy'|'draw'|'acquired'|'temporary';sourceCardId?:string;sourceRacerId?:string;via?:string;duration:'race'|'next-turn'|'source-change'};
+  const entries:Entry[]=[],base=String(r.flags.power??r.flags.copiedPower??r.characterId);
+  const add=(token:string,entry:Omit<Entry,'id'>)=>entries.push({id:token==='copycat'?String(r.flags.copyPower??copyPower(s,r)):token,...entry,...(token==='copycat'?{origin:['temporary','acquired'].includes(entry.origin)?entry.origin:'copy' as const,sourceCardId:'copycat',...(copyModel(s,r)?{sourceRacerId:copyModel(s,r)!.id}:{}),duration:['temporary','acquired'].includes(entry.origin)?entry.duration:'source-change' as const,...(!entry.via?{via:'copycat'}:{})}:{})});
+  add(base,{origin:base===r.characterId?'printed':r.flags.powerVia==='egg'||!r.flags.powerVia&&r.flags.eggCardId?'draw':'copy',duration:'race',...(typeof r.flags.powerVia==='string'?{via:r.flags.powerVia}:{}),...(base===r.characterId?{}:{sourceCardId:String(r.flags.powerSourceCard??r.flags.twinCardId??r.flags.eggCardId??base),...(typeof r.flags.copiedFrom==='string'?{sourceRacerId:r.flags.copiedFrom}:{})})});
+  const sources=(r.flags.acquiredPowerSources??{}) as Record<string,PowerSource|PowerSource[]>;
+  for(const power of permanentPowers(r))for(const grant of Array.isArray(sources[power])?sources[power] as PowerSource[]:[sources[power]??{}])add(power,{origin:'acquired',duration:'race',...grant});
+  for(const item of borrowedPowers(r))add(item.power,{origin:'temporary',duration:'next-turn',sourceCardId:item.power,...(character(item.source)?{via:item.source}:{})});
+  return { powers:effectivePowers(s,r),ownedPowers:ownedPowers(s,r),entries,disabledBy:disabledBy(s,r),copiedFrom:r.flags.copiedFrom,acquired:permanentPowers(r),krakenRemaining:r.flags.krakenUsed?0:1,form:r.flags.form??'normal',mount:r.flags.hogOwnerId,stepTargetId:target?.id,stepTargetControllerId:target?.playerId };
+}
 function hasPower(s:GameState,r:Racer,power:string) { return effectivePowers(s,r).includes(power); }
 function powers(s: GameState, power: string) { return order(s).filter(r => hasPower(s,r,power)); }
 function dispatch(s:GameState,r:Racer,power:string,run:()=>void){ if(!hasPower(s,r,power))return;dispatchPowers.set(r,power);try{run();}finally{dispatchPowers.delete(r);} }
@@ -203,16 +270,21 @@ function prepareRace(s: GameState) {
 function currentPlacements(s:GameState):RaceResult['placements'] { return (s.flags.placements??=[]) as RaceResult['placements']; }
 function finish(s:GameState,r:Racer, forcedRank?:number) {
   if(!live(r)&&forcedRank===undefined)return;
-  if(forcedRank===undefined&&currentPlacements(s).length===0){const doubles=powers(s,'doppelgangster').filter(x=>!x.flags.doppelUsed);if(doubles.length){for(const d of doubles){d.flags.doppelUsed=true;d.flags.acquiredPowers=[...((d.flags.acquiredPowers??[]) as string[]),...effectivePowers(s,r).filter(p=>p!=='doppelgangster')];log(s,'copy',`${name(d)}淘汰首位冲线者并获得其能力`,{source:d.id,targets:[r.id],cause:'doppelgangster'});}eliminate(s,r.id,doubles[0]!.id);return;}}
+  if(forcedRank===undefined&&currentPlacements(s).length===0){const doubles=powers(s,'doppelgangster').filter(x=>!x.flags.doppelUsed);if(doubles.length){const inherited=[...effectivePowers(s,r)];for(const d of doubles){d.flags.doppelUsed=true;for(const power of inherited)acquirePower(d,power,{sourceRacerId:r.id,via:'doppelgangster'});log(s,'copy',`${name(d)}淘汰首位冲线者并获得其当前有效能力（不继承资源、次数或私人手牌）`,{source:d.id,targets:[r.id],cause:'doppelgangster',grantedPowerIds:inherited,grantDuration:'race'});}eliminate(s,r.id,doubles[0]!.id);return;}}
   const placements=currentPlacements(s);const rank=forcedRank??placements.length+1;if(rank>2)return;
+  const championPower=printedPower(s,r);
   r.finished=true;r.rank??=rank;r.position=hasPower(s,r,em('doc-paradox'))?0:TRACKS[s.track].finish;
   for(const step of powers(s,'stepdad'))if(stepdadTarget(s,step)?.id===r.id&&rank===1)points(s,step,3,`继父：${name(r)}获得冠军`);
   const value=r.flags.gary?0:RACE_POINTS[Math.max(0,s.round-1)]?.[rank-1]??0;owner(s,r).score+=value;fanTrackIncome(s,r,value);
   placements.push({racerId:r.id,playerId:r.playerId,characterId:r.characterId,rank,points:value});
-  const history=(s.flags.historyPowers??={}) as Record<string,string>;history[r.characterId]=effectivePower(s,r);
+  if(rank===1){
+    const history=(s.flags.historyPowers??={}) as Record<string,string>;history[r.characterId]=championPower;
+    ((s.flags.championPowers??=[]) as {round:number;racerId:string;characterId:string;power:string}[]).push({round:s.round,racerId:r.id,characterId:r.characterId,power:championPower});
+  }
   log(s,'finish',`${owner(s,r).name}的${name(r)}获得第${rank}名，+${value}分`,{source:r.id});
   if(rank===1){
-    const minds=order(s,s.racers.filter(x=>!x.eliminated&&String(x.flags.prediction??'')===r.id&&effectivePower(s,x)==='mastermind')).sort((a,b)=>Number(a.characterId==='copycat')-Number(b.characterId==='copycat'));
+    const copycatMind=(x:Racer)=>powerTokens(x).includes('copycat')&&!powerTokens(x).includes('mastermind');
+    const minds=order(s,s.racers.filter(x=>!x.eliminated&&String(x.flags.prediction??'')===r.id&&hasPower(s,x,'mastermind'))).sort((a,b)=>Number(copycatMind(a))-Number(copycatMind(b)));
     if(minds.length){finish(s,minds[0]!,2);return;}
     const remaining=active(s);
     if(remaining.length===1){finish(s,remaining[0]!,2);return;}
@@ -233,7 +305,7 @@ function endRace(s:GameState,cycleDraw=false) {
     const back=candidates.length?Math.min(...candidates.map(r=>r.position)):0;const tied=[...new Set(candidates.filter(r=>r.position===back).map(r=>r.playerId))];
     s.flags.firstPlayer=tied.length===1?tied[0]:tied.length?rollOff(s,tied):s.players[0]!.id;
   }
-  s.phase=s.round>=4?'finished':'results';s.queue=[];s.pending=undefined;s.flags.awaitRoll=false;
+  leafRules.releaseCards(s);s.phase=s.round>=4?'finished':'results';s.queue=[];s.pending=undefined;s.flags.awaitRoll=false;
   s.flags.needsBegin=false;breakForcedCycle(s);
   log(s,'phase',s.phase==='finished'?'四场比赛结束，按累计分数结算；同分共享胜利':`第${s.round}场结束`);
 }
@@ -325,7 +397,7 @@ function motion(s:GameState,t:Work) {
       log(s,'place',`${name(displaced)}被大宝宝放到身后${displaced.position}格`,{source:baby.id,targets:[displaced.id],before:[previous],after:[displaced.position],cause:'huge-baby'});
       if(!arrivals.includes(displaced.id))arrivals.push(displaced.id);
       extra.push({kind:'powerDone',racerId:baby.id,power:'huge-baby'});
-      if(effectivePower(s,displaced)==='banana'&&movingIds.includes(baby.id))passEffects.push({kind:'ability',racerId:displaced.id,power:'banana',effects:[{kind:'trip',racerId:baby.id,source:displaced.id}]});
+      if(hasPower(s,displaced,'banana')&&movingIds.includes(baby.id))passEffects.push({kind:'ability',racerId:displaced.id,power:'banana',effects:[{kind:'trip',racerId:baby.id,source:displaced.id}]});
     }
   }
   }
@@ -353,16 +425,24 @@ function motion(s:GameState,t:Work) {
 function orderEffectTasks(s:GameState,tasks:Work[]):Work[] { const ids=order(s).map(r=>r.id);return tasks.toSorted((a,b)=>Number(b.priority==='pre-stop')-Number(a.priority==='pre-stop')||ids.indexOf(String(a.racerId))-ids.indexOf(String(b.racerId))); }
 
 function beforeRace(s:GameState,r:Racer) {
-  const power=effectivePower(s,r);if(leafRules.beforeRace(s,r,power)||fanBeforeRace(s,r,power)||secondWindBeforeRace(s,r,power))return;const prepared=(r.flags.preparedPowers??=[]) as string[];if(prepared.includes(power)||r.characterId==='copycat')return;prepared.push(power);
+  const power=effectivePower(s,r),base=String(r.flags.power??r.flags.copiedPower??r.characterId);
+  // Copycat's printed-text layer and temporary Leaf layers never open a race
+  // start window. An independent permanent acquisition of the same text can.
+  if(!(base!=='copycat'&&base===power||permanentPowers(r).includes(power)&&power!=='copycat'))return;
+  if(leafRules.beforeRace(s,r,power)||fanBeforeRace(s,r,power)||secondWindBeforeRace(s,r,power))return;const prepared=(r.flags.preparedPowers??=[]) as string[];if(prepared.includes(power))return;prepared.push(power);
   if(power==='sisyphus'){points(s,r,4,'西西弗斯赛前奖励');push(s,{kind:'powerDone',racerId:r.id,power});}
   if(power==='egg'){
-    if(s.deck.length<3){const unassigned=enabledCharacterIds(s.config,s.characterPool,s.mode==='practice').filter(id=>!s.players.some(p=>p.hand.includes(id)||p.used.includes(id))&&!s.racers.some(x=>x.characterId===id));s.deck=shuffle(s,unassigned);log(s,'house-rule','蛋的未分配候选不足，按公开房规重新洗候选');}
-    const cards=s.deck.splice(0,3);s.discard.push(...cards);
+    const cards=drawUnchosen(s,3);
+    if(cards.length<3)log(s,'draw',`${name(r)}的合法未选牌仅余${cards.length}张；${cards.length?'从实际可得牌中选择':'没有可复制的牌，保留现有能力'}。`,{source:r.id,cause:'egg'});
     ask(s,r,'egg','选择蛋要复制的能力',cards.map(id=>({id,label:character(id)?.nameZh??id})),{cards});
   }
   if(power==='twin'){
-    const cards=[...new Set(s.results.flatMap(result=>result.placements.filter(p=>p.rank===1).map(p=>p.characterId)))];
-    if(cards.length)ask(s,r,'twin','选择此前冠军的能力',[...cards.map(id=>({id,label:character(id)?.nameZh??id})),{id:'skip',label:'不复制'}],{cards},true);
+    const enabled=new Set(enabledCharacterIds(s.config,s.characterPool,s.mode==='practice'));
+    const snapshots=(s.flags.championPowers??[]) as {round:number;racerId:string;characterId:string;power:string}[],old=s.flags.historyPowers as Record<string,string>|undefined;
+    const champions=s.results.flatMap(result=>result.placements.filter(p=>p.rank===1).map(p=>({...p,round:result.round,power:snapshots.find(h=>h.round===result.round&&h.racerId===p.racerId)?.power??old?.[p.characterId]??p.characterId}))).filter(p=>enabled.has(p.characterId)&&enabled.has(p.power));
+    const counts=new Map<string,number>();for(const winner of champions)counts.set(winner.characterId,(counts.get(winner.characterId)??0)+1);
+    const choices=champions.map(winner=>({...winner,id:counts.get(winner.characterId)!>1?`${winner.characterId}:race:${winner.round}:${winner.racerId}`:winner.characterId}));
+    if(choices.length)ask(s,r,'twin','选择此前冠军的能力',[...choices.map(winner=>({id:winner.id,label:`${character(winner.characterId)?.nameZh??winner.characterId}${counts.get(winner.characterId)!>1?`（第${winner.round}场：${character(winner.power)?.nameZh??winner.power}）`:''}`})),{id:'skip',label:'不复制'}],{cards:choices.map(winner=>winner.characterId),champions:Object.fromEntries(choices.map(winner=>[winner.id,{characterId:winner.characterId,power:winner.power}]))},true);
   }
 }
 function beginTurn(s:GameState,r:Racer) {
@@ -471,7 +551,12 @@ function advance(s:GameState,r:Racer) {
 function processChoice(s:GameState,c:PendingChoice,id:string) {
   const r=racer(s,c.racerId!)!;const ctx=c.context as Record<string,any>;
   if(leafRules.choice(s,r,c,id)||fanChoice(s,r,c,id)||secondWindChoice(s,r,c,id))return;
-  if(c.kind==='copycat'){r.flags.copyTarget=id;r.flags.copyPower=copyPower(s,r);return;}
+  if(c.kind==='copycat'){
+    if(!copyCandidates(s,r).some(target=>target.id===id)){push(s,{kind:'refreshCopies'});return;}
+    const previous=r.flags.copyPower,previousTarget=r.flags.copyTarget;r.flags.copyTarget=id;r.flags.copyPower=copyPower(s,r);r.flags.lastCopyPower=r.flags.copyPower;
+    if(previous!==r.flags.copyPower||previousTarget!==id)log(s,'copy',`${name(r)}当前模仿${name(racer(s,id)!)}的印刷能力。`,{source:r.id,targets:[id],cause:'copycat',grantedPowerIds:r.flags.copyPower==='copycat'?[]:[r.flags.copyPower],grantDuration:'source-change'});
+    return;
+  }
   if(c.kind==='suckerfish'){
     const motionTask=ctx.motion as Work;
     if(id==='use'){motionTask.plans.push({racerId:r.id,follow:ctx.lead});log(s,'power',`${name(r)}选择随行`,{source:r.id,cause:'suckerfish'});}
@@ -486,8 +571,14 @@ function processChoice(s:GameState,c:PendingChoice,id:string) {
   }
   if(c.kind==='egg'||c.kind==='twin'){
     if(id==='skip')return;const hist=s.flags.historyPowers as Record<string,string>|undefined;
-    if(c.kind==='egg')r.flags.eggCardId??=id;else r.flags.twinCardId=id;
-    r.flags.power=c.kind==='twin'?(hist?.[id]??id):id;log(s,'copy',`${name(r)}本场复制${character(id)?.nameZh??id}`,{source:r.id,cause:c.kind,selectedCardId:id});push(s,{kind:'beforeRace',racerId:r.id},{kind:'powerDone',racerId:r.id,power:c.kind});return;
+    const enabled=new Set(enabledCharacterIds(s.config,s.characterPool,s.mode==='practice'));
+    if(c.kind==='egg')for(const card of ((ctx.cards??[]) as string[]))if(enabled.has(card)&&!s.discard.includes(card))s.discard.push(card);
+    const champion=(ctx.champions as Record<string,{characterId:string;power:string}>|undefined)?.[id],cardId=champion?.characterId??id;
+    const inherited=c.kind==='twin'?(champion?.power??hist?.[id]??id):id;
+    if(!enabled.has(cardId)||!enabled.has(inherited)){log(s,'cancel',`${name(r)}的复制来源已不在本房间启用角色包中，本次复制取消。`,{source:r.id,cause:c.kind});return;}
+    if(c.kind==='egg')r.flags.eggCardId??=id;else r.flags.twinCardId=cardId;
+    r.flags.power=inherited;r.flags.powerSourceCard=cardId;r.flags.powerVia=c.kind;
+    log(s,'copy',`${name(r)}本场复制${character(cardId)?.nameZh??cardId}`,{source:r.id,cause:c.kind,selectedCardId:cardId,grantedPowerIds:[inherited],grantDuration:'race'});push(s,{kind:'beforeRace',racerId:r.id},{kind:'powerDone',racerId:r.id,power:c.kind});return;
   }
   if(c.kind==='mastermind'){r.flags.prediction=id;log(s,'prediction',`${name(r)}预测${name(racer(s,id)!)}夺冠`,{source:r.id,targets:[id]});return;}
   if(c.kind==='genius'){if(id!=='skip')r.flags.geniusGuess=Number(id);return;}
@@ -568,11 +659,17 @@ function rawTask(s:GameState,t:Work) {
     case 'duelCheck':if(r&&live(r)&&hasPower(s,r,'duelist')&&!r.flags.duelInProgress){
       const targets=active(s).filter(x=>x.id!==r.id&&x.position===r.position);if(targets.length)ask(s,r,'duelist','要向同格角色发起决斗吗？',[...targetOptions(s,targets.map(x=>x.id)),{id:'skip',label:'不决斗'}],{},true);
     }break;
-    case 'refreshCopies':for(const copy of active(s).filter(x=>(String(x.flags.power??x.characterId)==='copycat'||((x.flags.acquiredPowers??[]) as string[]).includes('copycat')))){
-      const lead=Math.max(...active(s).map(x=>x.position));const targets=active(s).filter(x=>x.id!==copy.id&&x.characterId!=='copycat'&&x.position===lead);
-      const power=copyPower(s,copy);if(copy.flags.lastCopyPower!==power){if(copy.flags.lastCopyPower==='mastermind')delete copy.flags.prediction;copy.flags.lastCopyPower=power;}copy.flags.copyPower=power;
-      if(targets.length>1&&!targets.some(x=>x.id===copy.flags.copyTarget)){ask(s,copy,'copycat','选择一名并列领先者作为模仿对象',targetOptions(s,targets.map(x=>x.id)),{});push(s,{kind:'refreshCopies'});break;}
+    case 'refreshCopies':for(const copy of active(s).filter(x=>powerTokens(x).includes('copycat'))){
+      const targets=copyCandidates(s,copy);
+      if(targets.length>1&&!targets.some(x=>x.id===copy.flags.copyTarget)){
+        if(disabledBy(s,copy).length)continue;
+        ask(s,copy,'copycat','选择一名并列领先者作为模仿对象',targetOptions(s,targets.map(x=>x.id)),{});push(s,{kind:'refreshCopies'});break;
+      }
+      const power=copyPower(s,copy),previous=copy.flags.lastCopyPower,previousTarget=copy.flags.copyTarget;copy.flags.copyPower=power;
       if(targets.length===1)copy.flags.copyTarget=targets[0]!.id;
+      if(!targets.length)delete copy.flags.copyTarget;
+      if(previous!==power||previousTarget!==copy.flags.copyTarget){const model=copyModel(s,copy);log(s,'copy',model?`${name(copy)}当前模仿${name(model)}的印刷能力。`:`${name(copy)}当前没有可模仿的其他领跑者。`,{source:copy.id,targets:model?[model.id]:[],cause:'copycat',grantedPowerIds:power==='copycat'?[]:[power],grantDuration:'source-change'});}
+      copy.flags.lastCopyPower=power;
     }break;
     default:throw Error(`无法识别规则事件：${t.kind}`);
   }
@@ -722,7 +819,7 @@ function secondWindRollEffect(s:GameState,r:Racer,t:Work) {
   const face=Number(t.face),target=racer(s,String(t.targetId));
   if(t.power==='bite-mark'&&face<=2){r.flags.form='were-mouth';log(s,'transform',`${name(r)}变为狼人巨口`,{source:r.id,cause:'bite-mark',changes:[{racerId:r.id,form:'were-mouth'}]});}
   if(t.power==='icarus'&&face===6)eliminate(s,r.id,r.id);
-  if(t.power==='mush'&&face<=2){const id=s.deck.shift();if(id){s.discard.push(id);r.flags.acquiredPowers=[...((r.flags.acquiredPowers??[]) as string[]),id];log(s,'acquire',`${name(r)}获得${character(id)?.nameZh??id}的能力`,{source:r.id,cause:'mush',selectedCardId:id});}}
+  if(t.power==='mush'&&face<=2){const id=drawUnchosen(s,1)[0];if(id){s.discard.push(id);acquirePower(r,id,{sourceCardId:id,via:'mush'});log(s,'acquire',`${name(r)}获得${character(id)?.nameZh??id}的能力，不补用已经过的触发时机`,{source:r.id,cause:'mush',selectedCardId:id,grantedPowerIds:[id],grantDuration:'race'});if(id==='copycat')push(s,{kind:'refreshCopies'});}else log(s,'draw',`${name(r)}没有可抽取的合法未选牌，本次不获得新能力。`,{source:r.id,cause:'mush'});}
   if(t.power==='nemesis'&&target&&live(target))ask(s,r,'nemesis',`要跟掷${name(target)}的${face}点吗？`,yesNo,{face},true);
   if(t.power==='magical-athlete'){
     if(face===1)usePower(s,r,[{kind:'mainMove',racerId:r.id,base:7}],t.power);
@@ -761,7 +858,7 @@ function secondWindChoice(s:GameState,r:Racer,c:PendingChoice,id:string):boolean
   const ctx=c.context as Record<string,any>,kind=c.kind;
   if(kind==='main-ability'){r.flags.mainSelection=id;push(s,{kind:'mainReady',racerId:r.id});return true;}
   if(kind==='mole'){if(id==='use')usePower(s,r,[{kind:'mainMove',racerId:r.id,base:6}],'mole');else push(s,{kind:'mainReady',racerId:r.id});return true;}
-  if(kind==='understudy'){const target=racer(s,id)!;r.flags.power=target.characterId;r.flags.copiedFrom=target.id;log(s,'copy',`${name(r)}复制${name(target)}的印刷能力`,{source:r.id,targets:[target.id],selectedCardId:target.characterId,cause:kind});push(s,{kind:'beforeRace',racerId:r.id});return true;}
+  if(kind==='understudy'){const target=racer(s,id)!;r.flags.power=target.characterId;r.flags.powerSourceCard=target.characterId;r.flags.powerVia=kind;r.flags.copiedFrom=target.id;log(s,'copy',`${name(r)}复制${name(target)}的印刷能力`,{source:r.id,targets:[target.id],selectedCardId:target.characterId,cause:kind,grantedPowerIds:[target.characterId],grantDuration:'race'});push(s,{kind:'beforeRace',racerId:r.id});return true;}
   if(kind==='soulmate'){r.flags.soulmateTarget=id;return true;}
   if(kind==='diva'){const target=racer(s,id)!;usePower(s,r,[{kind:'warp',plans:[{racerId:r.id,position:target.position},{racerId:target.id,position:r.position}],cause:kind}],kind);return true;}
   if(kind==='kingtripper'){if(id!=='skip')usePower(s,r,[{kind:'trip',racerId:id,source:r.id}],kind);return true;}
@@ -963,8 +1060,8 @@ function fanTask(s:GameState,r:Racer,t:Work){
   }
   if(t.step==='marksman-prompt'&&target&&live(target))ask(s,r,'em-marksman-roll',`神射手：累计${t.total}，目标第${t.space}格，请继续掷骰`,[{id:'roll',label:'掷射击骰'}],{targetId:target.id,space:t.space,total:t.total});
   if(t.step==='shuffle'){
-    const all=order(s),cards=shuffle(s,all.map(x=>x.characterId));for(let i=0;i<all.length;i++){const model=cards[i]!;all[i]!.flags.power=model;}
-    if(!((r.flags.acquiredPowers??[]) as string[]).includes(em('shuffler')))r.flags.acquiredPowers=[...((r.flags.acquiredPowers??[]) as string[]),em('shuffler')];
+    const all=order(s).filter(x=>!x.flags.gary),cards=shuffle(s,all.map(x=>x.characterId));for(let i=0;i<all.length;i++){const model=cards[i]!;all[i]!.flags.power=model;all[i]!.flags.powerSourceCard=model;all[i]!.flags.powerVia=em('shuffler');delete all[i]!.flags.copiedFrom;}
+    acquirePower(r,em('shuffler'),{sourceCardId:em('shuffler'),via:em('shuffler')});
     log(s,'shuffle',`洗牌师重新分配能力：${all.map((x,i)=>`${name(x)}获得${character(cards[i]!)?.nameZh??cards[i]}`).join('，')}`,{source:r.id,cause:em('shuffler')});push(s,{kind:'refreshCopies'});
   }
 }
@@ -1064,7 +1161,7 @@ function reactionActivations(s:GameState,t:Work):{racerId:string;power:string}[]
       if(p==='coach'&&source.position===r.position||p==='gunk'&&source.id!==r.id&&!(s.players.length===2&&source.playerId===r.playerId)||p==='null'&&r.position>source.position||p==='stepdad'&&stepdadTarget(s,source)?.id===r.id||p===em('gluebert')&&source.id!==r.id&&source.position===r.position)add(source,p);
     }
   }
-  if(t.kind==='mainReady'&&!r.tripped){for(const p of ['leaf-thespian'])if(hasPower(s,r,p)&&r.flags.leafBorrowTurn!==s.turnCount)add(r,p);}
+  if(t.kind==='mainReady'&&!r.tripped){for(const p of ['leaf-thespian'])if(hasPower(s,r,p)&&(r.flags.leafBorrowTurns as Record<string,number>|undefined)?.[p]!==s.turnCount&&(!r.flags.leafBorrowTurns?r.flags.leafBorrowTurn!==s.turnCount:true))add(r,p);}
   if(t.kind==='rollDie'){if(r.flags.leafPhilanthropistRoll&&hasPower(s,r,'leaf-philanthropist'))add(r,'leaf-philanthropist');else if(hasPower(s,r,em('broken-clock')))add(r,em('broken-clock'));}
   if(t.kind==='trip'){if(hasPower(s,r,'leaf-catfish'))add(r,'leaf-catfish');if(hasPower(s,r,em('doctor-dice')))add(r,em('doctor-dice'));}
   if(t.kind==='rollBatch'){
@@ -1096,20 +1193,26 @@ function task(s:GameState,t:Work){
   }
   const blocked=new Set<string>((t.reactionBlocked??[]) as string[]);
   if(t.kind==='rollDie'&&blocked.has(`${t.racerId}:leaf-philanthropist`)){const source=racer(s,String(t.racerId));if(source)delete source.flags.leafPhilanthropistRoll;}
-  if(t.kind==='mainReady'&&['leaf-thespian','leaf-filmmaker'].some(power=>blocked.has(`${t.racerId}:${power}`))){const source=racer(s,String(t.racerId));if(source)source.flags.leafBorrowTurn=s.turnCount;}
+  if(t.kind==='mainReady'){const source=racer(s,String(t.racerId));if(source)for(const power of ['leaf-thespian','leaf-filmmaker'])if(blocked.has(`${t.racerId}:${power}`)){((source.flags.leafBorrowTurns??={}) as Record<string,number>)[power]=s.turnCount;source.flags.leafBorrowTurn=s.turnCount;}}
   if(t.kind==='activate'&&blocked.has(`${t.racerId}:${t.power}`)){log(s,'cancel',`${name(racer(s,String(t.racerId))!)}本次技能已被阻止，继续后续结算`,{source:String(t.racerId),cause:String(t.power)});push(s,...(t.fallback??[]));return;}
   const prior=executionBlocks.get(s);executionBlocks.set(s,new Set([...(prior??[]),...blocked]));
-  try{rawTask(s,t);}finally{if(prior)executionBlocks.set(s,prior);else executionBlocks.delete(s);}
+  try{
+    rawTask(s,t);
+    // Null/Fox only suppress execution; an actual loss of every owned
+    // Mastermind layer cancels its prediction and never recreates a first turn.
+    for(const source of s.racers)if(source.flags.prediction&&!ownedPowers(s,source).includes('mastermind'))delete source.flags.prediction;
+  }finally{if(prior)executionBlocks.set(s,prior);else executionBlocks.delete(s);}
   }finally{if(inherited)executionBlocks.set(s,inherited);else executionBlocks.delete(s);}
 }
 
 
-const leafRules=installLeaf({name,live,racer,active,owner,order,hasPower,powers,effectivePowers,effectivePower,ask,askTarget,targetOptions,yesNo,usePower,push,log,points,shuffle});
+const leafRules=installLeaf({name,live,racer,active,owner,order,hasPower,powers,effectivePowers,effectivePower,ask,askTarget,targetOptions,yesNo,usePower,push,log,points,shuffle,drawUnchosen,acquirePower,preparePowerGrant});
 
 /** These absolute counters are read only by equality with the current turn.
  * Normalize their meaning, so new display/turn serials cannot hide a true loop. */
 function semanticRacerFlags(s:GameState,r:Racer):Record<string,unknown>{
   const flags={...r.flags};for(const key of ['leafDarkTurn','leafWolfTurn','leafBorrowTurn','leafPhilanthropistTurn','leafToucanTurn','leafCarAskedTurn','leafCarBonusTurn'])if(typeof flags[key]==='number')flags[key]=flags[key]===s.turnCount?'this-turn':'another-turn';
+  if(flags.leafBorrowTurns&&typeof flags.leafBorrowTurns==='object')flags.leafBorrowTurns=Object.fromEntries(Object.entries(flags.leafBorrowTurns).map(([source,turn])=>[source,turn===s.turnCount?'this-turn':'another-turn']));
   if(Array.isArray(flags.leafGiftDice))flags.leafGiftDice=flags.leafGiftDice.map(gift=>{const {id:_id,...rule}=gift as Record<string,unknown>;return rule;});
   return flags;
 }

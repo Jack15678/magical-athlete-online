@@ -538,7 +538,7 @@ export const LEAF_CHARACTERS:readonly LeafCharacterData[] = [
     "optional": false,
     "targets": "unchosen-deck",
     "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
-    "duration": "本场；临时复制能力持续到自身下回合换牌",
+    "duration": "借用能力在自身下回合开始失效；展示牌在同来源实际换牌或赛末归还",
     "statuses": [],
     "sources": [
       {
@@ -554,7 +554,7 @@ export const LEAF_CHARACTERS:readonly LeafCharacterData[] = [
     "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
     "adaptation": "上一张已展示复制牌在下次换牌时回公共弃牌堆；牌堆耗尽则洗公共弃牌堆。",
     "artworkReference": "PNG Images ZIP / Gamepiece images/17 Thespian.png",
-    "limit": "每个独立合法触发分别处理；无统一技能次数上限"
+    "limit": "同一选手每回合每种主骰前借牌机制一次；同文能力不叠加，嵌套子层不延长期限"
   },
   {
     "id": "leaf-filmmaker",
@@ -573,7 +573,7 @@ export const LEAF_CHARACTERS:readonly LeafCharacterData[] = [
     "optional": false,
     "targets": "own-secret-hand",
     "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
-    "duration": "本场；临时复制能力持续到自身下回合换牌",
+    "duration": "借用能力在自身下回合开始失效；私人手牌到赛末，展示牌在同来源实际换牌或赛末归还",
     "statuses": [],
     "sources": [
       {
@@ -589,6 +589,6 @@ export const LEAF_CHARACTERS:readonly LeafCharacterData[] = [
     "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
     "adaptation": "手牌仅当前控制者可见；公开展示已弃并正在复制的牌；上一张展示牌换牌时才回公共弃牌堆。",
     "artworkReference": "PNG Images ZIP / Gamepiece images/18 Filmmaker.png",
-    "limit": "每个独立合法触发分别处理；无统一技能次数上限"
+    "limit": "同一选手每回合每种主骰前借牌机制一次；中途获得不补赛前七张，嵌套子层不延长期限"
   }
 ];

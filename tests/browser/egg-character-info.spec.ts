@@ -2,11 +2,12 @@ import { test, expect, type Browser, type Locator, type Page } from '@playwright
 import { mkdirSync } from 'node:fs';
 import { createApplication } from '../../src/server/index.js';
 import { resolveTasks } from '../../src/engine/index.js';
+import { CURRENT_RULES_VERSION } from '../../src/engine/runtime.js';
 import { CHARACTERS } from '../../src/shared/characters.js';
 import type { GameState, Room } from '../../src/shared/types.js';
 
 let application: ReturnType<typeof createApplication>, url: string;
-const output = 'docs/qa/duo-upgrade';
+const output = 'docs/qa/ability-detail-20261022';
 const eggId = 'egg-character-info-owner';
 const character = (id: string) => CHARACTERS.find(value => value.id === id)!;
 
@@ -65,6 +66,7 @@ function offerEgg(pair: Pair, cards = ['legs', 'copycat', 'banana']) {
       player.selection = [...player.used];
     });
     const game: GameState = {
+      rulesVersion: CURRENT_RULES_VERSION,
       mode: 'multiplayer', phase: 'race', round: 1, track: 'mild', players: room.game.players,
       deck: [...cards], discard: [], turn: 2, turnCount: 0, currentRacerId: 'egg-character-info-coach',
       baseTurnOrder: [eggId, 'egg-character-info-hare', 'egg-character-info-coach', 'egg-character-info-alchemist'],
@@ -89,13 +91,18 @@ async function openEgg(page: Page) {
 async function closeDialog(page: Page) { await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click(); }
 async function assertCard(dialog: Locator, id: string, effectiveId?: string) {
   await expect(dialog.getByRole('heading', { name: '本场抽到', exact: true })).toBeVisible();
-  await expect(dialog).toContainText(character(id).nameZh);
-  await expect(dialog).toContainText(character(id).ability);
-  if (effectiveId) {
-    await expect(dialog.getByRole('heading', { name: '当前生效能力', exact: true })).toBeVisible();
-    await expect(dialog).toContainText(character(effectiveId).nameZh);
-    await expect(dialog).toContainText(character(effectiveId).ability);
-  }
+  await expect(dialog.getByRole('region', { name: '蛋本场获得的能力来源', exact: true })).toContainText(character(id).nameZh);
+  const active = dialog.getByRole('region', { name: '现在拥有的能力', exact: true });
+  await expect(active.getByRole('heading', { name: '现在拥有的能力', exact: true })).toBeVisible();
+  await expect(active).toContainText(character(effectiveId ?? id).ability);
+  await expect(active.locator(`[data-power-id="${effectiveId ?? id}"]`)).toHaveCount(1);
+  const bounds = await active.boundingBox();
+  const panelBounds = await dialog.boundingBox();
+  expect(bounds).not.toBeNull();
+  // Desktop dialogs are vertically centered: measure content priority from
+  // the panel, rather than imposing a viewport coordinate on a short dialog.
+  expect(bounds!.y - panelBounds!.y).toBeLessThan(260);
+  await expect(dialog.locator('.printed-ability')).not.toHaveAttribute('open');
 }
 async function chooseEgg(pair: Pair, id: string) {
   await pair.host.getByTestId('skill-choice').getByRole('button', { name: character(id).nameZh, exact: true }).click();
@@ -140,7 +147,7 @@ test('Egg selected card and ability are public, survive refresh and all team ent
     const cleared = pair.host.getByRole('dialog', { name: '蛋', exact: true });
     await expect(cleared).toContainText(character('egg').ability);
     await expect(cleared.getByRole('heading', { name: '本场抽到', exact: true })).toHaveCount(0);
-    await expect(cleared.getByRole('heading', { name: '当前生效能力', exact: true })).toHaveCount(0);
+    await expect(cleared.getByRole('heading', { name: '现在拥有的能力', exact: true })).toHaveCount(0);
     await expect(cleared).not.toContainText(character('legs').ability);
     await pair.host.screenshot({ path: `${output}/egg-info-next-race-cleared.png` });
   } finally { await Promise.all(pair.contexts.map(context => context.close())); }
@@ -177,10 +184,60 @@ test('legacy Egg saves expose their known inherited ability without inventing an
     });
     for (const page of pair.pages) {
       const dialog = await openEgg(page);
-      await expect(dialog.getByRole('heading', { name: '当前生效能力', exact: true })).toBeVisible();
-      await expect(dialog).toContainText(character('legs').nameZh); await expect(dialog).toContainText(character('legs').ability);
+      const active=dialog.getByRole('region', { name:'现在拥有的能力',exact:true });
+      await expect(active.getByRole('heading', { name: '现在拥有的能力', exact: true })).toBeVisible();
+      await expect(active).toContainText(character('legs').nameZh); await expect(active).toContainText(character('legs').ability);
       await expect(dialog.getByRole('heading', { name: '本场抽到', exact: true })).toHaveCount(0);
       await closeDialog(page);
     }
   } finally { await Promise.all(pair.contexts.map(context => context.close())); }
+});
+
+test('current ability layout keeps Null, temporary grants and separate same-card instances clear on desktop and mobile', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const pair = await setup(browser), errors:string[]=[];
+  for(const page of pair.pages)page.on('pageerror',error=>errors.push(error.message));
+  try {
+    offerEgg(pair);
+    publish(pair,room=>{
+      delete room.game.pending;room.game.queue=[];room.game.flags={awaitRoll:true};
+      const [first,second,nullRacer]=room.game.racers;
+      Object.assign(first!,{playerId:pair.ids[1],identityPlayerId:pair.ids[0],flags:{
+        power:'coach',eggCardId:'coach',acquiredPowers:['kraken'],acquiredPowerSources:{kraken:{sourceCardId:'mush'}},
+        leafBorrowedPowers:[{power:'kraken',source:'leaf-filmmaker'}],secretLeafHand:['romantic'],krakenUsed:true,
+      }});
+      Object.assign(second!,{characterId:'egg',flags:{power:'legs',eggCardId:'legs'}});
+      Object.assign(nullRacer!,{characterId:'null',position:0,flags:{}});
+    });
+    for(const [index,page]of pair.pages.entries()){
+      await page.locator('.floating-racers').getByRole('button',{name:/^蛋，2号/}).click();
+      const dialog=page.getByRole('dialog',{name:'蛋',exact:true}),active=dialog.getByRole('region',{name:'现在拥有的能力',exact:true});
+      await expect(active).toContainText('暂时禁用');await expect(active).toContainText('能力被 Null 禁用');
+      await expect(active.locator('[data-power-id="kraken"]')).toHaveCount(1);
+      await expect(active.locator('[data-power-id="kraken"]')).toContainText('持续至本场结束');
+      await expect(active.locator('[data-power-id="kraken"]')).toContainText('临时借用');
+      await expect(active.locator('[data-power-id="kraken"]')).toContainText('下次自身回合开始失效');
+      await expect(active.locator('[data-power-id="kraken"]')).toContainText('本场剩余次数：0');
+      await expect(dialog).toContainText('控制权已交换，以当前玩家为准');
+      await expect(dialog.getByRole('button',{name:'查看本场实例1的玩家与能力'})).toHaveAttribute('aria-pressed','true');
+      const layout=await dialog.evaluate(element=>({width:element.scrollWidth,client:element.clientWidth}));
+      expect(layout.width).toBeLessThanOrEqual(layout.client);
+      expect((await active.boundingBox())!.y).toBeLessThan(390);
+      await expect(dialog).not.toContainText(character('romantic').nameZh);
+      await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop-'+index}-null.png`});
+      await dialog.getByRole('button',{name:'查看本场实例2的玩家与能力'}).click();
+      await expect(active).toContainText(character('legs').ability);await expect(active.locator('[data-power-id="kraken"]')).toHaveCount(0);
+      await closeDialog(page);
+    }
+    publish(pair,room=>{room.game.racers.find(racer=>racer.characterId==='null')!.position=25;});
+    for(const [index,page]of pair.pages.entries()){
+      await page.locator('.floating-racers').getByRole('button',{name:/^蛋，2号/}).click();
+      const dialog=page.getByRole('dialog',{name:'蛋',exact:true}),active=dialog.getByRole('region',{name:'现在拥有的能力',exact:true});
+      await expect(active.getByText('当前生效',{exact:true})).toBeVisible();await expect(active).not.toContainText('能力被 Null 禁用');
+      await expect(active.locator('[data-power-id="kraken"]')).toHaveCount(1);
+      if(index!==1)await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop'}-active.png`});
+      await closeDialog(page);
+    }
+    expect(errors).toEqual([]);
+  }finally{await Promise.all(pair.contexts.map(context=>context.close()));}
 });

@@ -1,0 +1,10 @@
+{
+  "stages": [
+    "desktop-entry-and-mobile-reduced-entry-before-effects-or-choice",
+    "skip-entry-preserves-pre-race-effect-then-choice",
+    "confirmed-egg-grant-public-on-both-clients",
+    "filmmaker-public-count-only-then-reveal-dismissed",
+    "duplicate-and-refresh-do-not-replay"
+  ],
+  "pageErrors": []
+}

@@ -10,7 +10,33 @@ export interface Spectator { id: string; name: string; connected: boolean; }
 export interface RoomSummary { code: string; hostName: string; phase: Phase; playerCount: number; maxPlayers: number; spectatorCount: number; createdAt: number; expiresAt: number; authorityOnline: boolean; mode?: GameMode; }
 export type Phase = 'lobby' | 'draft' | 'selection' | 'race' | 'results' | 'finished' | 'paused';
 export interface Player { isAI?: boolean; id: string; name: string; seat: number; color: string; ready: boolean; connected: boolean; score: number; hand: string[]; used: string[]; selection: string[]; }
+/** One public route by which a racer owns an ability. Never includes unrevealed
+ * draw candidates, private hands, a deck order, or another racer's resources. */
+export interface PublicAbilityEntry {
+  id: string;
+  origin: 'printed' | 'copy' | 'draw' | 'acquired' | 'temporary';
+  sourceCardId?: string;
+  sourceRacerId?: string;
+  /** Public card/mechanism responsible for this grant, when recorded. */
+  via?: string;
+  duration: 'race' | 'next-turn' | 'source-change';
+}
+export interface PublicAbilityState {
+  powers: string[];
+  /** Ownership survives suppression; older rule versions may omit this field. */
+  ownedPowers?: string[];
+  entries?: PublicAbilityEntry[];
+  disabledBy?: string[];
+  copiedFrom?: string;
+  acquired?: string[];
+  krakenRemaining?: number;
+  form?: string;
+  mount?: string;
+  stepTargetId?: string;
+  stepTargetControllerId?: string;
+}
 export interface RacerFlags extends Record<string, unknown> {
+  publicAbilities?: PublicAbilityState;
   /** Printed card selected by Egg this race; never replaced by later inheritance. */
   eggCardId?: string;
   /** Printed previous-champion card selected through Twin this race. */
@@ -55,3 +81,5 @@ export interface RaceResult { drawReason?: 'forced-cycle' }
 export interface GameEvent { changes?: { racerId:string; playerId?:string; form?:string; mount?:string|null }[]; }
 
 export interface GameEvent { rollKind?: 'main'|'ability'|'contest'|'recovery'|'reroll'; }
+/** Public grant at this event's exact time; never private draw candidates. */
+export interface GameEvent { grantedPowerIds?: string[]; grantDuration?: PublicAbilityEntry['duration']; }

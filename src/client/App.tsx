@@ -4,11 +4,14 @@ import { RoomChat, RenameForm } from './RoomChat.js';
 import type { CommunityState } from './community.js';
 import { EditionBadge, useCharacterFilter } from './CharacterFilters.js';
 import { CHARACTERS } from '../shared/characters.js';
+import { COPY_ABILITY_PROJECT_NOTES } from '../shared/character-info.js';
 import { enabledCharacterIds, legacyRoomConfig, legacyPoolForConfig, requiredCharacterCount } from '../shared/room-config.js';
 import { RoomConfigFields, RoomConfigPanel } from './RoomConfig.js';
 import { SECOND_WIND_PROJECT_NOTES } from '../shared/second-wind.js';
 import { Avatar } from './avatars.js';
-import { CharacterOwnership, StepdadTarget, characterContext, currentController, copiedAbilitySource } from './character-context.js';
+import { CharacterOwnership, StepdadTarget, characterContext, currentController } from './character-context.js';
+import { EggAbility, EffectiveAbilities } from './CharacterAbilities.js';
+import { AbilityReveal } from './AbilityReveal.js';
 import './character-details.css';
 import { RulesContent } from './RulesContent.js';
 import { EventLog, PublicEventConnection } from './EventLog.js';
@@ -350,7 +353,7 @@ function Race({ room, busy, leavingBusy, canClose, act, onDetail, presentation, 
   const { beat, playing } = presentation;
   const showing = presentation.displayRoom ?? room;
   const playbackRacer = presentation.racers.find(r => r.id === beat?.source);
-  const playbackLabel = beat?.kind === 'duel-dice' ? '双方决斗掷骰' : beat?.kind === 'dice' ? '正在掷骰' : beat?.kind === 'move' ? beat.motions.some(m => m.to < m.from) ? '后退移动' : beat.motions.length > 1 ? '同时移动' : '向前出发' : beat?.kind === 'swap' ? '交换位置' : beat?.kind === 'warp' ? '传送中' : beat?.kind === 'trip' ? '绊倒了！' : beat?.kind === 'score' ? '获得分数' : beat?.kind === 'finish' ? '冲过终点！' : '技能连锁';
+  const playbackLabel = beat?.kind === 'intro' ? '选手入场' : beat?.kind === 'duel-dice' ? '双方决斗掷骰' : beat?.kind === 'dice' ? '正在掷骰' : beat?.kind === 'move' ? beat.motions.some(m => m.to < m.from) ? '后退移动' : beat.motions.length > 1 ? '同时移动' : '向前出发' : beat?.kind === 'swap' ? '交换位置' : beat?.kind === 'warp' ? '传送中' : beat?.kind === 'trip' ? '绊倒了！' : beat?.kind === 'score' ? '获得分数' : beat?.kind === 'finish' ? '冲过终点！' : '技能连锁';
   const sameStage = showing.phase === room.phase && showing.round === room.round;
   const pendingChoice = !playing && sameStage ? room.pending : undefined;
   const duelChoice = !!pendingChoice && /duel-roll|cletus.*roll/.test(pendingChoice.kind);
@@ -358,7 +361,8 @@ function Race({ room, busy, leavingBusy, canClose, act, onDetail, presentation, 
   const actorName = active ? characterName(active.characterId) : '选手';
   const status = playing ? `${playbackRacer ? characterName(playbackRacer.characterId) + ' · ' : ''}${playbackLabel}` : pendingPrompt(room) ? pendingPrompt(room) : room.turnStage === 'starting' ? `${actorName} · 正在处理回合开始技能` : mine ? `${actorName} · 轮到你了，掷骰出发` : `${player?.name ?? '选手'}的${actorName}正在行动`;
   return <section className="immersive-race" data-testid="immersive-race">
-    <Suspense fallback={<div className="scene-loading">立体赛场正在就位…</div>}><Board3D room={showing} racers={presentation.racers} beat={beat} queue={presentation.state?.queue} startedAt={presentation.startedAt} durationMs={presentation.durationMs} lowQuality={lowQuality} reducedMotion={reduceMotion} muted={muted} onDetail={onDetail} /></Suspense>
+    <Suspense fallback={<div className="scene-loading">立体赛场正在就位…</div>}><Board3D room={showing} racers={presentation.racers} beat={beat} queue={presentation.state?.queue} startedAt={presentation.startedAt} durationMs={presentation.durationMs} lowQuality={lowQuality} reducedMotion={reduceMotion} muted={muted} onDetail={onDetail} onSkipIntro={presentation.skip} onIntroReady={presentation.startIntro} introReady={presentation.introReady} /></Suspense>
+    {beat?.abilityReveal && <AbilityReveal key={beat.key} reveal={beat.abilityReveal} onDetail={onDetail} />}
     <div className="race-hud-top">
       <div className="race-hud-buttons"><button className="race-menu-button" data-testid="presentation-settings" aria-label="比赛菜单" aria-expanded={settingsOpen} aria-controls="presentation-settings-panel" onClick={() => setSettingsOpen(true)}><span aria-hidden="true">☰</span> 菜单</button><button className="leave-room-button" disabled={leavingBusy} onClick={onLeave}>{spectator ? '退出观看' : '退出房间'}</button></div>
       <div className="race-match-label"><strong>{spectator && '观战 · '}第 {showing.round} / 4 场 <span>· {showing.track === 'mild' ? '轻松赛道' : '魔法赛道'}</span></strong><span className={`connection ${online ? 'is-online' : ''}`}><i />{online ? '已连接' : '正在重连'}</span></div>
@@ -408,40 +412,32 @@ function Countdown({ deadline }: { deadline: number | null }) {
   const seconds = Math.max(0, Math.ceil((deadline - now) / 1000));
   return <span className={`countdown ${seconds <= 15 ? 'urgent' : ''}`} aria-label={`剩余${seconds}秒`}>{seconds}<small>秒</small></span>;
 }
-function EggAbility({ racer, onDetail }: { racer: Racer; onDetail: ShowCharacter }) {
-  const flags = racer.flags;
-  const drawn = typeof flags.eggCardId === 'string' ? findCharacter(flags.eggCardId) : undefined;
-  const basePower = typeof flags.power === 'string' ? flags.power : typeof flags.copiedPower === 'string' ? flags.copiedPower : undefined;
-  const effectiveId = basePower === 'copycat' && typeof flags.copyPower === 'string' ? flags.copyPower : basePower;
-  const effective = effectiveId ? findCharacter(effectiveId) : undefined;
-  // Older saves may know the current power without retaining the original
-  // card selected before Twin inheritance. Do not present that as a draw.
-  const acquired = drawn ?? (effective?.id !== 'egg' ? effective : undefined);
-  const inherited = typeof flags.twinCardId === 'string' ? findCharacter(flags.twinCardId) : undefined;
-  return <section className="acquired-ability" aria-label="蛋本场获得的能力">
-    {acquired ? <>
-      <h3 className="acquired-ability-label">{drawn ? '本场抽到' : '当前生效能力'}</h3>
-      <div className="acquired-ability-card"><button type="button" className="character-ability-link" aria-label={`查看${acquired.nameZh}的技能与当前玩家`} onClick={()=>onDetail(acquired.id)}><Avatar id={acquired.id} /></button><div><h4>{acquired.nameZh}</h4><p className="english-name">{acquired.nameEn}</p></div></div>
-      <p className="full-ability">{acquired.ability}</p>
-      {inherited && <p className="inherited-ability">继承的冠军：{inherited.nameZh}</p>}
-      {effective && effective.id !== acquired.id && <div className="effective-ability"><h3>当前生效能力</h3><strong>{effective.nameZh}</strong><p className="full-ability">{effective.ability}</p></div>}
-      <p className="small-note">本场选择已公开，所有玩家和观战者均可查看。</p>
-    </> : <p>尚未选择本场获得的能力。选择完成后将在此公开显示。</p>}
-  </section>;
-}
 function CharacterModal({ id, racerId, room, onDetail, onClose }: { id: string; racerId?: string; room?: RoomView; onDetail: ShowCharacter; onClose: () => void }) {
   const character = findCharacter(id);
-  const [selectedId,setSelectedId]=useState(racerId);
-  useEffect(()=>setSelectedId(racerId),[id,racerId]);
-  const context=characterContext(room,id);
-  const racer=context.racers.find(current=>current.id===selectedId)??context.racers[0];
-  return <Modal title={characterName(id)} onClose={onClose}><div className="character-modal"><div className="modal-avatar"><Avatar id={id} /></div><p className="english-name">{character?.nameEn ?? id}</p><EditionBadge character={character} /><CharacterOwnership room={room} characterId={id} selectedId={racer?.id} onSelect={setSelectedId} /><StepdadTarget room={room} racer={racer} />{racerId&&!context.racers.some(current=>current.id===racerId)&&<p className="stale-instance-note">原先查看的选手已不在本场；以下显示当前可见信息。</p>}{racer?.characterId === 'egg' && <EggAbility racer={racer} onDetail={onDetail} />}{racer && <EffectiveAbilities racer={racer} room={room} onDetail={onDetail} />}<h3>{racer ? '角色基础能力' : '角色能力'}</h3><p className="full-ability">{character?.ability ?? '角色资料正在载入。'}</p>{FAN_CHARACTERS.find(card=>card.id===id)?.adaptation&&<p className="character-project-note">数字化适配与项目裁定：{FAN_CHARACTERS.find(card=>card.id===id)?.adaptation}</p>}{SECOND_WIND_PROJECT_NOTES[id]&&<p className="character-project-note">{SECOND_WIND_PROJECT_NOTES[id]}</p>}{character && <details className="character-sources"><summary>详细规则与来源</summary><dl className="character-rule-metadata"><dt>发动时点</dt><dd>{character.timing.map(timing => timingLabels[timing] ?? timing).join(' / ')}</dd><dt>是否可选</dt><dd>{character.optional ? '可选：由当前控制者决定' : '强制：需要选项时等待当前控制者'}</dd><dt>合法目标</dt><dd>{character.targets}</dd><dt>次数限制</dt><dd>{character.limit ?? '按技能条件触发'}</dd><dt>持续时间</dt><dd>{character.duration}</dd><dt>核验状态</dt><dd>{character.verification ?? (character.verified ? '已按基础盒与发行商 FAQ 核验' : '待核验')}</dd></dl>{character.sources.map((source, index) => <p key={`${source.url}-${index}`}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a><br />{source.locator} · {source.version}</p>)}{character.imageUrl && <p><a href={character.imageUrl} target="_blank" rel="noreferrer">外形参考图片 ↗</a></p>}</details>}<p className="small-note">角色中文名为本项目暂译。技能与合法选项由统一计算端裁定。</p></div></Modal>;
-}
-function EffectiveAbilities({ racer, room, onDetail }: { racer: Racer; room?: RoomView; onDetail: ShowCharacter }) {
-  const state = racer.flags.publicAbilities as {powers?: string[]; disabledBy?: string[]; copiedFrom?: string; acquired?: string[]; krakenRemaining?: number; form?: string; mount?: string} | undefined;
-  const fallbackPower = typeof racer.flags.power === 'string' ? racer.flags.power : racer.characterId;
-  const powerIds = state?.powers ?? [fallbackPower === 'copycat' && typeof racer.flags.copyPower === 'string' ? racer.flags.copyPower : fallbackPower];
-  return <section className="effective-powers" aria-label="当前有效能力"><h3>当前有效能力</h3>{!!state?.disabledBy?.length && <p className="disabled-ability">能力被 Null 禁用：位于虚无者前方。离开作用范围后恢复。</p>}{powerIds.map(id => {const power = findCharacter(id);return <article key={id}><button type="button" className="power-name character-ability-link" aria-label={`查看${power?.nameZh??id}的技能与当前玩家`} onClick={()=>onDetail(id)}><Avatar id={id} /><strong>{power?.nameZh ?? id}</strong></button><p>{power?.ability}</p>{state?.acquired?.includes(id) && <small>本场获得的额外能力</small>}{copiedAbilitySource(room,racer,id) && <small>复制来源：{copiedAbilitySource(room,racer,id)}</small>}</article>;})}{powerIds.includes('kraken') && <p>剩余次数：{state?.krakenRemaining ?? 1}</p>}{state?.form === 'were-mouth' && <p>当前形态：W.E.R.E.M.O.U.T.H.</p>}{state?.mount && <p>当前坐骑：野猪 · 主移动 +2</p>}</section>;
+  const [selectedId, setSelectedId] = useState(racerId);
+  useEffect(() => setSelectedId(racerId), [id, racerId]);
+  const context = characterContext(room, id);
+  const racer = context.racers.find(current => current.id === selectedId) ?? context.racers[0];
+  const requestedInstanceId = selectedId ?? racerId;
+  const adaptation = FAN_CHARACTERS.find(card => card.id === id)?.adaptation;
+  const copyNote = !room || room.rulesVersion === 'cmyk-base-aug2026-fan-v3' ? COPY_ABILITY_PROJECT_NOTES[id] : undefined;
+  const printedAbility = <><p className="full-ability">{character?.ability ?? '角色资料正在载入。'}</p>{adaptation && <p className="character-project-note">数字化适配与项目裁定：{adaptation}</p>}{SECOND_WIND_PROJECT_NOTES[id] && <p className="character-project-note">{SECOND_WIND_PROJECT_NOTES[id]}</p>}{copyNote && <p className="character-project-note"><strong>复制交互的项目裁定：</strong>{copyNote}</p>}</>;
+  return <Modal title={characterName(id)} onClose={onClose}>
+    <div className="character-modal character-detail">
+      <header className="character-identity"><div className="modal-avatar"><Avatar id={id} /></div><div><p className="identity-kicker">角色身份</p><p className="identity-name">{characterName(id)}</p><p className="english-name">{character?.nameEn ?? id}</p><EditionBadge character={character} /></div></header>
+      {racer && <CharacterOwnership room={room} characterId={id} selectedId={racer.id} onSelect={setSelectedId} />}
+      {requestedInstanceId && !context.racers.some(current => current.id === requestedInstanceId) && <p className="stale-instance-note">原先查看的选手已不在本场；以下显示当前可见信息。</p>}
+      {racer ? <>
+        <EffectiveAbilities racer={racer} room={room} onDetail={onDetail} />
+        <StepdadTarget room={room} racer={racer} />
+        {racer.characterId === 'egg' && <EggAbility racer={racer} onDetail={onDetail} />}
+        <details className="printed-ability"><summary>角色基础能力 <small>查看原卡文字</small></summary>{printedAbility}</details>
+      </> : <section className="catalog-ability" aria-label="角色能力"><h3>角色能力</h3>{printedAbility}</section>}
+      {!racer && <CharacterOwnership room={room} characterId={id} onSelect={setSelectedId} />}
+      {character && <details className="character-sources"><summary>详细规则与来源</summary><dl className="character-rule-metadata"><dt>发动时点</dt><dd>{character.timing.map(timing => timingLabels[timing] ?? timing).join(' / ')}</dd><dt>是否可选</dt><dd>{character.optional ? '可选：由当前控制者决定' : '强制：需要选项时等待当前控制者'}</dd><dt>合法目标</dt><dd>{character.targets}</dd><dt>次数限制</dt><dd>{character.limit ?? '按技能条件触发'}</dd><dt>持续时间</dt><dd>{character.duration}</dd><dt>核验状态</dt><dd>{character.verification ?? (character.verified ? '已按基础盒与发行商 FAQ 核验' : '待核验')}</dd></dl>{character.sources.map((source, index) => <p key={`${source.url}-${index}`}><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a><br />{source.locator} · {source.version}</p>)}{character.imageUrl && <p><a href={character.imageUrl} target="_blank" rel="noreferrer">外形参考图片 ↗</a></p>}</details>}
+      <p className="small-note">角色中文名为本项目暂译。技能与合法选项由统一计算端裁定。</p>
+    </div>
+  </Modal>;
 }
 function Modal({ title, children, onClose, busy = false, descriptionId }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean; descriptionId?: string }) {
   const panel = useRef<HTMLDivElement>(null);

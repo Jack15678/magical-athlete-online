@@ -2,3 +2,76 @@
 @media(max-width:650px){.character-avatar-detail{height:133px;padding:10px}.character-avatar-detail .avatar{height:115px;width:115px}.character-card:nth-child(n) .character-art.character-pick{font-size:11px;min-height:40px}.character-ownership{padding:11px}}
 .round-draw-notice{padding:12px 15px;margin:16px 0;background:#fff2c9;border:1px solid #cbbb84;border-radius:9px;color:#315b55;font-size:13px;line-height:1.7}
 .character-project-note{padding:10px 12px;background:#fff2c9;border-left:3px solid #c39a41;border-radius:5px;color:#6f602f;font-size:12px;line-height:1.7}
+/* Current abilities are the first content panel; identity and controller stay compact. */
+.character-modal.character-detail{padding:18px 22px 24px;max-height:none;overflow:visible;text-align:left}
+.character-detail .character-identity{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.character-detail .character-identity .modal-avatar{width:76px;height:76px;flex:none;padding:5px;margin:0;background:#e3ebd7;border:1px solid #c7d4b8}
+.character-detail .character-identity>div:last-child{min-width:0}
+.character-detail .identity-kicker{font-size:10px;color:#647563;letter-spacing:.12em}
+.character-detail .identity-name{font-size:19px;line-height:1.45;font-weight:900}
+.character-detail .character-identity .english-name{font-size:11px;margin:0 0 6px;text-align:left;overflow-wrap:anywhere}
+.character-detail .current-controller{background:transparent;border:0;padding:0;margin:0 0 14px}
+.character-detail .controller-summary{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;font-size:12px;line-height:1.7}
+.character-detail .controller-summary>span:first-child{font-size:10px;color:#63745f}
+.character-detail .controller-summary strong{font-size:12px;overflow-wrap:anywhere;min-width:0}
+.character-detail .racer-current-status{margin-left:auto;white-space:nowrap;font-size:11px;color:#63745f}
+.character-detail .controller-summary small{width:100%;font-size:10px}
+.character-detail .current-controller h3{font-size:11px;color:#63745f;margin:0 0 7px}
+.character-detail .character-instances{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.character-detail .character-instances>button{min-height:49px;padding:8px 10px;font-size:11px;gap:2px;overflow-wrap:anywhere}
+.character-detail .character-instances>button.is-selected{padding:7px 9px}
+.character-detail .character-instances>button span{font-size:10px}
+.character-detail .shared-ability-holders{border-top:0;margin:8px 0 0;padding:0}
+.character-detail .shared-ability-holders summary{font-size:10px;color:#63745f;cursor:pointer;line-height:1.8}
+.character-detail .current-abilities{margin:0 0 16px;border:2px solid #4c7864;border-radius:12px;padding:15px;background:#edf4e7}
+.character-detail .current-abilities.is-disabled{border-color:#b8955c;background:#faf0da}
+.character-detail .current-abilities-heading{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.character-detail .current-abilities-heading h3{font-size:17px;line-height:1.4;margin:0;color:#254b3e}
+.character-detail .ability-state{font-size:10px;font-weight:800;padding:4px 7px;border-radius:5px;background:#d4e5c5;color:#325e40;white-space:nowrap}
+.character-detail .ability-state.is-disabled{background:#efd7b6;color:#805229}
+.character-detail .current-ability-list{display:grid;gap:10px}
+.character-detail .current-ability-card{margin:0;padding:12px;background:#fffdf5;border:1px solid #c6d4bb;border-radius:8px}
+.character-detail .current-ability-card .power-name{width:100%;gap:9px;min-height:40px}
+.character-detail .current-ability-card .power-name .avatar{width:39px;height:39px;flex:none}
+.character-detail .current-ability-card .power-name>span:not(.ability-open){min-width:0}
+.character-detail .current-ability-card .power-name strong{display:block;font-size:15px;line-height:1.4}
+.character-detail .current-ability-card .power-name small{display:block;font-size:9px;color:#71816c;margin-top:2px}
+.character-detail .ability-open{margin-left:auto;color:#6f8266;font-size:15px}
+.character-detail .ability-provenance{display:flex;flex-wrap:wrap;gap:4px 8px;margin:8px 0;color:#617657;font-size:10px;line-height:1.7}
+.character-detail .ability-provenance>span{overflow-wrap:anywhere}
+.character-detail .ability-provenance .ability-inactive-label{color:#966132;font-weight:800}
+.character-detail .current-ability-description{font-size:13px;line-height:1.9;color:#263d31}
+.character-detail .ability-empty,.character-detail .disabled-ability{font-size:12px;line-height:1.8;margin:0 0 10px}
+.character-detail .ability-counter{padding-top:8px;margin-top:9px;border-top:1px solid #dce3d3;font-size:11px;line-height:1.7;color:#586e4e}
+.character-detail .ability-live-status{display:grid;gap:5px;font-size:11px;line-height:1.8;margin-top:11px;color:#516647}
+.character-detail .ability-duration-note{font-size:10px;line-height:1.8;margin-top:10px;color:#617657}
+.character-detail .ability-source-record{margin:0 0 14px;padding:11px 12px;border:1px solid #d3d6c4;border-radius:8px;background:#f7f5e9;font-size:11px}
+.character-detail .ability-source-record>div{display:flex;align-items:center;gap:11px;min-height:34px}
+.character-detail .ability-source-record h3{margin:0;font-size:10px;font-weight:600;color:#72765e;min-width:60px}
+.character-detail .ability-source-record .character-ability-link{font-size:12px;font-weight:800;gap:6px;min-height:34px}
+.character-detail .ability-source-record .avatar{width:28px;height:28px}
+.character-detail .ability-source-record>p{font-size:10px;line-height:1.7;color:#72765e;margin-top:6px}
+.character-detail .printed-ability,.character-detail .character-sources{border-top:1px solid #d5d9c6;padding:12px 0;font-size:12px;line-height:1.8}
+.character-detail .printed-ability>summary,.character-detail .character-sources>summary{cursor:pointer;font-size:12px;font-weight:800;min-height:24px}
+.character-detail .printed-ability>summary small{font-weight:400;font-size:10px;color:#728169;margin-left:8px}
+.character-detail .printed-ability .full-ability{font-size:12px;line-height:1.9;margin-top:12px}
+.character-detail .catalog-ability{padding:13px 0}
+.character-detail .catalog-ability h3{font-size:16px;margin-bottom:9px}
+.character-detail .character-project-note{font-size:11px;margin-top:12px}
+.character-detail .character-sources p{margin-top:12px}
+.character-detail .small-note{font-size:9px;line-height:1.8;margin-top:5px}
+@media(max-width:650px){
+ .character-modal.character-detail{padding:14px 15px 19px}
+ .character-detail .character-identity{gap:11px;margin-bottom:11px}
+ .character-detail .character-identity .modal-avatar{width:62px;height:62px;padding:4px}
+ .character-detail .identity-name{font-size:17px}
+ .character-detail .current-abilities{padding:11px;margin-bottom:13px}
+ .character-detail .current-abilities-heading{margin-bottom:10px}
+ .character-detail .current-abilities-heading h3{font-size:16px}
+ .character-detail .current-ability-card{padding:10px}
+ .character-detail .current-ability-description{font-size:13px;line-height:1.85}
+ .character-detail .ability-provenance{margin:7px 0;font-size:10px}
+ .character-detail .character-instances>button{padding:7px;min-height:50px}
+ .character-detail .character-instances>button.is-selected{padding:6px}
+ .character-detail .ability-source-record{padding:9px 10px}
+}

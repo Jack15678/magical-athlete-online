@@ -16,43 +16,53 @@ export interface LeafContext {
   usePower:(s:State,r:Racer,tasks:Work[],power?:string,fallback?:Work[])=>void; push:(s:State,...tasks:Work[])=>void;
   log:(s:State,type:string,text:string,detail?:Record<string,any>)=>void;
   points:(s:State,r:Racer,delta:number,cause:string)=>void; shuffle:(s:State,ids:string[])=>string[];
+  drawUnchosen:(s:State,count:number)=>string[];
+  acquirePower:(r:Racer,power:string,source?:{sourceCardId?:string;sourceRacerId?:string;via?:string})=>void;
+  preparePowerGrant:(r:Racer,power:string)=>void;
 }
 export function installLeaf(ctx:LeafContext){
-  const {name,live,racer,active,owner,order,hasPower,powers,ask,askTarget,targetOptions,usePower,push,log,points,shuffle}=ctx;
+  const {name,live,racer,active,owner,order,hasPower,powers,ask,askTarget,targetOptions,usePower,push,log,points,drawUnchosen:draw,acquirePower,preparePowerGrant}=ctx;
   const has=(s:State,r:Racer,id:string)=>hasPower(s,r,leaf(id));
   const title=(id:string)=>CHARACTERS.find(card=>card.id===id)?.nameZh??id;
   const effect=(r:Racer,power:string,effects:Work[],detail:Record<string,any>={}):Work=>({kind:'ability',racerId:r.id,power:leaf(power),effects,...detail});
   const done=(r:Racer,power:string):Work=>({kind:'powerDone',racerId:r.id,power:leaf(power)});
   const task=(r:Racer,step:string,extra:Record<string,any>={}):Work=>({kind:'leaf',racerId:r.id,step,...extra});
   const aloneLast=(s:State,r:Racer)=>active(s).every(other=>other.id===r.id||other.position>r.position);
-  function availableDeck(s:State):void{
-    const enabled=new Set(enabledCharacterIds(s.config,s.characterPool,s.mode==='practice'));
-    // Recovered v3 state may predate a repaired pack configuration. Keep the
-    // relative order of valid cards, without drawing or shuffling forbidden ones.
-    s.deck=s.deck.filter(id=>enabled.has(id));
-    if(s.deck.length)return;
-    const displayed=new Set(s.racers.map(r=>String(r.flags.leafDisplayedCard??'')).filter(Boolean));
-    const cards=s.discard.filter(id=>enabled.has(id)&&!displayed.has(id));
-    if(cards.length){s.deck=shuffle(s,[...new Set(cards)]);s.discard=s.discard.filter(id=>!cards.includes(id));log(s,'shuffle','Leaf：未选牌堆耗尽，洗公共弃牌堆。',{cause:'leaf-deck'});}
+  type Borrow={power:string;source:string};
+  /** Migrate the original single borrowed slot once; permanent and temporary
+   * grants then have separate storage even when their text is identical. */
+  function migrateBorrow(r:Racer):void{
+    const permanent=[String(r.flags.power??r.flags.copiedPower??r.characterId),...((r.flags.acquiredPowers??[]) as string[]).filter(power=>
+      Array.isArray(r.flags.leafBorrowedPowers)||r.flags.leafBorrowAlreadyPresent||power!==r.flags.leafBorrowedPower)];
+    const source=typeof r.flags.leafBorrowSource==='string'?r.flags.leafBorrowSource:permanent.includes(leaf('thespian'))?leaf('thespian'):permanent.includes(leaf('filmmaker'))?leaf('filmmaker'):'legacy-borrow';
+    if(!Array.isArray(r.flags.leafBorrowedPowers)){
+      const previous=r.flags.leafBorrowedPower;
+      if(typeof previous==='string'&&!r.flags.leafBorrowAlreadyPresent)r.flags.acquiredPowers=((r.flags.acquiredPowers??[]) as string[]).filter(power=>power!==previous);
+      r.flags.leafBorrowedPowers=typeof previous==='string'?[{power:previous,source}]:[];
+    }
+    if(!Array.isArray(r.flags.leafDisplayedCards))r.flags.leafDisplayedCards=typeof r.flags.leafDisplayedCard==='string'?[{power:r.flags.leafDisplayedCard,source}]:[];
+    if(!r.flags.leafBorrowTurns)r.flags.leafBorrowTurns=typeof r.flags.leafBorrowTurn==='number'?{[source]:r.flags.leafBorrowTurn}:{};
+    delete r.flags.leafBorrowedPower;delete r.flags.leafBorrowAlreadyPresent;delete r.flags.leafBorrowSource;
   }
-  function draw(s:State,count:number):string[]{
-    const cards:string[]=[];for(let i=0;i<count;i++){availableDeck(s);const id=s.deck.shift();if(!id)break;cards.push(id);}return cards;
+  function syncDisplay(r:Racer):void{
+    const display=(r.flags.leafDisplayedCards as Borrow[])[0];
+    if(display)r.flags.leafDisplayedCard=display.power;else delete r.flags.leafDisplayedCard;
   }
   function turnBoundary(_s:State,r:Racer):void{
-    const previous=r.flags.leafBorrowedPower;
-    if(typeof previous==='string'&&!r.flags.leafBorrowAlreadyPresent)r.flags.acquiredPowers=((r.flags.acquiredPowers??[]) as string[]).filter(power=>power!==previous);
-    delete r.flags.leafBorrowedPower;delete r.flags.leafBorrowAlreadyPresent;
+    migrateBorrow(r);r.flags.leafBorrowedPowers=[];
   }
-  function clearBorrow(s:State,r:Racer):void{
-    turnBoundary(s,r);
-    const displayed=r.flags.leafDisplayedCard;if(typeof displayed==='string')s.discard.push(displayed);
-    delete r.flags.leafDisplayedCard;
+  function clearBorrow(s:State,r:Racer,source:string):void{
+    migrateBorrow(r);
+    r.flags.leafBorrowedPowers=(r.flags.leafBorrowedPowers as Borrow[]).filter(item=>item.source!==source);
+    const displays=r.flags.leafDisplayedCards as Borrow[];
+    for(const displayed of displays.filter(item=>item.source===source))if(!s.discard.includes(displayed.power))s.discard.push(displayed.power);
+    r.flags.leafDisplayedCards=displays.filter(item=>item.source!==source);syncDisplay(r);
   }
   function borrow(s:State,r:Racer,id:string,source:string):void{
-    clearBorrow(s,r);const acquired=(r.flags.acquiredPowers??[]) as string[];
-    r.flags.leafBorrowAlreadyPresent=acquired.includes(id);r.flags.leafBorrowedPower=id;r.flags.leafDisplayedCard=id;
-    r.flags.acquiredPowers=[...new Set([...acquired,id])];
-    log(s,'copy',`${name(r)}公开弃出并复制「${title(id)}」，持续到自己下回合换牌，不执行赛前能力。`,{source:r.id,cause:source,selectedCardId:id});
+    clearBorrow(s,r,source);preparePowerGrant(r,id);
+    (r.flags.leafBorrowedPowers as Borrow[]).push({power:id,source});
+    (r.flags.leafDisplayedCards as Borrow[]).push({power:id,source});syncDisplay(r);
+    log(s,'copy',`${name(r)}公开弃出并复制「${title(id)}」，持续到自己下回合前，不执行赛前能力。`,{source:r.id,cause:source,selectedCardId:id,grantedPowerIds:[id],grantDuration:'next-turn'});
   }
   function beforeRace(s:State,r:Racer,p:string):boolean{
     if(!p.startsWith('leaf-'))return false;
@@ -87,13 +97,16 @@ export function installLeaf(ctx:LeafContext){
     return true;
   }
   function mainReady(s:State,r:Racer):boolean{
-    if(has(s,r,'thespian')&&r.flags.leafBorrowTurn!==s.turnCount){
-      r.flags.leafBorrowTurn=s.turnCount;clearBorrow(s,r);const id=draw(s,1)[0];
+    migrateBorrow(r);const turns=r.flags.leafBorrowTurns as Record<string,number>;
+    if(has(s,r,'thespian')&&turns[leaf('thespian')]!==s.turnCount){
+      turns[leaf('thespian')]=s.turnCount;r.flags.leafBorrowTurn=s.turnCount;const id=draw(s,1)[0];
       if(id)borrow(s,r,id,leaf('thespian'));else log(s,'power',`${name(r)}没有可弃的未选角色牌，保留自身能力。`,{source:r.id,cause:leaf('thespian')});
-      push(s,{kind:'mainReady',racerId:r.id});return true;
+      push(s,{kind:'refreshCopies'},{kind:'mainReady',racerId:r.id});return true;
     }
-    if(has(s,r,'filmmaker')&&r.flags.leafBorrowTurn!==s.turnCount){
-      r.flags.leafBorrowTurn=s.turnCount;clearBorrow(s,r);const hand=(r.flags.secretLeafHand??[]) as string[];
+    if(has(s,r,'filmmaker')&&turns[leaf('filmmaker')]!==s.turnCount){
+      turns[leaf('filmmaker')]=s.turnCount;r.flags.leafBorrowTurn=s.turnCount;
+      const enabled=new Set(enabledCharacterIds(s.config,s.characterPool,s.mode==='practice'));
+      const hand=[...new Set(((r.flags.secretLeafHand??[]) as string[]).filter(id=>enabled.has(id)))];if(Array.isArray(r.flags.secretLeafHand))r.flags.secretLeafHand=hand;
       if(hand.length){ask(s,r,'leaf-film-card','电影制作人：选择本回合公开弃出并复制的一张牌',hand.map(id=>({id,label:title(id)})),{});return true;}
     }
     const gifts=(r.flags.leafGiftDice??[]) as {id:string;face:number;source:string}[];
@@ -208,6 +221,16 @@ export function installLeaf(ctx:LeafContext){
     const candidates=s.racers.filter(r=>!r.eliminated),last=Math.min(...candidates.map(r=>r.position)),back=candidates.filter(r=>r.position===last);
     if(back.length===1&&has(s,back[0]!,'sore-loser'))points(s,back[0]!,3,'输不起独自末位奖励');
   }
+  /** Release actual cards before race instances are replaced. This does not
+   * expose unused private card identities in the public event log. */
+  function releaseCards(s:State):void{
+    for(const target of s.racers){
+      migrateBorrow(target);
+      const cards=[...((target.flags.secretLeafHand??[]) as string[]),...(target.flags.leafDisplayedCards as Borrow[]).map(item=>item.power)];
+      for(const card of cards)if(!s.discard.includes(card)&&!s.deck.includes(card))s.discard.push(card);
+      delete target.flags.secretLeafHand;target.flags.leafDisplayedCards=[];delete target.flags.leafDisplayedCard;
+    }
+  }
   function processTask(s:State,r:Racer,t:Work):boolean{
     if(t.step==='zombie-copy'){
       const power=String(t.characterId);
@@ -216,12 +239,15 @@ export function installLeaf(ctx:LeafContext){
       if(!enabledCharacterIds(s.config,s.characterPool,s.mode==='practice').includes(power)){
         log(s,'cancel',`${name(r)}的历史复制来源已不在本房间启用角色包中，本次复制取消。`,{source:r.id,cause:leaf('zombie')});return true;
       }
-      r.flags.acquiredPowers=[...new Set([...((r.flags.acquiredPowers??[]) as string[]),power])];r.flags.leafZombieCard=power;
-      log(s,'copy',`${name(r)}本场获得此前失利角色「${title(power)}」的印刷能力，并执行其赛前效果。`,{source:r.id,cause:leaf('zombie'),selectedCardId:power});push(s,{kind:'beforeRacePower',racerId:r.id,power});return true;
+      acquirePower(r,power,{sourceCardId:power,via:leaf('zombie')});r.flags.leafZombieCard=power;
+      log(s,'copy',`${name(r)}本场获得此前失利角色「${title(power)}」的印刷能力，并执行其赛前效果。`,{source:r.id,cause:leaf('zombie'),selectedCardId:power,grantedPowerIds:[power],grantDuration:'race'});push(s,{kind:'beforeRacePower',racerId:r.id,power});return true;
     }
     if(t.step==='film-copy'){
       const power=String(t.characterId),hand=(r.flags.secretLeafHand??[]) as string[];if(!hand.includes(power))throw Error('影片复制时手牌已失效。');
-      r.flags.secretLeafHand=hand.filter(card=>card!==power);borrow(s,r,power,leaf('filmmaker'));return true;
+      if(!enabledCharacterIds(s.config,s.characterPool,s.mode==='practice').includes(power)){
+        log(s,'cancel',`${name(r)}所选影片已不在本房间启用角色包中，本次借用取消。`,{source:r.id,cause:leaf('filmmaker')});return true;
+      }
+      r.flags.secretLeafHand=hand.filter(card=>card!==power);borrow(s,r,power,leaf('filmmaker'));push(s,{kind:'refreshCopies'});return true;
     }
     if(t.step==='car-spend'){if(owner(s,r).score<1)throw Error('赛车结算时积分不足。');points(s,r,-1,'赛车加速');r.flags.leafCarBonusTurn=s.turnCount;return true;}
     if(t.step==='toucan-adjust'){log(s,'die-adjusted',`${name(r)}将主骰2调整为${t.face}，不产生一次新掷骰。`,{source:r.id,faces:[2,Number(t.face)],cause:leaf('toucan')});push(s,{kind:'finalRoll',racerId:r.id,face:Number(t.face)});return true;}
@@ -229,5 +255,5 @@ export function installLeaf(ctx:LeafContext){
     const target=racer(s,String(t.targetId)),tokens=target?.flags.leafLoanTokens as Record<string,boolean>|undefined;
     if(target&&live(target)&&target.position===r.position&&tokens?.[r.id]){delete tokens[r.id];points(s,r,1,`高利贷鲨从${name(target)}牌面收回筹码`);}return true;
   }
-  return {beforeRace,turnStart,turnBoundary,mainReady,finalRoll,distance,choice,rollResult,stopTasks,passTasks,rawDie,trackIncome,preventTrip,onTrip,recover,endTurn,raceEnd,task:processTask};
+  return {beforeRace,turnStart,turnBoundary,mainReady,finalRoll,distance,choice,rollResult,stopTasks,passTasks,rawDie,trackIncome,preventTrip,onTrip,recover,endTurn,raceEnd,releaseCards,task:processTask};
 }
