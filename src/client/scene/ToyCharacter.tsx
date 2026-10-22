@@ -125,7 +125,7 @@ function Sculpture({ characterId, color, lowQuality = false, castShadow = true, 
 export function ToyCharacter({ characterId, color, lowQuality = false, castShadow = true, form, mount, animation }: ToyCharacterProps) {
   const geometry = toyResources.baseGeometry(lowQuality);
   const modelId = characterId === 'bite-mark' && form === 'were-mouth' ? 'bite-mark-were' : characterId;
-  const url = secondWind.has(characterId) ? `/models/second-wind/${modelId}.glb?v=second-wind-20261021` : lowQuality ? ECONOMY_URL : MODEL_URL;
+  const url = secondWind.has(characterId) ? `/models/second-wind/${modelId}.glb?v=${modelId==='switcharoo'?'switcharoo-mouth-20261022':'second-wind-20261021'}` : lowQuality ? ECONOMY_URL : MODEL_URL;
   return <group name={`racer-model-${characterId}`}>
     <mesh geometry={geometry.body} material={toyResources.baseMaterial(color, lowQuality)} receiveShadow={!lowQuality} castShadow={castShadow && !lowQuality} dispose={null} />
     <mesh geometry={geometry.cap} material={toyResources.baseMaterial(color, lowQuality, true)} receiveShadow={!lowQuality} dispose={null} />

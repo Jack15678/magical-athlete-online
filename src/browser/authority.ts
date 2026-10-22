@@ -1,4 +1,5 @@
 import { publicEventBatch } from '../shared/public-events.js';
+import { secureRandomSeed, type RandomSeed } from '../shared/random.js';
 import { immediateRoomAction } from '../shared/automation.js';
 import { personalRoom, roomExpiry } from '../shared/room-lifecycle.js';
 import { automaticRoomAction as automaticAction } from '../engine/runtime.js';
@@ -12,9 +13,9 @@ interface StoredRoom { code: string; authorityId: string; room: Room }
 interface Receipt { code: string; playerId: string; actionId: string; request: string; result: ActionReply }
 export interface AuthorityOptions {
   /** Test-only substitution; production uses the current origin's IndexedDB. */
-  indexedDB?: IDBFactory; databaseName?: string; now?: () => number; randomSeed?: () => number;
+  indexedDB?: IDBFactory; databaseName?: string; now?: () => number; randomSeed?: () => RandomSeed;
 }
-function entropy(): number { return crypto.getRandomValues(new Uint32Array(1))[0]!; }
+const entropy = secureRandomSeed;
 function storageError(error: unknown): Error {
   const detail = error instanceof Error ? error.message : String(error ?? '');
   return Error(`主持设备未能保存本次操作，尚未确认成功。请检查浏览器存储后重试。${detail ? `（${detail}）` : ''}`);
@@ -48,7 +49,7 @@ export class BrowserAuthority {
     this.db.onversionchange=() => this.dispose();
   }
   private now(): number { return (this.options.now ?? Date.now)(); }
-  private seed(): number { return (this.options.randomSeed ?? entropy)(); }
+  private seed(): RandomSeed { return (this.options.randomSeed ?? entropy)(); }
   static create(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,true,options); }
   static load(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,false,options); }
   private static async initialize(meta: RelayMetadata, allowCreate: boolean, options: AuthorityOptions): Promise<BrowserAuthority> {

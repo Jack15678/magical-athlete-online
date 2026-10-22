@@ -73,6 +73,7 @@ export function trackPath(from: number, to: number): number[] {
 export function confirmedFace(event: GameEvent, room?: RoomView): number | undefined {
   const structured = (event as GameEvent & { face?: number }).face;
   if (structured !== undefined && Number.isInteger(structured) && structured >= 1 && structured <= 6) return structured;
+  if (event.faces?.length === 1 && Number.isInteger(event.faces[0]) && event.faces[0]! >= 1 && event.faces[0]! <= 6) return event.faces[0];
   const value = /(?:最终骰面为|掷出)\s*([1-6])\s*[。！!]?\s*$/.exec(event.text)?.[1];
   if (value) return Number(value);
   // Use lastRoll only for the newest confirmed die, never for an older reroll.
@@ -92,21 +93,22 @@ function eventMotion(event: GameEvent, kind: PresentationKind): PresentationMoti
 
 function beatForEvent(event: GameEvent, room: RoomView): PresentationBeat | undefined {
   let kind: PresentationKind;
-  if (event.type === 'die' || event.type === 'roll') kind = 'dice';
+  if (['die', 'roll', 'ability-dice', 'multi-dice'].includes(event.type)) kind = 'dice';
   else if (event.type === 'duel-dice') kind = 'duel-dice';
   else if (event.type === 'move') kind = 'move';
   else if (event.type === 'warp') kind = event.cause === 'flip-flop' ? 'swap' : 'warp';
   else if (event.type === 'place') kind = 'warp';
   else if (['trip', 'recover', 'score', 'finish', 'eliminate'].includes(event.type)) kind = event.type as PresentationKind;
-  else if (['power', 'copy', 'prediction', 'duel', 'cancel', 'reroll', 'skip', 'transform', 'mount', 'control', 'secret-reveal', 'die-modified', 'cancel-race'].includes(event.type)) kind = 'skill';
+  else if (['power', 'copy', 'prediction', 'duel', 'cancel', 'reroll', 'skip', 'transform', 'mount', 'control', 'secret-reveal', 'die-modified', 'cancel-race', 'cycle-draw', 'loop'].includes(event.type)) kind = 'skill';
   else return undefined;
+  const faces = event.faces?.length && event.faces.every(value => Number.isInteger(value) && value >= 1 && value <= 6) ? [...event.faces] : undefined;
   const face = kind === 'dice' ? confirmedFace(event, room) : undefined;
-  if (kind === 'dice' && face === undefined) return undefined;
+  if (kind === 'dice' && face === undefined && !(event.type === 'multi-dice' && faces?.length === 6)) return undefined;
   const motions = eventMotion(event, kind);
   const longest = motions.reduce((steps, motion) => Math.max(steps, Math.abs(motion.to - motion.from)), 0);
-  const durationMs = kind === 'dice' ? 2500 : kind === 'duel-dice' ? 3000 : kind === 'skill' ? 1800 : kind === 'move' ? Math.min(2200, Math.max(800, 280 + Math.max(1, longest) * 240)) : kind === 'swap' || kind === 'warp' || kind === 'finish' ? 1100 : 850;
+  const durationMs = kind === 'dice' ? event.type === 'multi-dice' ? 3600 : 2500 : kind === 'duel-dice' ? 3000 : kind === 'skill' ? 1800 : kind === 'move' ? Math.min(2200, Math.max(800, 280 + Math.max(1, longest) * 240)) : kind === 'swap' || kind === 'warp' || kind === 'finish' ? 1100 : 850;
   const boundary = eventsOf(room).findLast(log => log.id <= event.id && (log.type === 'turn' || log.type === 'reveal'));
-  return { key: `${room.code}:${room.round}:${event.id}`, chainId: `${room.code}:${room.round}:chain:${boundary?.id ?? 0}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, faces: event.faces, cause: event.cause, durationMs, naturalDurationMs: durationMs };
+  return { key: `${room.code}:${room.round}:${event.id}`, chainId: `${room.code}:${room.round}:chain:${boundary?.id ?? 0}`, kind, events: [event], source: event.source, targets: event.targets ?? (event.source ? [event.source] : []), motions, face, faces, cause: event.cause, durationMs, naturalDurationMs: durationMs };
 }
 
 /** Queue pressure may gently shorten unstarted beats, never erase their readable
@@ -258,5 +260,6 @@ export function beatDuration(beat: PresentationBeat, options: PresentationOption
   const speed = Math.max(0.5, Math.min(8, Number.isFinite(options.speed) ? options.speed! : 1));
   const duration = Math.round((options.reducedMotion ? REDUCED_MOTION_MS[beat.kind] : beat.durationMs) / speed);
   // Speed controls shorten motion, not the minimum time to understand a skill.
-  return Math.max(beat.kind === 'skill' || beat.kind === 'duel-dice' ? 1500 : 0, duration);
+  const minimum = beat.events.some(event => event.type === 'multi-dice') ? 2200 : beat.events.some(event => event.type === 'ability-dice') ? 1800 : beat.kind === 'skill' || beat.kind === 'duel-dice' ? 1500 : 0;
+  return Math.max(minimum, duration);
 }

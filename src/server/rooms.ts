@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { secureRandomSeed } from '../shared/random.js';
 import type { ActionEnvelope, ActionReply, CharacterPool, ChatReply, GameMode, Identity, Player, RenameReply, Room, RoomRole, RoomSummary, RoomView } from '../shared/types.js';
 import { appendChat, appendPlayerChat, chatBatch, deduplicateStoredNicknames, uniqueNickname, validateChatSend, validateNickname } from '../shared/chat.js';
 import { immediateRoomAction } from '../shared/automation.js';
@@ -66,7 +67,7 @@ export class Rooms {
     const p = this.player(uniqueNickname(name,[]),0); const now=this.now();
     const players=[p,...Array.from({length:mode==='ai'?aiCount:0},(_,i)=>({...this.player(`电脑${i+1}`,i+1),isAI:true,ready:true,connected:true}))];
     for(let i=1;i<players.length;i++)players[i]!.name=uniqueNickname(players[i]!.name,players.slice(0,i).map(person=>person.name));
-    const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,randomBytes(4).readUInt32LE(),mode,characterPool)};
+    const room:Room = {mode,code,hostId:p.id,ownerId:p.id,hostLeftAt:now,createdAt:now,updatedAt:now,version:1,maxPlayers,timeoutSeconds:timeoutSeconds??this.defaultTimeout,deadline:null,game:createGame(players,secureRandomSeed(),mode,characterPool)};
     if(mode!=='multiplayer'){p.ready=true;room.game.players[0]!.ready=true;startGame(room.game);this.deadline(room);}
     const token = randomBytes(32).toString('base64url'); this.store.addIdentity(room,p.id,hash(token)); this.rooms.set(code,room);
     return {identity:{roomCode:code,playerId:p.id,token,role:'player'},room:this.view(room,p.id)};
@@ -127,7 +128,7 @@ export class Rooms {
     if(original.closedAt!==undefined) return {ok:false,error:'房间已解散。请创建或加入其他房间。',version:original.version};
     if(original.version!==envelope.expectedVersion) return {ok:false,error:'画面已更新，请同步后重试。',version:original.version};
     try {
-      const room=reduceRoomAction(original,id,envelope.action,{now:this.now(),rematchSeed:envelope.action.type==='rematch'?randomBytes(4).readUInt32LE():0,automatic});
+      const room=reduceRoomAction(original,id,envelope.action,{now:this.now(),rematchSeed:envelope.action.type==='rematch'?secureRandomSeed():0,automatic});
       if(envelope.action.type==='transfer')(room as PresenceRoom).hostSeenAt=this.now();
       if(room.closedAt!==undefined){this.closePersonal(room,'dismissed',room.closedAt,envelope.actionId);return{ok:true,version:room.version};}
       const result={ok:true,version:room.version};this.store.commitAction(room,id,envelope.actionId,request,result);this.rooms.set(code,room);return result;

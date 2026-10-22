@@ -942,8 +942,8 @@
       "node": "toy_switcharoo",
       "url": "/models/second-wind/switcharoo.glb",
       "avatar": "/avatars/second-wind/switcharoo.svg",
-      "bytes": 35268,
-      "triangles": 2424,
+      "bytes": 37680,
+      "triangles": 2736,
       "draws": 5,
       "bounds": [
         0.48567,
@@ -958,7 +958,7 @@
         "fall",
         "recover"
       ],
-      "recognition": "Yellow kangaroo, very long ears/feet/tail, pink round glasses, cream pouch, slender tucked forearms.",
+      "recognition": "Yellow kangaroo, very long ears/feet/tail, pink round glasses, centred symmetric snout and surface-following smile, cream pouch, slender tucked forearms.",
       "inferred": "Back and side volumes extrapolated from the published single-view illustration.",
       "referenceChecked": true,
       "referenceImage": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Switcharoo.png",
@@ -1108,8 +1108,8 @@
       "editableSource": "assets/blender/second-wind/hog-knight-hog.blend"
     }
   ],
-  "totalBytes": 1570536,
-  "totalTriangles": 126714,
+  "totalBytes": 1572948,
+  "totalTriangles": 127026,
   "materialCount": 15,
   "textureCount": 0,
   "referenceStatus": "36 fan-site illustrations visually inspected; closed-volume toy interpretations; unseen views explicitly inferred; not exact official production sculpts."

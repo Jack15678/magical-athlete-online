@@ -24,6 +24,19 @@ function repeatedFollow(view:RoomView,r:Racer):boolean {
   const last=journeys.at(-1);if(!last)return false;
   return journeys.slice(0,-1).some(e=>e.source===last.source&&e.cause===last.cause&&JSON.stringify(e.targets)===JSON.stringify(last.targets)&&JSON.stringify(e.before)===JSON.stringify(last.before)&&JSON.stringify(e.after)===JSON.stringify(last.after));
 }
+function repeatedTrip(view:RoomView,r:Racer,target:Racer):boolean {
+  // Reconstruct only public positions back to this racer's earlier trip. If
+  // the same target was tripped on this exact board and nobody made progress,
+  // let an AI decline the optional repeat. This never changes a human choice
+  // or declares a rules draw; fresh movement and phase changes reset the hint.
+  const now=new Map(view.racers.map(item=>[item.id,item.position])),positions=new Map(now);
+  for(let i=view.logs.length-1;i>=0;i--){
+    const event=view.logs[i]!;if(['phase','reveal','finish','eliminate','cycle-draw'].includes(event.type))break;
+    if(event.type==='trip'&&event.source===r.id&&event.targets?.includes(target.id)&&view.logs[i-1]?.cause==='kingtripper'&&[...now].every(([id,position])=>positions.get(id)===position))return true;
+    if(['move','warp','place'].includes(event.type)&&event.before&&event.targets)event.targets.forEach((id,index)=>{const before=event.before?.[index];if(before!==undefined)positions.set(id,before);});
+  }
+  return false;
+}
 export function decideAI(view:RoomView):GameAction|undefined {
   const self=view.players.find(p=>p.id===view.selfId);if(!self)return;
   if(view.mode==='practice'&&view.phase==='draft'&&view.draft){const cards=[...view.draft.market].sort((a,b)=>value(b)-value(a)||a.localeCompare(b));return{type:'practice-team',characterIds:cards.slice(0,4)};}
@@ -48,7 +61,7 @@ export function decideAI(view:RoomView):GameAction|undefined {
       case 'tail': if (has('use')) pick = 'use'; break;
       case 'diva': {const target = targets.filter(t => t.id !== r?.id).sort((a,b) => (r && r.position >= a.position ? a.position-b.position : b.position-a.position))[0]; if(target)pick=target.id; break;}
       case 'understudy': case 'soulmate': {const target = others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0]; if(target)pick=target.id;break;}
-      case 'kingtripper': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
+      case 'kingtripper': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target&&!(r&&has('skip')&&repeatedTrip(view,r,target)))pick=target.id;break;}
       case 'magical-last': {const target=targets.find(t=>t.playerId===self.id)??targets[0];if(target)pick=target.id;break;}
       case 'magical-lead': case 'magical-warp': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
       case 'switcharoo': {const target=others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0];if(target&&r&&value(target.characterId)>value(r.characterId))pick=target.id;break;}

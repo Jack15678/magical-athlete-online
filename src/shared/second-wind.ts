@@ -606,7 +606,7 @@ export const SECOND_WIND_CHARACTERS: readonly CharacterData[] = [
     "nameZh": "骰子先生",
     "translation": "本项目译名",
     "edition": "second-wind",
-    "ability": "主移动掷六颗骰子，从出现至少两次的点数中选择一个作为结果。",
+    "ability": "主移动掷六颗骰子，从出现至少两次的点数中选择一个作为结果。项目房规：六骰各异时，等待当前控制者重掷整组六骰。",
     "timing": [
       "main-roll"
     ],
@@ -1094,15 +1094,15 @@ export const SECOND_WIND_CHARACTERS: readonly CharacterData[] = [
     "nameZh": "继父",
     "translation": "本项目译名",
     "edition": "second-wind",
-    "ability": "自己左边选手主移动+2；该选手获得第一时，自己获得3分。",
+    "ability": "固定行动顺序中的左邻（下一名选手，可为队友）主移动+2；该实例夺冠时，继父当前控制者获得3分。独自出场无目标。",
     "timing": [
-      "before-race",
+      "continuous",
       "main-move",
       "first-finish"
     ],
     "optional": false,
-    "targets": "固定行动顺序中左边的选手",
-    "scope": "按卡文；other 为其他选手，opposing 为其他玩家控制的选手",
+    "targets": "本场固定顺时针行动顺序中的下一名选手实例；允许同控制者队友，不包含自身，不按屏幕左右或赛道位置判断",
+    "scope": "只加主要移动，不加额外移动或传送；目标按赛前固定选手实例顺序派生，中途获得能力也生效，控制权交换不改实例顺序",
     "limit": "持续；获冠军一次",
     "duration": "本场",
     "statuses": [],
@@ -1212,7 +1212,7 @@ export const SECOND_WIND_CHARACTERS: readonly CharacterData[] = [
       "turn-end"
     ],
     "optional": true,
-    "targets": "距离不超过1格的其他选手",
+    "targets": "相同格或相邻1格的其他在赛选手实例；包含队友，无目标时不显示技能选择",
     "scope": "按卡文；other 为其他选手，opposing 为其他玩家控制的选手",
     "limit": "每回合结束一次",
     "duration": "本场控制权与牌归属",
@@ -1281,14 +1281,14 @@ export const SECOND_WIND_CHARACTERS: readonly CharacterData[] = [
     "nameZh": "水管",
     "translation": "本项目译名",
     "edition": "second-wind",
-    "ability": "回合结束时掷一骰，绊倒前方距离不超过该骰面的所有选手。",
+    "ability": "本人回合结束时另掷一颗范围骰，绊倒严格前方1～骰面格（含边界）的所有在赛选手；同格和后方不受影响。",
     "timing": [
       "turn-end",
       "ability-roll"
     ],
     "optional": false,
-    "targets": "前方范围内其他选手",
-    "scope": "按卡文；other 为其他选手，opposing 为其他玩家控制的选手",
+    "targets": "距离自身严格前方1～最终范围骰面格的所有在赛选手，包含队友",
+    "scope": "能力骰独立于主骰，不应用主移动加减；受惊艳者固定骰面与扫兴鬼重掷影响。恢复代替主移动后仍触发；完赛或淘汰后不触发。企鹅不是绊倒免疫",
     "limit": "每回合结束一次",
     "duration": "至目标恢复",
     "statuses": [],
@@ -1351,3 +1351,8 @@ export const SECOND_WIND_CHARACTERS: readonly CharacterData[] = [
     "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Understudy.png"
   }
 ];
+
+/** Explicit project rulings, not official Second Wind card text. */
+export const SECOND_WIND_PROJECT_NOTES: Readonly<Record<string,string>> = {
+  'mr-dice-guy':'项目房规（新规则v2）：六骰均不相同时，先公开本组结果，再等待当前控制者重掷整组六骰；主要移动尚未执行，不消耗额外回合。',
+};

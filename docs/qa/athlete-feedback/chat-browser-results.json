@@ -1,0 +1,65 @@
+{
+  "burstLifetimeAfterNewestMs": 6240,
+  "desktopOpen": {
+    "x": 18,
+    "y": 442,
+    "width": 330,
+    "height": 440,
+    "bottom": 18,
+    "viewportWidth": 1280,
+    "viewportHeight": 900,
+    "position": "fixed",
+    "transform": "none",
+    "parent": "BODY"
+  },
+  "transformedRoot": {
+    "x": 18,
+    "y": 442,
+    "width": 330,
+    "height": 440,
+    "bottom": 18,
+    "viewportWidth": 1280,
+    "viewportHeight": 900,
+    "position": "fixed",
+    "transform": "none",
+    "parent": "BODY"
+  },
+  "mobileOpen": {
+    "x": 8,
+    "y": 500,
+    "width": 374,
+    "height": 330,
+    "bottom": 14,
+    "viewportWidth": 390,
+    "viewportHeight": 844,
+    "position": "fixed",
+    "transform": "none",
+    "parent": "BODY"
+  },
+  "mobileCompact": {
+    "x": 8,
+    "y": 336,
+    "width": 374,
+    "height": 210,
+    "bottom": 14,
+    "viewportWidth": 390,
+    "viewportHeight": 560,
+    "position": "fixed",
+    "transform": "none",
+    "parent": "BODY"
+  },
+  "mobileClosed": {
+    "x": 12,
+    "y": 786,
+    "width": 104.0625,
+    "height": 44,
+    "bottom": 14,
+    "viewportWidth": 390,
+    "viewportHeight": 844,
+    "position": "fixed",
+    "transform": "none",
+    "parent": "BODY"
+  },
+  "errors": [],
+  "realPeerMessages": 4
+}
