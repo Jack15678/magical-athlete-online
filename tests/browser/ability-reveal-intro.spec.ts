@@ -11,10 +11,28 @@ const output='docs/qa/ability-detail-20261022';
 test.beforeAll(async()=>{mkdirSync(output,{recursive:true});application=createApplication(':memory:');await new Promise<void>(resolve=>application.http.listen(0,'127.0.0.1',resolve));const address=application.http.address();if(!address||typeof address==='string')throw Error('No test address');url=`http://127.0.0.1:${address.port}`;});
 test.afterAll(async()=>application.close());
 const name=(id:string)=>CHARACTERS.find(card=>card.id===id)!.nameZh;
+type ObservedReveal={eventId:string;text:string};
+declare global {interface Window {__ABILITY_REVEAL_OBSERVATION__?:ObservedReveal[]}}
+
+/** Capture each actual DOM appearance immediately. Reading pixels in another
+ * browser must not consume this page's three-second announcement window. */
+function installRevealObserver(){
+  if(window.__ABILITY_REVEAL_OBSERVATION__)return;
+  const records:ObservedReveal[]=[];window.__ABILITY_REVEAL_OBSERVATION__=records;
+  let current:Element|null=null,currentId:string|undefined;
+  const capture=()=>{
+    const node=document.querySelector<HTMLElement>('[data-testid="ability-reveal"]'),eventId=node?.dataset.eventId;
+    if(node&&eventId&&(node!==current||eventId!==currentId))records.push({eventId,text:node.textContent??''});
+    current=node;currentId=eventId;
+  };
+  new MutationObserver(capture).observe(document,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-event-id']});
+  capture();
+}
+const observedReveals=(page:Page)=>page.evaluate(()=>window.__ABILITY_REVEAL_OBSERVATION__??[]);
 
 test('entry tour precedes pre-race effects and choice, then grants reveal once without leaking private cards',async({browser})=>{
   const contexts=await Promise.all([false,true].map(mobile=>browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:900},deviceScaleFactor:1})));
-  const errors:string[]=[],stages:string[]=[];
+  const errors:string[]=[],stages:string[]=[],revealEvents:ObservedReveal[][]=[];
   for(const [index,context] of contexts.entries())await context.addInitScript(reduced=>{localStorage.setItem('magical-athlete:low-quality','true');localStorage.setItem('magical-athlete:animation-speed','4');localStorage.setItem('magical-athlete:reduced-motion',String(reduced));},index===1);
   const pages=await Promise.all(contexts.map(context=>context.newPage()));const [host,guest]=pages as [Page,Page];
   for(const page of pages)page.on('pageerror',error=>errors.push(error.message));
@@ -46,29 +64,48 @@ test('entry tour precedes pre-race effects and choice, then grants reveal once w
       })(),
     ]);
     stages.push('desktop-entry-and-mobile-reduced-entry-before-effects-or-choice');
-    await host.screenshot({path:`${output}/ability-entry-desktop.png`});
+    if(!process.env.CI)await host.screenshot({path:`${output}/ability-entry-desktop.png`});
     await host.getByRole('button',{name:'跳过选手介绍',exact:true}).click();
     await expect(host.getByTestId('race-intro')).toHaveCount(0);await expect(host.getByTestId('board-3d')).toHaveAttribute('data-phase','skill');await expect(host.getByTestId('skill-choice')).toHaveCount(0);
     await expect(host.getByTestId('skill-choice')).toBeVisible();await expect(guest.getByTestId('race-intro')).toHaveCount(0);
     stages.push('skip-entry-preserves-pre-race-effect-then-choice');
+    await Promise.all(pages.map(async page=>{
+      // Install for this document and its forthcoming reload before choosing.
+      await page.addInitScript(installRevealObserver);await page.evaluate(installRevealObserver);
+    }));
     await host.getByTestId('skill-choice').getByRole('button',{name:name('legs'),exact:true}).click();
-    await expect(host.getByTestId('ability-reveal')).toContainText('抽到新能力');
-    await host.screenshot({path:`${output}/ability-grant-desktop.png`});
-    for(const page of pages){
-      const reveal=page.getByTestId('ability-reveal');await expect(reveal).toContainText('抽到新能力');await expect(reveal).toContainText(name('legs'));await expect(reveal).toContainText('能力获得者');await expect(reveal).toContainText('持续至本场结束');
-    }
+    await Promise.all(pages.map(async page=>{
+      await expect.poll(async()=>(await observedReveals(page)).some(record=>record.text.includes('抽到新能力'))).toBe(true);
+      const grant=(await observedReveals(page)).find(record=>record.text.includes('抽到新能力'))!;
+      expect(grant.text).toContain(name('legs'));expect(grant.text).toContain('能力获得者');expect(grant.text).toContain('持续至本场结束');
+    }));
+    if(!process.env.CI)await host.screenshot({path:`${output}/ability-grant-desktop.png`});
     stages.push('confirmed-egg-grant-public-on-both-clients');
     // The next public event is Filmmaker's count; its seven private identities
     // must never become part of this announcement on either browser.
-    for(const page of pages){
-      const reveal=page.getByTestId('ability-reveal');await expect(reveal).toContainText('抽到私人手牌',{timeout:10_000});await expect(reveal).toContainText('7');for(const id of ['blimp','skipper','romantic','genius','gunk'])await expect(reveal).not.toContainText(name(id));
-      await expect(reveal).toHaveCount(0,{timeout:10_000});
-    }
+    const confirmed=application.rooms.get(code).game.logs;
+    const grantId=String(confirmed.find(event=>event.type==='copy'&&event.source==='intro-egg'&&event.cause==='egg')!.id);
+    const filmId=String(confirmed.find(event=>event.type==='draw'&&event.source==='intro-leaf-filmmaker'&&event.cause==='leaf-filmmaker')!.id);
+    await Promise.all(pages.map(async(page,index)=>{
+      await expect.poll(async()=>(await observedReveals(page)).some(record=>record.eventId===filmId),{timeout:10_000}).toBe(true);
+      const records=await observedReveals(page),film=records.find(record=>record.eventId===filmId)!;
+      expect(film.text).toContain('抽到私人手牌');expect(film.text).toMatch(/抽到\s*7\s*张/);
+      for(const id of ['blimp','skipper','romantic','genius','gunk'])expect(film.text).not.toContain(name(id));
+      // Keep appearances rather than a deduplicating Map: replaying the same
+      // event as a second DOM card must fail this assertion on either client.
+      expect(records.map(record=>record.eventId)).toEqual([grantId,filmId]);
+      await expect(page.getByTestId('ability-reveal')).toHaveCount(0,{timeout:10_000});
+      revealEvents[index]=await observedReveals(page);expect(revealEvents[index]!.map(record=>record.eventId)).toEqual([grantId,filmId]);
+    }));
     stages.push('filmmaker-public-count-only-then-reveal-dismissed');
-    publish(()=>{});await expect(host.getByTestId('ability-reveal')).toHaveCount(0);
-    await guest.reload();await expect(guest.locator('.connection.is-online')).toBeVisible();await expect(guest.getByTestId('ability-reveal')).toHaveCount(0);await expect(guest.getByTestId('race-intro')).toHaveCount(0);
+    publish(()=>{});const duplicateVersion=String(application.rooms.get(code).version);
+    await Promise.all(pages.map(async(page,index)=>{
+      await expect(page.locator('.game-shell')).toHaveAttribute('data-room-version',duplicateVersion);
+      await expect(page.getByTestId('ability-reveal')).toHaveCount(0);expect(await observedReveals(page)).toEqual(revealEvents[index]);
+    }));
+    await guest.reload();await expect(guest.locator('.connection.is-online')).toBeVisible();await expect(guest.getByTestId('board-3d')).toHaveAttribute('data-phase','idle');await expect(guest.getByTestId('ability-reveal')).toHaveCount(0);await expect(guest.getByTestId('race-intro')).toHaveCount(0);expect(await observedReveals(guest)).toEqual([]);
     stages.push('duplicate-and-refresh-do-not-replay');
     await host.locator('.floating-racers').getByRole('button',{name:/^蛋，/}).click();const dialog=host.getByRole('dialog',{name:'蛋',exact:true});await expect(dialog.getByRole('region',{name:'现在拥有的能力',exact:true})).toContainText(name('legs'));
     expect(errors).toEqual([]);
-  }finally{writeFileSync(`${output}/ability-intro-stages.json`,JSON.stringify({stages,pageErrors:errors},null,2));await Promise.all(contexts.map(context=>context.close()));}
+  }finally{writeFileSync(`${output}/ability-intro-stages.json`,JSON.stringify({stages,revealEvents,pageErrors:errors},null,2));await Promise.all(contexts.map(context=>context.close()));}
 });

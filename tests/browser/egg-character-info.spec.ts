@@ -124,7 +124,7 @@ test('Egg selected card and ability are public, survive refresh and all team ent
       const dialog = await openEgg(page);
       // Capture the actual pre-fix dialog too, so the first failed assertion
       // documents the old base-card-only behavior in a running game.
-      await page.screenshot({ path: `${output}/egg-info-${['owner', 'opponent', 'spectator-mobile'][index]}.png` });
+      if (!process.env.CI) await page.screenshot({ path: `${output}/egg-info-${['owner', 'opponent', 'spectator-mobile'][index]}.png` });
       await assertCard(dialog, 'legs'); await closeDialog(page);
       await page.reload(); await expect(page.locator('.connection.is-online')).toBeVisible();
       await assertCard(await openEgg(page), 'legs'); await closeDialog(page);
@@ -149,7 +149,7 @@ test('Egg selected card and ability are public, survive refresh and all team ent
     await expect(cleared.getByRole('heading', { name: '本场抽到', exact: true })).toHaveCount(0);
     await expect(cleared.getByRole('heading', { name: '现在拥有的能力', exact: true })).toHaveCount(0);
     await expect(cleared).not.toContainText(character('legs').ability);
-    await pair.host.screenshot({ path: `${output}/egg-info-next-race-cleared.png` });
+    if (!process.env.CI) await pair.host.screenshot({ path: `${output}/egg-info-next-race-cleared.png` });
   } finally { await Promise.all(pair.contexts.map(context => context.close())); }
 });
 
@@ -165,7 +165,7 @@ test('Egg keeps its chosen Copycat card while publicly showing the changing lead
     });
     for (const [index, page] of pair.pages.entries()) {
       const dialog = await openEgg(page); await assertCard(dialog, 'copycat', 'hare');
-      if (index === 2) await page.screenshot({ path: `${output}/egg-copycat-current-ability-mobile.png` });
+      if (!process.env.CI && index === 2) await page.screenshot({ path: `${output}/egg-copycat-current-ability-mobile.png` });
       await closeDialog(page); await page.reload();
       await assertCard(await openEgg(page), 'copycat', 'hare'); await closeDialog(page);
     }
@@ -224,7 +224,7 @@ test('current ability layout keeps Null, temporary grants and separate same-card
       expect(layout.width).toBeLessThanOrEqual(layout.client);
       expect((await active.boundingBox())!.y).toBeLessThan(390);
       await expect(dialog).not.toContainText(character('romantic').nameZh);
-      await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop-'+index}-null.png`});
+      if (!process.env.CI) await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop-'+index}-null.png`});
       await dialog.getByRole('button',{name:'查看本场实例2的玩家与能力'}).click();
       await expect(active).toContainText(character('legs').ability);await expect(active.locator('[data-power-id="kraken"]')).toHaveCount(0);
       await closeDialog(page);
@@ -235,7 +235,7 @@ test('current ability layout keeps Null, temporary grants and separate same-card
       const dialog=page.getByRole('dialog',{name:'蛋',exact:true}),active=dialog.getByRole('region',{name:'现在拥有的能力',exact:true});
       await expect(active.getByText('当前生效',{exact:true})).toBeVisible();await expect(active).not.toContainText('能力被 Null 禁用');
       await expect(active.locator('[data-power-id="kraken"]')).toHaveCount(1);
-      if(index!==1)await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop'}-active.png`});
+      if(!process.env.CI&&index!==1)await page.screenshot({path:`${output}/ability-priority-${index===2?'mobile':'desktop'}-active.png`});
       await closeDialog(page);
     }
     expect(errors).toEqual([]);
