@@ -1,0 +1,639 @@
+{
+  "generator": "Dots / Blender 4.3.2",
+  "up": "+Y",
+  "forward": "+Z",
+  "portraitMethod": "Transparent Eevee render of the corresponding 3D model",
+  "animationMethod": "Whole-model breathing, bounce and squash; no skeletal limb animation",
+  "models": [
+    {
+      "id": "wurstii-bart-simpson",
+      "nameZh": "巴特·辛普森",
+      "node": "toy_wurstii-bart-simpson",
+      "model": "/models/wurstii/wurstii-bart-simpson.glb",
+      "portrait": "/avatars/wurstii/wurstii-bart-simpson.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-bart-simpson.blend",
+      "bytes": 155684,
+      "triangles": 3978,
+      "draws": 1,
+      "bounds": [
+        0.3860644996166229,
+        0.8799999952316284,
+        0.24791397154331207
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-bucky-ohare",
+      "nameZh": "巴基兔",
+      "node": "toy_wurstii-bucky-ohare",
+      "model": "/models/wurstii/wurstii-bucky-ohare.glb",
+      "portrait": "/avatars/wurstii/wurstii-bucky-ohare.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-bucky-ohare.blend",
+      "bytes": 168732,
+      "triangles": 4364,
+      "draws": 1,
+      "bounds": [
+        0.4105469584465027,
+        0.8799999952316284,
+        0.2650153338909149
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-bullet-bill",
+      "nameZh": "炮弹刺客",
+      "node": "toy_wurstii-bullet-bill",
+      "model": "/models/wurstii/wurstii-bullet-bill.glb",
+      "portrait": "/avatars/wurstii/wurstii-bullet-bill.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-bullet-bill.blend",
+      "bytes": 94604,
+      "triangles": 2484,
+      "draws": 1,
+      "bounds": [
+        0.5238806009292603,
+        0.34656721353530884,
+        0.5400000214576721
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-chip-n-dale",
+      "nameZh": "奇奇与蒂蒂",
+      "node": "toy_wurstii-chip-n-dale",
+      "model": "/models/wurstii/wurstii-chip-n-dale.glb",
+      "portrait": "/avatars/wurstii/wurstii-chip-n-dale.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-chip-n-dale.blend",
+      "bytes": 300512,
+      "triangles": 7752,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.5833213925361633,
+        0.24920377135276794
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-diddy-kong",
+      "nameZh": "迪迪刚",
+      "node": "toy_wurstii-diddy-kong",
+      "model": "/models/wurstii/wurstii-diddy-kong.glb",
+      "portrait": "/avatars/wurstii/wurstii-diddy-kong.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-diddy-kong.blend",
+      "bytes": 180364,
+      "triangles": 4536,
+      "draws": 1,
+      "bounds": [
+        0.462860107421875,
+        0.8799999952316284,
+        0.3883433938026428
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-dixie-kong",
+      "nameZh": "迪克西刚",
+      "node": "toy_wurstii-dixie-kong",
+      "model": "/models/wurstii/wurstii-dixie-kong.glb",
+      "portrait": "/avatars/wurstii/wurstii-dixie-kong.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-dixie-kong.blend",
+      "bytes": 212312,
+      "triangles": 5276,
+      "draws": 1,
+      "bounds": [
+        0.43705740571022034,
+        0.8799999952316284,
+        0.338817834854126
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-dr-wily",
+      "nameZh": "威利博士",
+      "node": "toy_wurstii-dr-wily",
+      "model": "/models/wurstii/wurstii-dr-wily.glb",
+      "portrait": "/avatars/wurstii/wurstii-dr-wily.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-dr-wily.blend",
+      "bytes": 132360,
+      "triangles": 3320,
+      "draws": 1,
+      "bounds": [
+        0.46725666522979736,
+        0.8800000548362732,
+        0.2647787630558014
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-dry-bones",
+      "nameZh": "枯骨龟",
+      "node": "toy_wurstii-dry-bones",
+      "model": "/models/wurstii/wurstii-dry-bones.glb",
+      "portrait": "/avatars/wurstii/wurstii-dry-bones.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-dry-bones.blend",
+      "bytes": 199184,
+      "triangles": 5112,
+      "draws": 1,
+      "bounds": [
+        0.4606242775917053,
+        0.8799999952316284,
+        0.40631577372550964
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-eric",
+      "nameZh": "埃里克",
+      "node": "toy_wurstii-eric",
+      "model": "/models/wurstii/wurstii-eric.glb",
+      "portrait": "/avatars/wurstii/wurstii-eric.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-eric.blend",
+      "bytes": 275348,
+      "triangles": 7212,
+      "draws": 1,
+      "bounds": [
+        0.46883711218833923,
+        0.8799999952316284,
+        0.26790693402290344
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-falco-lombardi",
+      "nameZh": "法尔科",
+      "node": "toy_wurstii-falco-lombardi",
+      "model": "/models/wurstii/wurstii-falco-lombardi.glb",
+      "portrait": "/avatars/wurstii/wurstii-falco-lombardi.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-falco-lombardi.blend",
+      "bytes": 122852,
+      "triangles": 3052,
+      "draws": 1,
+      "bounds": [
+        0.4246402680873871,
+        0.8799999952316284,
+        0.3486943244934082
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-frogger",
+      "nameZh": "过河蛙",
+      "node": "toy_wurstii-frogger",
+      "model": "/models/wurstii/wurstii-frogger.glb",
+      "portrait": "/avatars/wurstii/wurstii-frogger.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-frogger.blend",
+      "bytes": 170408,
+      "triangles": 4328,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.39694249629974365,
+        0.4101738929748535
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-hoagie",
+      "nameZh": "霍吉",
+      "node": "toy_wurstii-hoagie",
+      "model": "/models/wurstii/wurstii-hoagie.glb",
+      "portrait": "/avatars/wurstii/wurstii-hoagie.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-hoagie.blend",
+      "bytes": 225556,
+      "triangles": 6076,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.7812000513076782,
+        0.2916000485420227
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-jason-vorhees",
+      "nameZh": "杰森",
+      "node": "toy_wurstii-jason-vorhees",
+      "model": "/models/wurstii/wurstii-jason-vorhees.glb",
+      "portrait": "/avatars/wurstii/wurstii-jason-vorhees.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-jason-vorhees.blend",
+      "bytes": 143928,
+      "triangles": 3616,
+      "draws": 1,
+      "bounds": [
+        0.4768282175064087,
+        0.8799999952316284,
+        0.24229076504707336
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-knuckles",
+      "nameZh": "纳克鲁斯",
+      "node": "toy_wurstii-knuckles",
+      "model": "/models/wurstii/wurstii-knuckles.glb",
+      "portrait": "/avatars/wurstii/wurstii-knuckles.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-knuckles.blend",
+      "bytes": 284920,
+      "triangles": 6964,
+      "draws": 1,
+      "bounds": [
+        0.5138102769851685,
+        0.8800000548362732,
+        0.39954501390457153
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-lakitu",
+      "nameZh": "朱盖木",
+      "node": "toy_wurstii-lakitu",
+      "model": "/models/wurstii/wurstii-lakitu.glb",
+      "portrait": "/avatars/wurstii/wurstii-lakitu.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-lakitu.blend",
+      "bytes": 173016,
+      "triangles": 4404,
+      "draws": 1,
+      "bounds": [
+        0.5399999618530273,
+        0.8155437111854553,
+        0.4068604111671448
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-lizzie",
+      "nameZh": "莉齐",
+      "node": "toy_wurstii-lizzie",
+      "model": "/models/wurstii/wurstii-lizzie.glb",
+      "portrait": "/avatars/wurstii/wurstii-lizzie.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-lizzie.blend",
+      "bytes": 175248,
+      "triangles": 4152,
+      "draws": 1,
+      "bounds": [
+        0.5228526592254639,
+        0.8618568181991577,
+        0.5399999618530273
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-magikarp",
+      "nameZh": "鲤鱼王",
+      "node": "toy_wurstii-magikarp",
+      "model": "/models/wurstii/wurstii-magikarp.glb",
+      "portrait": "/avatars/wurstii/wurstii-magikarp.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-magikarp.blend",
+      "bytes": 134524,
+      "triangles": 3444,
+      "draws": 1,
+      "bounds": [
+        0.5399999618530273,
+        0.5887951254844666,
+        0.39198794960975647
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-mario",
+      "nameZh": "马力欧",
+      "node": "toy_wurstii-mario",
+      "model": "/models/wurstii/wurstii-mario.glb",
+      "portrait": "/avatars/wurstii/wurstii-mario.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-mario.blend",
+      "bytes": 278204,
+      "triangles": 7504,
+      "draws": 1,
+      "bounds": [
+        0.536309003829956,
+        0.8799999952316284,
+        0.3285837173461914
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-mr-game-and-watch",
+      "nameZh": "游戏与观看先生",
+      "node": "toy_wurstii-mr-game-and-watch",
+      "model": "/models/wurstii/wurstii-mr-game-and-watch.glb",
+      "portrait": "/avatars/wurstii/wurstii-mr-game-and-watch.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-mr-game-and-watch.blend",
+      "bytes": 150452,
+      "triangles": 3808,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.6627272367477417,
+        0.1402597278356552
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-olaf",
+      "nameZh": "奥拉夫",
+      "node": "toy_wurstii-olaf",
+      "model": "/models/wurstii/wurstii-olaf.glb",
+      "portrait": "/avatars/wurstii/wurstii-olaf.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-olaf.blend",
+      "bytes": 250396,
+      "triangles": 6492,
+      "draws": 1,
+      "bounds": [
+        0.5399999618530273,
+        0.7787195444107056,
+        0.23707315325737
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-pitfall-harry",
+      "nameZh": "探险家哈利",
+      "node": "toy_wurstii-pitfall-harry",
+      "model": "/models/wurstii/wurstii-pitfall-harry.glb",
+      "portrait": "/avatars/wurstii/wurstii-pitfall-harry.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-pitfall-harry.blend",
+      "bytes": 175664,
+      "triangles": 4608,
+      "draws": 1,
+      "bounds": [
+        0.40101268887519836,
+        0.8799999952316284,
+        0.27105486392974854
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-simon-belmont",
+      "nameZh": "西蒙·贝尔蒙特",
+      "node": "toy_wurstii-simon-belmont",
+      "model": "/models/wurstii/wurstii-simon-belmont.glb",
+      "portrait": "/avatars/wurstii/wurstii-simon-belmont.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-simon-belmont.blend",
+      "bytes": 217604,
+      "triangles": 5592,
+      "draws": 1,
+      "bounds": [
+        0.4930305778980255,
+        0.8799999952316284,
+        0.29781660437583923
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-tails",
+      "nameZh": "塔尔斯",
+      "node": "toy_wurstii-tails",
+      "model": "/models/wurstii/wurstii-tails.glb",
+      "portrait": "/avatars/wurstii/wurstii-tails.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-tails.blend",
+      "bytes": 165200,
+      "triangles": 4260,
+      "draws": 1,
+      "bounds": [
+        0.5399999618530273,
+        0.8337970972061157,
+        0.36383873224258423
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-yoshi",
+      "nameZh": "耀西",
+      "node": "toy_wurstii-yoshi",
+      "model": "/models/wurstii/wurstii-yoshi.glb",
+      "portrait": "/avatars/wurstii/wurstii-yoshi.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-yoshi.blend",
+      "bytes": 168236,
+      "triangles": 4348,
+      "draws": 1,
+      "bounds": [
+        0.4072612524032593,
+        0.8547115921974182,
+        0.5400000214576721
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-rollercoaster-tycoon-guest",
+      "nameZh": "过山车乐园游客",
+      "node": "toy_wurstii-rollercoaster-tycoon-guest",
+      "model": "/models/wurstii/wurstii-rollercoaster-tycoon-guest.glb",
+      "portrait": "/avatars/wurstii/wurstii-rollercoaster-tycoon-guest.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-rollercoaster-tycoon-guest.blend",
+      "bytes": 153432,
+      "triangles": 4008,
+      "draws": 1,
+      "bounds": [
+        0.45913031697273254,
+        0.8799999952316284,
+        0.2984347641468048
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-spot",
+      "nameZh": "斯波特",
+      "node": "toy_wurstii-spot",
+      "model": "/models/wurstii/wurstii-spot.glb",
+      "portrait": "/avatars/wurstii/wurstii-spot.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-spot.blend",
+      "bytes": 132480,
+      "triangles": 3376,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.5194936394691467,
+        0.1640506386756897
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-rockford",
+      "nameZh": "洛克福德",
+      "node": "toy_wurstii-rockford",
+      "model": "/models/wurstii/wurstii-rockford.glb",
+      "portrait": "/avatars/wurstii/wurstii-rockford.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-rockford.blend",
+      "bytes": 133976,
+      "triangles": 3404,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.8230645060539246,
+        0.3222580552101135
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-burt",
+      "nameZh": "伯特",
+      "node": "toy_wurstii-burt",
+      "model": "/models/wurstii/wurstii-burt.glb",
+      "portrait": "/avatars/wurstii/wurstii-burt.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-burt.blend",
+      "bytes": 146616,
+      "triangles": 3752,
+      "draws": 1,
+      "bounds": [
+        0.4980335533618927,
+        0.8799999952316284,
+        0.3882974088191986
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-piranha-plant",
+      "nameZh": "食人花",
+      "node": "toy_wurstii-piranha-plant",
+      "model": "/models/wurstii/wurstii-piranha-plant.glb",
+      "portrait": "/avatars/wurstii/wurstii-piranha-plant.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-piranha-plant.blend",
+      "bytes": 82564,
+      "triangles": 2052,
+      "draws": 1,
+      "bounds": [
+        0.3815774917602539,
+        0.8800000548362732,
+        0.3082125782966614
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    },
+    {
+      "id": "wurstii-fluffin-puffins",
+      "nameZh": "蓬蓬海鹦",
+      "node": "toy_wurstii-fluffin-puffins",
+      "model": "/models/wurstii/wurstii-fluffin-puffins.glb",
+      "portrait": "/avatars/wurstii/wurstii-fluffin-puffins.png",
+      "editableSource": "assets/blender/wurstii/blend/wurstii-fluffin-puffins.blend",
+      "bytes": 280332,
+      "triangles": 7700,
+      "draws": 1,
+      "bounds": [
+        0.5400000214576721,
+        0.46656474471092224,
+        0.3897125720977783
+      ],
+      "animations": [
+        "idle",
+        "move",
+        "skill"
+      ]
+    }
+  ]
+}

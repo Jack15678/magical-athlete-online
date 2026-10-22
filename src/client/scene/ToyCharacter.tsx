@@ -127,14 +127,13 @@ function Sculpture({ characterId, color, lowQuality = false, castShadow = true, 
 export function ToyCharacter({ characterId, color, lowQuality = false, castShadow = true, form, mount, animation }: ToyCharacterProps) {
   const geometry = toyResources.baseGeometry(lowQuality);
   const modelId = characterId === 'bite-mark' && form === 'were-mouth' ? 'bite-mark-were' : characterId;
-  const url = secondWind.has(characterId) ? `/models/second-wind/${modelId}.glb?v=second-wind-20261021` : lowQuality ? ECONOMY_URL : MODEL_URL;
+  const url = wurstii.has(characterId) ? `/models/wurstii/${modelId}.glb?v=wurstii-20261022` : secondWind.has(characterId) ? `/models/second-wind/${modelId}.glb?v=second-wind-20261021` : lowQuality ? ECONOMY_URL : MODEL_URL;
   return <group name={`racer-model-${characterId}`}>
     <mesh geometry={geometry.body} material={toyResources.baseMaterial(color, lowQuality)} receiveShadow={!lowQuality} castShadow={castShadow && !lowQuality} dispose={null} />
     <mesh geometry={geometry.cap} material={toyResources.baseMaterial(color, lowQuality, true)} receiveShadow={!lowQuality} dispose={null} />
     {mount && <group position={[0, .164, 0]}><Sculpture characterId="hog-knight-hog" rootName="toy_hog-knight-hog" url="/models/second-wind/hog-knight-hog.glb?v=second-wind-20261021" color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} /></group>}
     <group position={[0, .164 + (mount ? .34 : 0), mount ? -.07 : 0]} scale={mount ? .7 : 1}>
-      {/* shortcut: Wurstii uses the named procedural pawn until dedicated models are available; never show another card's sculpture. */}
-      {wurstii.has(characterId) ? <LoadingToy color={color} castShadow={castShadow && !lowQuality} /> : <Sculpture url={url} rootName={`toy_${modelId}`} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} />}
+      <Sculpture url={url} rootName={`toy_${modelId}`} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} />
     </group>
   </group>;
 }

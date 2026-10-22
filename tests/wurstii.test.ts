@@ -33,7 +33,7 @@ test('Wurstii A contains exactly the selected 30 distinct named cards and playab
   assert.equal(new Set(CHARACTERS.map(c=>c.id)).size,102);
   assert.equal(new Set(WURSTII_CHARACTERS.map(c=>c.nameZh)).size,30);
   assert.deepEqual(['original','second-wind','mixed','wurstii','all'].map(p=>characterPool(p as any).length),[36,36,72,66,102]);
-  for(const c of WURSTII_CHARACTERS){assert.match(c.nameZh,/[\u4e00-\u9fff]/);assert(c.ability&&c.sources.length);assert.equal(c.edition,'wurstii');assert.equal(c.verified,false);assert.match(renderToStaticMarkup(createElement(Avatar,{id:c.id})),new RegExp(c.nameZh.slice(0,2)));}
+  for(const c of WURSTII_CHARACTERS){assert.match(c.nameZh,/[\u4e00-\u9fff]/);assert(c.ability&&c.sources.length);assert.equal(c.edition,'wurstii');assert.equal(c.verified,false);assert.ok(renderToStaticMarkup(createElement(Avatar,{id:c.id})).includes(`/avatars/wurstii/${c.id}.png`));}
 });
 test('WA01 Bart targets a Racer, retains the choice on reload and only boosts while it is ahead',()=>{
   let s=standard('bart-simpson');racer(s,1).playerId='p0';begin(s);
