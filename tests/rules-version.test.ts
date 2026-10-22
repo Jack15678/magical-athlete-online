@@ -39,3 +39,35 @@ test('SQLite恢复会持久锁定旧规则且不会悄悄更新到新规则',()=
     assert.equal(store.load()[0]!.game.rulesVersion,LEGACY_RULES_VERSION);
   }finally{store.close();}
 });
+
+test('新旧规则的每批选秀最后一张自动分配，关闭超时和恢复存档也无需玩家确认',()=>{
+  for(const version of [CURRENT_RULES_VERSION,LEGACY_RULES_VERSION])for(const count of [2,3,4,5,6,7,8]){
+    let current=room();
+    current.maxPlayers=count;
+    current.game.players=Array.from({length:count},(_,seat)=>({...structuredClone(players[0]!),id:`p${seat}`,seat}));
+    current.game.rulesVersion=version;
+    current=reduceRoomAction(current,'p0',{type:'start'},{now:2,rematchSeed:0});
+    for(const batch of [0,1]){
+      assert.equal(current.game.draft!.batch,batch);
+      while(current.game.draft!.market.length>1){
+        assert.equal(immediateRoomAction(current,current.updatedAt),undefined);
+        const pick=automaticRoomAction(current.game)!;
+        current=reduceRoomAction(current,pick.playerId,pick.action,{now:current.updatedAt+1,rematchSeed:0});
+      }
+      current=JSON.parse(JSON.stringify(current)) as Room;
+      const draft=current.game.draft!,recipient=draft.order[draft.cursor]!,card=draft.market[0]!;
+      const previousHand=[...current.game.players.find(p=>p.id===recipient)!.hand];
+      assert.equal(current.deadline,null);
+      const automatic=immediateRoomAction(current,current.updatedAt);
+      assert.deepEqual(automatic,{playerId:recipient,action:{type:'draft',characterId:card},reason:'system'});
+      current=reduceRoomAction(current,automatic!.playerId,automatic!.action,{now:current.updatedAt+1,rematchSeed:0});
+      assert.deepEqual(current.game.players.find(p=>p.id===recipient)!.hand,[...previousHand,card]);
+      assert.equal(current.game.phase,batch===0?'draft':'selection');
+      assert.equal(immediateRoomAction(current,current.updatedAt),undefined);
+    }
+    const hands=current.game.players.flatMap(p=>p.hand);
+    assert(current.game.players.every(p=>p.hand.length===(count===2?8:4)));
+    assert.equal(new Set(hands).size,hands.length);
+    assert.equal(current.game.logs.some(event=>event.type==='timeout'),false);
+  }
+});

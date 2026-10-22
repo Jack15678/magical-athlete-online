@@ -20,5 +20,6 @@ export function automaticRoomAction(game: GameState) {
 }
 export function systemRoomAction(game: GameState) {
   if (!hasRoomRules(game)) return;
+  if (game.mode !== 'practice' && game.phase === 'draft' && game.draft?.market.length === 1) return automaticRoomAction(game);
   return roomRules(game).systemAction(game);
 }

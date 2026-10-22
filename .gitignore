@@ -16,3 +16,6 @@ tmp/
 .dev.vars*
 .worker-config*
 playwright-report-relay/
+/.dev-memory/
+/.codex/hooks.json
+/docs/dev-memory/
