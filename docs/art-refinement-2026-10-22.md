@@ -2,6 +2,8 @@
 
 日期：2026-10-22。均在当前仓库和实际 Edge WebGL 页面实施，未部署。浏览器截图、Blender模型检查图分别保存，不能互相替代。
 
+减少动态模式后续改为共享原几何和材质的静态bind-pose实例，省去SkinnedMesh与AnimationMixer；重新启用动态仍从原始GLB重建独立骨骼。7项真实模型逐顶点、包围盒、资源共享和恢复动作检查通过。低档另外移除跑道、草地及底座的凹凸/粗糙度贴图，并使用无clearcoat的金色Standard材质；保留颜色纹理、几何及高档效果。下方性能表采于这两项优化前，远端软件渲染检查结果单独见PR Checks。
+
 ## 本次改动
 
 用户的[场景参考](evidence/refinement-20261022/user-miniature-stadium-reference.png)与[嘴部反馈](evidence/refinement-20261022/user-mouth-feedback.png)已保存在仓库。先完成跑道段、香蕉、起点门样板并与参考对照，再推广全场。最终实际网页：[香蕉与前三格](qa/refinement-20261022/toy-reference-final-reference-banana-lane-closer.png)、[完整起点门](qa/refinement-20261022/toy-reference-final-reference-banana-complete-start-gate.png)、[全场](qa/refinement-20261022/toy-reference-final-reference-stadium-overview.png)。

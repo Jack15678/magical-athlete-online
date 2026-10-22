@@ -60,9 +60,12 @@ function courseGeometry() {
   geometry.rotateX(Math.PI/2);geometry.computeVertexNormals();return geometry;
 }
 
-function useKit() {
+function useKit(lowQuality: boolean) {
   const kit = useMemo(() => {
     const grain=mouldGrain(),lawn=lawnTexture();
+    // Low quality retains the albedo and sculpture, but avoids derivative-based
+    // bump sampling across the large road, turf and base surfaces.
+    const bumpMap=lowQuality?null:grain;
     return {
     grain,lawn,baseContact:baseContactTexture(),course:courseGeometry(),
     tile: new RoundedBoxGeometry(1.99, .115, 1.99, 2, .035),
@@ -75,16 +78,18 @@ function useKit() {
     deck: new RoundedBoxGeometry(WIDTH, .3, DEPTH, 5, .145),
     cylinder: new THREE.CylinderGeometry(1, 1, 1, 24),
     sphere: new THREE.SphereGeometry(1, 20, 14),
-    plastic: new THREE.MeshStandardMaterial({ color: C.cream, roughness: .65, bumpMap:grain,bumpScale:.009, metalness: 0 }),
+    plastic: new THREE.MeshStandardMaterial({ color: C.cream, roughness: .65, bumpMap,bumpScale:.009, metalness: 0 }),
     mint: new THREE.MeshStandardMaterial({ color: C.mint, roughness: .72 }),
     dark: new THREE.MeshStandardMaterial({ color: C.darkMint, roughness: .66 }),
     coral: new THREE.MeshStandardMaterial({ color: C.coral, roughness: .48 }),
-    wood: new THREE.MeshStandardMaterial({ color: '#f7e7c9', roughness: .56, bumpMap:grain,bumpScale:.007 }),
-    turf: new THREE.MeshStandardMaterial({ color: '#fffdf0',map:lawn,roughness: .96,bumpMap:grain,bumpScale:.02 }),
-    turfShade: new THREE.MeshStandardMaterial({ color: '#e3eabf',map:lawn,roughness:.98,bumpMap:grain,bumpScale:.026 }),
-    gold: new THREE.MeshPhysicalMaterial({ color: '#f6be43', roughness: .22, metalness: .72,clearcoat:.22 }),
+    wood: new THREE.MeshStandardMaterial({ color: '#f7e7c9', roughness: .56, bumpMap,bumpScale:.007 }),
+    turf: new THREE.MeshStandardMaterial({ color: '#fffdf0',map:lawn,roughness: .96,bumpMap,bumpScale:.02 }),
+    turfShade: new THREE.MeshStandardMaterial({ color: '#e3eabf',map:lawn,roughness:.98,bumpMap,bumpScale:.026 }),
+    gold: lowQuality
+      ? new THREE.MeshStandardMaterial({ color: '#f6be43', roughness: .22, metalness: .72 })
+      : new THREE.MeshPhysicalMaterial({ color: '#f6be43', roughness: .22, metalness: .72,clearcoat:.22 }),
     ink: new THREE.MeshStandardMaterial({ color: C.ink, roughness: .65 }),
-  };}, []);
+  };}, [lowQuality]);
   useEffect(() => () => Object.values(kit).forEach(resource => resource.dispose()), [kit]);
   return kit;
 }
@@ -120,7 +125,7 @@ function printTexture(index: number) {
 }
 
 /** Reused geometry, shallow moulded caps and printed ink; the route remains the engine's route. */
-export function DioramaTile({ index, track, triggered, kit }: { index: number; track: RoomView['track']; triggered: boolean; kit: Kit }) {
+export function DioramaTile({ index, track, triggered, kit, lowQuality }: { index: number; track: RoomView['track']; triggered: boolean; kit: Kit; lowQuality: boolean }) {
   const special = TRACKS[track].specials[index];
   const point = boardPoint(index, false);
   const next = boardPoint(index + Math.sign(special?.move ?? 1), false);
@@ -128,7 +133,7 @@ export function DioramaTile({ index, track, triggered, kit }: { index: number; t
   const texture = useMemo(() => special ? specialTileTexture(special.kind, special.move, index, angle) : printTexture(index), [index, special?.kind, special?.move, angle]);
   useEffect(() => () => texture.dispose(), [texture]);
   const color = index === 0 ? C.darkMint : index === 30 ? C.coral : special?.kind === 'star' ? '#f1c552' : special?.kind === 'trip' ? C.coral : special?.kind === 'arrow' ? (special.move ?? 0) < 0 ? '#b69bd1' : '#74c7af' : '#efd29c';
-  const top = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: .76, roughnessMap: kit.grain,bumpMap:kit.grain,bumpScale:.012, emissive: color }), [color, kit.grain]);
+  const top = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: .76, roughnessMap: lowQuality?null:kit.grain,bumpMap:lowQuality?null:kit.grain,bumpScale:.012, emissive: color }), [color, kit.grain, lowQuality]);
   useEffect(() => () => top.dispose(), [top]);
   useFrame(({ clock }) => { top.emissiveIntensity = triggered ? .16 + Math.sin(clock.elapsedTime * 8) * .09 : 0; });
   const extended = index === 0, center = extended ? -START_EXTENSION / 2 : 0;
@@ -265,7 +270,7 @@ function LawnDetails({lowQuality,kit}:{lowQuality:boolean;kit:Kit}) {
 }
 
 export function DioramaStadium({ compact, track, lowQuality, beat, racers }: { compact: boolean; track: RoomView['track']; lowQuality: boolean; beat?: PresentationBeat; racers: Racer[] }) {
-  const kit = useKit();
+  const kit = useKit(lowQuality);
   const triggered = new Set(beat?.motions.map(motion => motion.to) ?? []);
   if (beat && ['score', 'trip'].includes(beat.kind)) for (const racer of racers) if (beat.targets.includes(racer.id) || beat.source === racer.id) triggered.add(racer.position);
   return <group rotation={[0, compact ? -Math.PI / 2 : 0, 0]}>
@@ -278,7 +283,7 @@ export function DioramaStadium({ compact, track, lowQuality, beat, racers }: { c
     <Box kit={kit} position={[2.4,.154,-.05]} scale={[6.15,.022,2.08]} material={kit.turfShade} shadow={false}/>
     <mesh geometry={kit.course} material={kit.dark} position={[0,.19,0]} receiveShadow castShadow dispose={null}/>
     <LawnDetails lowQuality={lowQuality} kit={kit}/>
-    {Array.from({ length: 31 }, (_, index) => <DioramaTile key={index} {...{ index, track, kit }} triggered={triggered.has(index)} />)}
+    {Array.from({ length: 31 }, (_, index) => <DioramaTile key={index} {...{ index, track, kit, lowQuality }} triggered={triggered.has(index)} />)}
     <Gate kit={kit} /><Gate finish kit={kit} /><CourseDetails kit={kit} lowQuality={lowQuality} />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.925, 0]} receiveShadow><planeGeometry args={[240, 240]} /><meshStandardMaterial color="#e3dcca" roughness={1} /></mesh>
   </group>;

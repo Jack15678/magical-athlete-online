@@ -2,11 +2,11 @@ import { Component, Suspense, useEffect, useMemo, useSyncExternalStore, type Rea
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { AnimationMixer, LoopOnce, LoopRepeat, Mesh, MeshStandardMaterial, type AnimationClip, type Group } from 'three';
-import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { SECOND_WIND_CHARACTERS } from '../../shared/second-wind.js';
 import { toyResources } from './pawn-materials.js';
 import { AssetRecovery } from './asset-recovery.js';
 import { expansionModels } from './expansion-models.js';
+import { cloneToyModel } from './toy-model-instance.js';
 
 export interface ToyCharacterProps {
   characterId: string;
@@ -78,7 +78,7 @@ function CharacterModel({ scene, recovery, characterId, lowQuality = false, cast
   useEffect(() => { recovery.success(); }, [scene, recovery]);
   const model = useMemo(() => {
     const source = scene.getObjectByName(rootName ?? `toy_${characterId}`) ?? scene.children[0];
-    const instance = cloneSkeleton(source!) as Group;
+    const instance = cloneToyModel(source!, motionEnabled);
     instance.traverse(object => {
       if (object instanceof Mesh) {
         object.castShadow = castShadow;
@@ -90,18 +90,18 @@ function CharacterModel({ scene, recovery, characterId, lowQuality = false, cast
       }
     });
     return instance;
-  }, [scene, characterId, rootName, castShadow, lowQuality]);
-  const mixer = useMemo(() => new AnimationMixer(model), [model]);
+  }, [scene, characterId, rootName, castShadow, lowQuality, motionEnabled]);
+  const mixer = useMemo(() => motionEnabled ? new AnimationMixer(model) : null, [model, motionEnabled]);
   useEffect(() => {
-    if (!motionEnabled) { mixer.stopAllAction(); return; }
+    if (!mixer) return;
     const clip = animations.find(clip => clip.name === `${characterId}-${animation}`) ?? animations.find(clip => clip.name === animation);
     if (!clip) return;
     const once = !['idle','move'].includes(animation);
     const action = mixer.clipAction(clip); action.reset(); action.setLoop(once ? LoopOnce : LoopRepeat, once ? 1 : Infinity); action.clampWhenFinished = true; action.fadeIn(.12); action.play(); mixer.update(0);
     return () => { action.fadeOut(.1); };
-  }, [mixer, animations, animation, characterId, motionEnabled]);
-  useEffect(() => () => { mixer.stopAllAction(); mixer.uncacheRoot(model); }, [mixer, model]);
-  useFrame((_, delta) => { if (motionEnabled && animations.length) mixer.update(Math.min(delta, .1)); });
+  }, [mixer, animations, animation, characterId]);
+  useEffect(() => () => { mixer?.stopAllAction(); mixer?.uncacheRoot(model); }, [mixer, model]);
+  useFrame((_, delta) => { if (mixer && animations.length) mixer.update(Math.min(delta, .1)); });
   // Source geometry belongs to useGLTF; satin palette variants to toyResources.
   return <primitive object={model} dispose={null} />;
 }
