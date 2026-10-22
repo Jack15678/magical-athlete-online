@@ -10,7 +10,7 @@ import { publicCopyCardIds } from './character-info.js';
  * Time and entropy are explicit inputs. This module imports no Node APIs. */
 export function validateMetadata(meta: RelayMetadata): void {
   if (!meta) throw Error('房间元数据无效。');
-  if (meta.characterPool !== undefined && !['original','second-wind','mixed'].includes(meta.characterPool)) throw Error('角色牌池无效。');
+  if (meta.characterPool !== undefined && !['original','second-wind','mixed','wurstii','all'].includes(meta.characterPool)) throw Error('角色牌池无效。');
   if (meta.mode !== undefined && !['multiplayer','practice','ai'].includes(meta.mode)) throw Error('比赛模式无效。');
   if (!/^[A-Z2-9]{6}$/.test(meta.code) || !Number.isSafeInteger(meta.createdAt) || meta.createdAt < 0) throw Error('房间元数据无效。');
   if (!Number.isInteger(meta.maxPlayers) || meta.maxPlayers < (meta.mode==='practice'?1:2) || meta.maxPlayers > 8) throw Error('房间人数范围无效。');

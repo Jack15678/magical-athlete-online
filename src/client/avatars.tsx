@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { SECOND_WIND_CHARACTERS } from '../shared/second-wind.js';
+import { WURSTII_CHARACTERS } from '../shared/wurstii.js';
 import { SECOND_WIND_PORTRAITS_A } from './second-wind-portraits-a.js';
 import { SECOND_WIND_PORTRAITS_B } from './second-wind-portraits-b.js';
 import { SECOND_WIND_PORTRAITS_C } from './second-wind-portraits-c.js';
@@ -50,7 +51,11 @@ const portraits: Record<string, ReactNode> = {
 };
 
 const secondWindIds = new Set(SECOND_WIND_CHARACTERS.map(character => character.id));
-const allPortraits = { ...portraits, ...SECOND_WIND_PORTRAITS_A, ...SECOND_WIND_PORTRAITS_B, ...SECOND_WIND_PORTRAITS_C };
+// shortcut: name badges identify the new cards until dedicated character artwork is commissioned.
+const wurstiiPortraits = Object.fromEntries(WURSTII_CHARACTERS.map((card,index)=>[card.id,
+  <><rect x="14" y="12" width="92" height="96" rx="22" fill={[yellow,pink,green,paper][index%4]} /><path d="M14 42h92" /><circle cx="29" cy="27" r="5" fill={red} /><path d="M42 27h49" /><text x="60" y="77" textAnchor="middle" stroke="none" fill={ink} fontSize="28" fontWeight="700">{card.nameZh.slice(0,2)}</text><text x="60" y="98" textAnchor="middle" stroke="none" fill={ink} fontSize="11">{`WA-${String(index+1).padStart(2,'0')}`}</text></>
+]));
+const allPortraits: Record<string, ReactNode> = { ...portraits, ...SECOND_WIND_PORTRAITS_A, ...SECOND_WIND_PORTRAITS_B, ...SECOND_WIND_PORTRAITS_C, ...wurstiiPortraits };
 export const AVATAR_IDS = Object.keys(allPortraits);
 export function Avatar({ id, className = '' }: { id: string; className?: string }) {
   return <svg className={`avatar${secondWindIds.has(id) ? ' sw-avatar' : ''} ${className}`} viewBox="0 0 120 120" fill="none" stroke={ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{allPortraits[id] ?? <><circle cx="60" cy="58" r="42" fill={yellow} /><Eyes /><path d="M43 79q17 16 35-2" /></>}</svg>;

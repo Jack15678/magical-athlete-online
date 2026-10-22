@@ -62,7 +62,7 @@ export class Rooms {
     if(!['multiplayer','practice','ai'].includes(mode))throw Error('比赛模式无效。');
     if(mode==='ai'&&(!Number.isInteger(aiCount)||aiCount<1||aiCount>7))throw Error('AI人数需为1～7。');
     if(mode!=='multiplayer')maxPlayers=mode==='practice'?1:aiCount+1;
-    if(!['original','second-wind','mixed'].includes(characterPool))throw Error('角色牌池无效。');
+    if(!['original','second-wind','mixed','wurstii','all'].includes(characterPool))throw Error('角色牌池无效。');
     const p = this.player(uniqueNickname(name,[]),0); const now=this.now();
     const players=[p,...Array.from({length:mode==='ai'?aiCount:0},(_,i)=>({...this.player(`电脑${i+1}`,i+1),isAI:true,ready:true,connected:true}))];
     for(let i=1;i<players.length;i++)players[i]!.name=uniqueNickname(players[i]!.name,players.slice(0,i).map(person=>person.name));

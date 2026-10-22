@@ -105,7 +105,7 @@ export default {
         const input=await body(request);
         if(!only(input,['name','maxPlayers','timeoutSeconds','mode','aiCount','characterPool']))throw new HttpError(400,'请求包含未知字段。');
         const nickname=name(input.name),mode=input.mode??'multiplayer',aiCount=input.aiCount??3,timeoutSeconds=input.timeoutSeconds??120;
-        const characterPool=input.characterPool??'original';if(!['original','second-wind','mixed'].includes(characterPool as string))throw new HttpError(400,'角色牌池无效。');
+        const characterPool=input.characterPool??'original';if(!['original','second-wind','mixed','wurstii','all'].includes(characterPool as string))throw new HttpError(400,'角色牌池无效。');
         if(typeof mode!=='string'||!['multiplayer','practice','ai'].includes(mode))throw new HttpError(400,'比赛模式无效。');
         if(input.aiCount!==undefined&&(!Number.isInteger(aiCount)||(aiCount as number)<1||(aiCount as number)>7))throw new HttpError(400,'AI人数需为1～7。');
         const maxPlayers=mode==='practice'?1:mode==='ai'?(aiCount as number)+1:input.maxPlayers??8;
@@ -372,7 +372,7 @@ export class RoomRelay extends DurableObject<Env> {
           const mode=(input.mode??'multiplayer') as GameMode;
           const bots:StoredMember[]=Array.from({length:mode==='ai'?(input.aiCount as number??3):0},(_,i)=>({id:crypto.randomUUID(),name:`电脑${i+1}`,seat:i+1,tokenHash:'',isAI:true}));
           for(let i=0;i<bots.length;i++)bots[i]!.name=uniqueNickname(bots[i]!.name,[player,...bots.slice(0,i)].map(person=>person.name));
-          const characterPool=(input.characterPool??'original') as CharacterPool;if(!['original','second-wind','mixed'].includes(characterPool))throw new HttpError(400,'角色牌池无效。');
+          const characterPool=(input.characterPool??'original') as CharacterPool;if(!['original','second-wind','mixed','wurstii','all'].includes(characterPool))throw new HttpError(400,'角色牌池无效。');
           const created:RoomRecord={characterPool,mode,code,authorityId:player.id,adminHostId:player.id,ownerId:player.id,maxPlayers:input.maxPlayers as number,timeoutSeconds:input.timeoutSeconds as number,phase:'lobby',createdAt:now,expiresAt:now,hostLeftAt:now,members:[player,...bots],spectators:[]};
           created.expiresAt=this.expiry(created);
           await this.ctx.storage.transaction(async txn=>{await txn.put('room',created);await txn.setAlarm(this.expiry(created));});

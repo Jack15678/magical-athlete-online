@@ -3,6 +3,7 @@ import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { AnimationMixer, LoopOnce, LoopRepeat, Mesh, MeshStandardMaterial, type AnimationClip, type Group } from 'three';
 import { SECOND_WIND_CHARACTERS } from '../../shared/second-wind.js';
+import { WURSTII_CHARACTERS } from '../../shared/wurstii.js';
 import { toyResources } from './pawn-materials.js';
 import { AssetRecovery } from './asset-recovery.js';
 
@@ -31,6 +32,7 @@ const createRecovery = (url: string) => new AssetRecovery({
 const modelRecovery = createRecovery(MODEL_URL);
 const economyRecovery = createRecovery(ECONOMY_URL);
 const secondWind = new Set(SECOND_WIND_CHARACTERS.map(character => character.id));
+const wurstii = new Set(WURSTII_CHARACTERS.map(character => character.id));
 const additionalRecovery = new Map<string, AssetRecovery>();
 function recoveryFor(url: string) {
   if (url === MODEL_URL) return modelRecovery;
@@ -131,7 +133,8 @@ export function ToyCharacter({ characterId, color, lowQuality = false, castShado
     <mesh geometry={geometry.cap} material={toyResources.baseMaterial(color, lowQuality, true)} receiveShadow={!lowQuality} dispose={null} />
     {mount && <group position={[0, .164, 0]}><Sculpture characterId="hog-knight-hog" rootName="toy_hog-knight-hog" url="/models/second-wind/hog-knight-hog.glb?v=second-wind-20261021" color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} /></group>}
     <group position={[0, .164 + (mount ? .34 : 0), mount ? -.07 : 0]} scale={mount ? .7 : 1}>
-      <Sculpture url={url} rootName={`toy_${modelId}`} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} />
+      {/* shortcut: Wurstii uses the named procedural pawn until dedicated models are available; never show another card's sculpture. */}
+      {wurstii.has(characterId) ? <LoadingToy color={color} castShadow={castShadow && !lowQuality} /> : <Sculpture url={url} rootName={`toy_${modelId}`} characterId={characterId} color={color} lowQuality={lowQuality} castShadow={castShadow} animation={animation} />}
     </group>
   </group>;
 }

@@ -85,8 +85,8 @@ for (const pool of ['second-wind','mixed'] as const) test(`${pool}: four races t
   } catch(error){writeFileSync(testInfo.outputPath('public-diagnostics.json'),JSON.stringify({pool,latestPublic,summaries,error:error instanceof Error?error.message:String(error)},null,2));throw error;} finally {await Promise.all(contexts.map(context=>context.close()));}
 });
 
-test('practice has 72 searchable cards and edition filters preserve four selected cards',async({page})=>{
-  await page.goto(url);await page.getByRole('tab',{name:'自己练习',exact:true}).click();await page.getByRole('button',{name:'开始自己练习',exact:true}).click();await online(page);await expect(page.locator('.practice-pool .character-card')).toHaveCount(72);
+test('practice has 102 searchable cards and edition filters preserve four selected cards',async({page})=>{
+  await page.goto(url);await page.getByRole('tab',{name:'自己练习',exact:true}).click();await page.getByRole('button',{name:'开始自己练习',exact:true}).click();await online(page);await expect(page.locator('.practice-pool .character-card')).toHaveCount(102);
   await page.getByLabel('角色版本筛选').selectOption('second-wind');await expect(page.locator('.practice-pool .character-card')).toHaveCount(36);await page.getByLabel('搜索角色').fill('Mr. Dice Guy');await expect(page.locator('.practice-pool .character-card')).toHaveCount(1);await page.locator('.practice-pool .character-art').click();
   await page.getByLabel('搜索角色').fill('');await page.getByLabel('角色版本筛选').selectOption('original');await expect(page.locator('.practice-pool .character-card')).toHaveCount(36);await page.locator('.practice-pool .character-art').nth(0).click();await page.locator('.practice-pool .character-art').nth(1).click();await page.locator('.practice-pool .character-art').nth(2).click();await expect(page.getByRole('status')).toContainText('已选 4 / 4 张');await page.getByRole('button',{name:'确认练习阵容',exact:true}).click();await expect(page.locator('.hand-selection .character-card')).toHaveCount(4);
 });

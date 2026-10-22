@@ -1,5 +1,5 @@
 export type GameMode = 'multiplayer' | 'practice' | 'ai';
-export type CharacterPool = 'original' | 'second-wind' | 'mixed';
+export type CharacterPool = 'original' | 'second-wind' | 'mixed' | 'wurstii' | 'all';
 export interface ChatSend { clientMessageId: string; text: string; }
 export interface ChatMessage { id: number; clientMessageId?: string; senderId?: string; senderName: string; text: string; sentAt: number; kind: 'player' | 'system'; }
 export interface ChatReply { ok: boolean; message?: ChatMessage; duplicate?: boolean; error?: string; }

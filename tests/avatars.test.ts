@@ -7,8 +7,8 @@ import { Avatar, AVATAR_IDS } from '../src/client/avatars.js';
 import { CHARACTERS } from '../src/shared/characters.js';
 import { SECOND_WIND_CHARACTERS } from '../src/shared/second-wind.js';
 
-test('all72 portraits use the original flat vector vocabulary with exactly36 new unique drawings',()=>{
-  assert.equal(AVATAR_IDS.length,72);assert.deepEqual([...AVATAR_IDS].sort(),CHARACTERS.map(character=>character.id).sort());
+test('all102 cards have portraits, retaining the36 distinct Second Wind drawings',()=>{
+  assert.equal(AVATAR_IDS.length,102);assert.deepEqual([...AVATAR_IDS].sort(),CHARACTERS.map(character=>character.id).sort());
   const drawings = new Set<string>();
   for(const character of SECOND_WIND_CHARACTERS){
     const svg=renderToStaticMarkup(createElement(Avatar,{id:character.id}));
