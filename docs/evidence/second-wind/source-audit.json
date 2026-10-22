@@ -4,10 +4,10 @@
     {
       "id": "bite-mark",
       "source": "assets/blender/second-wind/bite-mark.blend",
-      "sourceSha256": "0458e35aaf95d9258ff17834faf58e7b9eb884bc21bd9060381e3a0d9520811c",
-      "glbSha256": "9ce3f187df8fa0a2bb6cb500f057689ea10faf666a39a2f1dea847d4f8b46920",
+      "sourceSha256": "5fd64fbdec3d7c15052ecaeb3d6db7e0531ca5f24487b3fd33b451ec82fe4fad",
+      "glbSha256": "87c037f2f672095fd43ee4fadaf67d0bb33076cbae408508c87df8f5a89e57a0",
       "editableParts": 22,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -21,10 +21,10 @@
     {
       "id": "blunderdog",
       "source": "assets/blender/second-wind/blunderdog.blend",
-      "sourceSha256": "027bfd759bc37318c86dbf11c81ea15853f9dbdeb448baf5a04527ab3d0bcbeb",
-      "glbSha256": "57615faa04b3a5f6204b725999b934d8b42eff775482eaa37d890b3f6f0778f2",
+      "sourceSha256": "662b70000b7e4b6592f8f11f8b8268a40d61609ca2beb347cb7ba229ca9a89f5",
+      "glbSha256": "eba49fe246c0acf76ad34ad3fc93a43b82045ce5f1842a747677324d76518697",
       "editableParts": 25,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -38,10 +38,10 @@
     {
       "id": "cheatah",
       "source": "assets/blender/second-wind/cheatah.blend",
-      "sourceSha256": "ba03aa8b710ebf7dc86b5dfde2f3b939f0802c443852070842f79a90fff35229",
-      "glbSha256": "da25f75c961e8433296a7b4a24e84258a70f840a98b2764b10ffb85b7947a6dd",
+      "sourceSha256": "cb1f7c0ca3ae878b64dd21a7f4294cd077c896742f3e24239693222313157c31",
+      "glbSha256": "fae14f6ed7b6bdb3613b21fca4300b724e7bcee17cdbb0e532ae9f06c3be372d",
       "editableParts": 40,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -55,10 +55,10 @@
     {
       "id": "critic",
       "source": "assets/blender/second-wind/critic.blend",
-      "sourceSha256": "61e47df6190ca94ff1b4cbfc22d4a4e060dde30a3d017be41837ba0515509d8c",
-      "glbSha256": "0a23bd39cad91b430c847db12a1f3e74aa688d9a689fb84081df7eb50bb6fbec",
+      "sourceSha256": "a99b6dae29a424234f51751ec7b8ee78d86857fd32f7ade3686f2abcac2a253e",
+      "glbSha256": "ba095498be4442faa45092cef282113d8b7b16cb9d8275443003cb385a4e71a4",
       "editableParts": 20,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -72,10 +72,10 @@
     {
       "id": "diva",
       "source": "assets/blender/second-wind/diva.blend",
-      "sourceSha256": "0c7b3db784f8df5917dcebfac5be166f0ce0242b65ad5da96e4069303638cdb5",
-      "glbSha256": "687a5d1c6e87137e741d46d433a00651b17150883462ebb3f17a83528811f9f8",
+      "sourceSha256": "25a44e77c667728b00c8627bd7beb7ab23efdaa72e0f7f77884309506d01ee2d",
+      "glbSha256": "7aba8239bb08903560b7876e9d2b8d7f21cd28fd55f4c098e874f374089a673c",
       "editableParts": 29,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -89,10 +89,10 @@
     {
       "id": "doppelgangster",
       "source": "assets/blender/second-wind/doppelgangster.blend",
-      "sourceSha256": "1501ccb8662d08f6bcf0b7be612ee95cc5a22648403278a18b00db9316ab9975",
-      "glbSha256": "af94b123217a37c95a14db5622d466ac9b4c071a436bf6c7a3a95354b79df62f",
+      "sourceSha256": "3d2eb5596d737a8b9bb732d9698469274005abb976e495310495dc2051a3ed78",
+      "glbSha256": "28b6794675afe679754755e37293b41f0f83c8cf6787a877b2d608439ba13986",
       "editableParts": 38,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -106,10 +106,10 @@
     {
       "id": "gloth",
       "source": "assets/blender/second-wind/gloth.blend",
-      "sourceSha256": "283f9dec90a13c1ee3faaeed84ea8d7e4298710ad1e1ad3ebef726013443effb",
-      "glbSha256": "050a6249627a57790041f7b86a7e625116ef0fd11a155051fa4f13296ebeb042",
+      "sourceSha256": "e59c4e185f78bac95b872139b4ac8e72e0477fd867b3a5aad2ebec6b9fb36015",
+      "glbSha256": "b1ef3e87a0a68e972f3f08ec2e1da3edb61118ce1ed4b4facf8b1eef877099ea",
       "editableParts": 21,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -123,10 +123,10 @@
     {
       "id": "hog-knight",
       "source": "assets/blender/second-wind/hog-knight.blend",
-      "sourceSha256": "404a120b8597620182f783eb824989abedd1e6897a979c6d1d0d14a61ae59ee9",
-      "glbSha256": "570b2a03ec16d62a07d595aa4d461d6429f05611a8b244fd3bc2afb5cc718b86",
+      "sourceSha256": "14a1fc190c61a5b26b1c99cf5aff8ce06c231f41a43af8643e02042923159ca6",
+      "glbSha256": "2fdd2d8839d4a4f834c7c786b053acbba1a87052936d466766a757b7b40c0d24",
       "editableParts": 21,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -140,10 +140,10 @@
     {
       "id": "hopfrog",
       "source": "assets/blender/second-wind/hopfrog.blend",
-      "sourceSha256": "e72f697aedb1fe7c180c7ec54baed79f1a1a06e8f0e4348b77a248ea69287b34",
-      "glbSha256": "dd7645431ad36d3e5b4323b82291058750513ef0031638cf4d67caead03198c1",
+      "sourceSha256": "5a2c524cdd9a984ee2d6b6e8ca3b7e4790c56e8cff4767a286dcd173b1228903",
+      "glbSha256": "3eb23226a38d3953f2267e4e480d290e7a2d7b42bee58a7fbbafae2e8b951be7",
       "editableParts": 15,
-      "gameMeshes": 3,
+      "gameMeshes": 4,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -157,10 +157,10 @@
     {
       "id": "hotel",
       "source": "assets/blender/second-wind/hotel.blend",
-      "sourceSha256": "312f923ebe8a07b336f4ce6d53f26cd29db486094353b9fa56d70c2043f7bbd0",
-      "glbSha256": "abad924141b1558b8072c5e1f29d70da1087f880b9542d513b3538eac7cd6ae7",
+      "sourceSha256": "30f75e6dff790420ece44834cf73fd2505ce61978e6ac21a172db850c55aea04",
+      "glbSha256": "2ca3325b2ca9ffd49c9b1c1ab069b34a6ea548c5105a71e170190dc88d952d15",
       "editableParts": 27,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -174,10 +174,10 @@
     {
       "id": "icarus",
       "source": "assets/blender/second-wind/icarus.blend",
-      "sourceSha256": "53e029b0a3c98120d09ff52bab63703a06f6441a7760b9e3e68b73e1ad1d74c2",
-      "glbSha256": "38c7a76f51e931b7455b7d2342fbfa68a8034b45d594ea86b200f3b09641e715",
+      "sourceSha256": "9172a0dd20ead01b9d9ff63bae72356a7baa45d338337aa20f9cc7f0fc3caa7d",
+      "glbSha256": "da95a039f67bfadbaf19417d3e4f01fa91b5996b2222d9732d30ab612278e21a",
       "editableParts": 29,
-      "gameMeshes": 7,
+      "gameMeshes": 8,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -191,10 +191,10 @@
     {
       "id": "kingtripper",
       "source": "assets/blender/second-wind/kingtripper.blend",
-      "sourceSha256": "fbcd7046933ad4f3a3316d28af79f83ff4e2d8268b4df6e9dc97e634991a6b9d",
-      "glbSha256": "d114d42603d3e88a1c7f6576f944c9bbd06686a92671412593a5c2b54eb6a97c",
+      "sourceSha256": "b49990a7512d0b8f5c715d74bde364d1850dec99f23357a63aff01fff9d37302",
+      "glbSha256": "1ade661d9684737a9846e10d54574de9cc222b8c8e88edb5bc9d62f889b90c89",
       "editableParts": 26,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -208,10 +208,10 @@
     {
       "id": "kraken",
       "source": "assets/blender/second-wind/kraken.blend",
-      "sourceSha256": "b4faf831d84072d4b77a559d79bcd218c11d24bce3910ae23928600849adf25f",
-      "glbSha256": "b41feced422ae17a4f1480e7d44f3a0fb8126611f28029bb932eb0655c1f612f",
+      "sourceSha256": "60adf86be59841f50ba3750ada5b5d2641f6505540acd59caa9852836135c9fd",
+      "glbSha256": "71b217dc7f30b7ac94f3bc334122b254e00596f181adb8b7b95ee68b497e993a",
       "editableParts": 32,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -225,10 +225,10 @@
     {
       "id": "le-saboteur",
       "source": "assets/blender/second-wind/le-saboteur.blend",
-      "sourceSha256": "ac890637299f1a72b44c51aebdfa5dccb8094120b0b785ffb7914645a9a7f0e0",
-      "glbSha256": "3c885a6f24499d6b0496ddc030d47561af32267807f213384fe4bdad59e25c20",
+      "sourceSha256": "34e33228a8bbbf2eb121d53c53bf873b7c2545d36d9d24b9f069cd883896a533",
+      "glbSha256": "a58418e3443d3808b9a2af43b47f5b023c7cf70d655fbe00f0fe9fd2bd3d06d1",
       "editableParts": 24,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -242,10 +242,10 @@
     {
       "id": "magical-athlete",
       "source": "assets/blender/second-wind/magical-athlete.blend",
-      "sourceSha256": "bfd69227ecebebd8b9b74ab5f3924c3165721ce363d05be23c3da73a6e6f8193",
-      "glbSha256": "39914fac7b21d1423f443782c6f14124fbc8574261e7f4c642017feac5f9da95",
+      "sourceSha256": "3847864cf36f42de9fcb0afdf80025781574e4d6f6086241d7a9d43ba55f9281",
+      "glbSha256": "f294add730ad26479876d18e9708d70fc85ba6400be31157b03d45b260f355a6",
       "editableParts": 26,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -259,10 +259,10 @@
     {
       "id": "mole",
       "source": "assets/blender/second-wind/mole.blend",
-      "sourceSha256": "0b029697e0dbabc51095b5a3b0738fc5c71f5b9698536dc30ddacf83c0e7ac92",
-      "glbSha256": "78c770ff56b639e265b43201e6d4981a27de33ad2b0fd03160bfe63fa6777704",
+      "sourceSha256": "e6a84a5f10c6a2addfc6bf9be2da810862403460a6da254bfb95bb41f6719c45",
+      "glbSha256": "c224a98873f2460499ce0eea0f0ae80701dbf95c3d99a7661a97450c10ca951e",
       "editableParts": 20,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -276,10 +276,10 @@
     {
       "id": "mr-dice-guy",
       "source": "assets/blender/second-wind/mr-dice-guy.blend",
-      "sourceSha256": "6e4db242238e320fa537ddf01e40f13c799f2679b3fbb78a11aff2a57da5d7e5",
-      "glbSha256": "b933e5dba64c8e8190664160dd252f98ebe2dcf9fedc86a0e43bf7d7eef52ecb",
+      "sourceSha256": "3494d52339d2ea879aac2be6ff62ad145d9052133fb1945ee68b18cafd922479",
+      "glbSha256": "31089eb85e55846486e4d17a149d50f1ee56997bbccc133e63da7e7229ca7cba",
       "editableParts": 57,
-      "gameMeshes": 9,
+      "gameMeshes": 10,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -293,10 +293,10 @@
     {
       "id": "mush",
       "source": "assets/blender/second-wind/mush.blend",
-      "sourceSha256": "8c954c0dc0d5f960529c92f47d04e9c029eeed7ac48ca7a88e944fc05e2d7c9d",
-      "glbSha256": "ae7039b54be7b9f45ca3f244863244783650d0fba8ae07ca925d2f25a9cb6eb9",
+      "sourceSha256": "6437602134e0828dccb02dc5fa3bae5e3cfb0798883b5c9a78a4a7177971246c",
+      "glbSha256": "1880a773adabf1bc52cdecd1a361891869fc63d79d22b4b36531a86cbb969654",
       "editableParts": 42,
-      "gameMeshes": 3,
+      "gameMeshes": 4,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -310,10 +310,10 @@
     {
       "id": "nemesis",
       "source": "assets/blender/second-wind/nemesis.blend",
-      "sourceSha256": "4b35a4eadb8353289a22d5db95dc91a3f5447f1d91a30bdd3d3d96e66889566b",
-      "glbSha256": "8e718edaf3495ae42916a1b11407d220371e207c859bebbfc2508ed333ddb7fc",
+      "sourceSha256": "4d0afd6446ba63b31c0933d310cdd75969a4ab8786d45927781273b4e465681a",
+      "glbSha256": "e79474ecff6d527ec0665db3e27a26c1de4dfc8476b4e6e126ead263bac04bfe",
       "editableParts": 30,
-      "gameMeshes": 3,
+      "gameMeshes": 4,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -327,10 +327,10 @@
     {
       "id": "nepo-baby",
       "source": "assets/blender/second-wind/nepo-baby.blend",
-      "sourceSha256": "74e397ba0cdb3981ce6fb006af81d793f7cf41884fe782f0f201e0833a049aab",
-      "glbSha256": "9487b2670a235d2e05696a40d5208acca2ac1c9e6e9ceaa4ea83b6f9c4724705",
+      "sourceSha256": "0290d004b5c81cd622f736cf681d00ee880f57e8b2385a57c9753fb10f75f57c",
+      "glbSha256": "17211d36152c74f10f60f935a43321234f0be3e74ea2944b037d46038f53668f",
       "editableParts": 27,
-      "gameMeshes": 7,
+      "gameMeshes": 8,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -344,10 +344,10 @@
     {
       "id": "null",
       "source": "assets/blender/second-wind/null.blend",
-      "sourceSha256": "199fee95b5cb5ad0b60f235d93016ee10d8d032328f5d507343a6656ffa45fb7",
-      "glbSha256": "b2507eb7c385791360f39520e11fc02f5609a26313eea1d92b52627a7edc4528",
+      "sourceSha256": "2821c5f2defa502d263e47181aefcb1d87c3d25853e1faab2cbac52d891265f8",
+      "glbSha256": "7b8283da6164fff1f547b2dae94e95222b47534f78e031fd441ed747c21f8a3c",
       "editableParts": 5,
-      "gameMeshes": 2,
+      "gameMeshes": 3,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -361,10 +361,10 @@
     {
       "id": "overtaker",
       "source": "assets/blender/second-wind/overtaker.blend",
-      "sourceSha256": "8748ae7e76f80760a37cd3e965e17302d7d0c6036dac6f8e2537d2c797f80cb3",
-      "glbSha256": "ecef776c10de6fdc23d0fa28dd0a4bf8e5564e29ff056a3f0024d5add9f9b3d5",
+      "sourceSha256": "7d3b05f46530f9f7624535077203456b40730ebf59a357f1b8f219d79878669a",
+      "glbSha256": "0015276ddcde5245acce59f779364f5007ef7354b0bc372c577ca455d7667059",
       "editableParts": 28,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -378,10 +378,10 @@
     {
       "id": "party-pooper",
       "source": "assets/blender/second-wind/party-pooper.blend",
-      "sourceSha256": "b027c27f780562ae5b7483e46d65dba5536e7af93ae99ea5e20eb9c4aabc2f94",
-      "glbSha256": "bb2e86cdc0374ba329c5c2f963400687167c47c196e411cc2d8cf374989478c3",
+      "sourceSha256": "3fe635e5c30ca4f957c01e47942a69f348d0b74eee38a73eeafa7f5c56b69be2",
+      "glbSha256": "a1e7f8001d546b2772809aea602d4c811487ddb3e65bdd98ce81023011e3e32b",
       "editableParts": 29,
-      "gameMeshes": 8,
+      "gameMeshes": 9,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -395,10 +395,10 @@
     {
       "id": "penguin",
       "source": "assets/blender/second-wind/penguin.blend",
-      "sourceSha256": "5a9458de3ea44e1b30b50792164508de62d877a01256e5633ae1ce4f197f2a4f",
-      "glbSha256": "11dd3de74ac7f232406cb9ba32aa52a7f7858b7d1107be5858ffd3df2195fafc",
+      "sourceSha256": "26a1ef5bd4cf4055dc7ff6e92eeca250f7d83de2b06d2b4b2a68d44061a155b4",
+      "glbSha256": "126b8323b4bc9b8a503c80a1c26bbaae5d0f52c3b3eb2c6faa59bd6acf04df08",
       "editableParts": 20,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -412,10 +412,10 @@
     {
       "id": "re-runner",
       "source": "assets/blender/second-wind/re-runner.blend",
-      "sourceSha256": "39c4c177916b04dd6232285c09c24e3115cf3af627d32180dd4d2d15940f6efa",
-      "glbSha256": "079712940acff93386acadeea223af9af458debca5056aed979f114e53c627f5",
+      "sourceSha256": "bd4385d044deaf15e8504bfacd22f4d7ee80a86e5c9ea31b1f55c2bc0c3140c0",
+      "glbSha256": "8f6c90f0527bbf509ea0a8cfee3c449baee8d0a4c1e16c72c0797e9d66f353fb",
       "editableParts": 26,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -429,10 +429,10 @@
     {
       "id": "show-off",
       "source": "assets/blender/second-wind/show-off.blend",
-      "sourceSha256": "eb16d7f9eff70ab2288ee22a82035bd0dd64c6bdbfb4fcd49e2b4410d295683b",
-      "glbSha256": "46858aebdad8378981b52f4c6c91f2f7bfcfcacae5af97f1328fb8a13e24428f",
+      "sourceSha256": "940bc8b658b6f8852b4ef3efbaa41b4243f8286349d9422ca045910133b9715e",
+      "glbSha256": "c690f204c61692405c1694d0a002c47e018e0b9a6fe7255c01ebb93dbb742a0a",
       "editableParts": 24,
-      "gameMeshes": 8,
+      "gameMeshes": 9,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -446,10 +446,10 @@
     {
       "id": "soulmate",
       "source": "assets/blender/second-wind/soulmate.blend",
-      "sourceSha256": "f937937043c50fc89eec0d0853ba2b4bf916337462126a4e5df2f37b2592603d",
-      "glbSha256": "2a7ca735bde576b61c11acd5d1f6710e18adad1561a347b2148b59b99c8061de",
+      "sourceSha256": "20f66538caf204216fbc8da2e0714563cff91a53d6bf6b92ff8360f6c373c35b",
+      "glbSha256": "3d6f43463940c7dad998a137fa61570f307b0a8369ae28690d5badd9af9e6675",
       "editableParts": 29,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -463,10 +463,10 @@
     {
       "id": "speed-demon",
       "source": "assets/blender/second-wind/speed-demon.blend",
-      "sourceSha256": "cc8ecfd054b5a17c2432c6a28dc49780be0929c8d5189f39d383f4fb5832fa82",
-      "glbSha256": "80febe6c9954dfad7959a8efcfa9e01e701374abb66aea6b8af9340ba333c364",
+      "sourceSha256": "436c83a5d92813c1ffaa8b63fdd93c77d69258ac3d9a427010deb0ad40fdc072",
+      "glbSha256": "6f426aca4d4b5d902ed3d7a592258c717a2f7b2f1558795dccea82dba33df504",
       "editableParts": 24,
-      "gameMeshes": 8,
+      "gameMeshes": 9,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -480,10 +480,10 @@
     {
       "id": "spoilsport",
       "source": "assets/blender/second-wind/spoilsport.blend",
-      "sourceSha256": "f67d14f4b6c5962bfaaca787762c2be4826d127107ed89ad5f63999a202e7655",
-      "glbSha256": "8db87456f86ad92cbba5732d0a9b6a0e2b73be23b1e30a47b2de27c884ebf130",
+      "sourceSha256": "fbc732fe3dcac061d1109ec79d6c62b58481901a2f85f0062f9d5559c9173cd6",
+      "glbSha256": "9d242b10b4ea3ed4326124ca71d92e5bb9c302bf88a13481f7c265dbff992795",
       "editableParts": 26,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -497,10 +497,10 @@
     {
       "id": "stepdad",
       "source": "assets/blender/second-wind/stepdad.blend",
-      "sourceSha256": "1aa2f62f7b3e3c2367eadd93d46cab7ad8644c2bf986f9533502ad128cc0f7b0",
-      "glbSha256": "3e831dcb58784b1edaded97a061f7461a3d952c009fa3b4c001935b2972f58ce",
+      "sourceSha256": "f16d038066c35dd6384273f586bf459c9a06e238a4989d4724ff910faedb826f",
+      "glbSha256": "7c1160abb7bb4e5bdc9c06bd8e2350d45b3b2f8de458db057090c4190cf80e52",
       "editableParts": 27,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -514,10 +514,10 @@
     {
       "id": "streaker",
       "source": "assets/blender/second-wind/streaker.blend",
-      "sourceSha256": "0178e496efedf2f8b572894bf56a7cfcb4cc7a50c4f12829b8b955b86482a351",
-      "glbSha256": "9ee5ab7dad4d0a53aa9105e64502482ff99083d0043a314577ba3498d891eb2d",
+      "sourceSha256": "e3739819fb462b59d49caaca67e5247a5b7ad1e4e8e1a290c41f7633ec0ae0bf",
+      "glbSha256": "e27b219b6cddb5c5a8d95d5e188f5bb2fdc90c71a5dee1b1af173b3ac6f9360f",
       "editableParts": 16,
-      "gameMeshes": 3,
+      "gameMeshes": 4,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -531,10 +531,10 @@
     {
       "id": "stunner",
       "source": "assets/blender/second-wind/stunner.blend",
-      "sourceSha256": "08e5448784fbd26616f4385febb089fe9afb8c3862d6dda8625de8e1f68f68a6",
-      "glbSha256": "cd2ebfc36291164731dcb0d2c447800951186081b38d72bf3bb3b51a8a340924",
+      "sourceSha256": "2d0479253d83ad360f425b1827b924ab5093fed2db6ec0305780d2d6a1275485",
+      "glbSha256": "6c845e1414d1d2e5011fbf3b57613b879f711741d92a18d6facc6313283191ef",
       "editableParts": 20,
-      "gameMeshes": 6,
+      "gameMeshes": 7,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -548,10 +548,10 @@
     {
       "id": "switcharoo",
       "source": "assets/blender/second-wind/switcharoo.blend",
-      "sourceSha256": "66cd023653e60ef09e465c6df107195b534a78ca40f1b0d0fd93627494ea6b15",
-      "glbSha256": "37e061aca9fc0fee96c33ad8875e1c1b9d7010ec92b182fb175e70a2bab08b4a",
-      "editableParts": 18,
-      "gameMeshes": 5,
+      "sourceSha256": "9179116f938b935d2d3ee6fc0d99702a6486f9ffcb178f6a1f29f0273f3a73d6",
+      "glbSha256": "6da8e617343264b9badd13e980e5376bdb8ea5e33ca4d05208b238c6da94eb00",
+      "editableParts": 21,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -560,15 +560,22 @@
         "move",
         "recover",
         "skill"
-      ]
+      ],
+      "facialAlignment": {
+        "headX": -0.06611163914203644,
+        "snoutX": -0.06611166149377823,
+        "smileX": -0.06611163169145584,
+        "nostrilMidpointX": -0.06611162982881069,
+        "nostrils": 2
+      }
     },
     {
       "id": "tail",
       "source": "assets/blender/second-wind/tail.blend",
-      "sourceSha256": "e4432fa9ae39b9839852a4b47fc565874c8603cd4731a288b87705dc00d0fbb7",
-      "glbSha256": "4cfdca631f23bc262c4efef1daedbc186ea616f93fcb72be3c9cb7919a335c19",
+      "sourceSha256": "9b52ea4a9fc10f84564163c1d2f0b22afd3efe93620390fbd7818a2ff024bdb9",
+      "glbSha256": "2070374ce734aff108785eb86971b1792998acaeb4c2d3ee162debd711b4811f",
       "editableParts": 15,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -582,10 +589,10 @@
     {
       "id": "the-hose",
       "source": "assets/blender/second-wind/the-hose.blend",
-      "sourceSha256": "a54828360ee585e43a79084f4ca42e34a37923bd79d73f352bbf823b04f8aa84",
-      "glbSha256": "2be40fc7b5cd11b4134502a3690a3d63c98858f952a629cc1791c67709254a38",
+      "sourceSha256": "55c3326f5d1c41e51ec5265200b34e4bbc11f3f44b65d662e7d2866fbf3bc551",
+      "glbSha256": "e4405070124f06f4554044111544a6427fe9643dd6d2ac036dd64fca308eea2e",
       "editableParts": 17,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -599,10 +606,10 @@
     {
       "id": "understudy",
       "source": "assets/blender/second-wind/understudy.blend",
-      "sourceSha256": "7cfda193cfba9fe810e2108f0d490d6da6f0993bca5bf40baa0140ceef165b4d",
-      "glbSha256": "5db6a3c663cd95de0f8b3a1ad76a977512226ee0b1378444e4523d23710b0728",
+      "sourceSha256": "f4f26823192cb1bce563786f131e9a764fdccbfafcd93649a83d8de08c824da6",
+      "glbSha256": "bb9c4abfb94cd9c9c6645e14afd96cae0f4cf888a27e4dd9093f10a037f3f192",
       "editableParts": 44,
-      "gameMeshes": 7,
+      "gameMeshes": 8,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -616,10 +623,10 @@
     {
       "id": "bite-mark-were",
       "source": "assets/blender/second-wind/bite-mark-were.blend",
-      "sourceSha256": "8d95d6c6f76e6b998f620484ebea216ccac80cce4229f9c9fe92872c26ca3ad5",
-      "glbSha256": "accaa72ab10551eecd49ae0a5aeb76bd3494e20481258c4138141a3a3daf2211",
+      "sourceSha256": "542e4f9d273881f16fbc9e5bf4b185d6a0ee9f93b8a76185766071dae8ec3b25",
+      "glbSha256": "256f6aedb9fe88bfaa0cede6edfba9c3626df9e4677acf54e011043fefc4c900",
       "editableParts": 25,
-      "gameMeshes": 4,
+      "gameMeshes": 5,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [
@@ -633,10 +640,10 @@
     {
       "id": "hog-knight-hog",
       "source": "assets/blender/second-wind/hog-knight-hog.blend",
-      "sourceSha256": "715a406e9c671d3f4cdd74f93ce8fffbc466b8ae6bdfcb3c2c91342b28f4ad22",
-      "glbSha256": "693e289ad2243ca8c386291259793a20647bdb571334ea97b40060e378d4f5e6",
+      "sourceSha256": "17ed909850e924580f5fb25ef0911670839f01d6a056323fb1853b0afae33502",
+      "glbSha256": "d162bb5da70a16f6c93c31f4ab2a62b9d5a916243e51fc99fe33982d316bee17",
       "editableParts": 22,
-      "gameMeshes": 5,
+      "gameMeshes": 6,
       "boundaryEdges": 0,
       "looseEdges": 0,
       "clips": [

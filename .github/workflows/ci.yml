@@ -8,6 +8,7 @@ on:
         default: eight-only
         options:
           - eight-only
+          - ability-interactions
           - all
   push:
     paths-ignore:
@@ -34,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -41,22 +44,35 @@ jobs:
         with:
           version: 11.25.0
       - run: pnpm install --frozen-lockfile
+      - name: Choose validation scope
+        id: validation
+        run: node scripts/ci-validation-scope.mjs
+        env:
+          REQUESTED_SUITE: ${{ inputs.browser_suite }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: pnpm typecheck
       - run: pnpm test
-        if: inputs.browser_suite == 'all'
+        if: steps.validation.outputs.suite == 'all'
+      - run: pnpm test:abilities
+        if: steps.validation.outputs.suite == 'ability-interactions'
       - run: pnpm build
       - run: pnpm exec wrangler deploy --dry-run
       - run: pnpm exec playwright install --with-deps chromium
-      # Default to one eight-player race with reconnects. Unit/animation suites
-      # require an explicit manual all run; complete four-race games stay manual.
+      # Default to one eight-player race with reconnects. A validation trailer
+      # can select focused ability checks; broad suites stay manual.
       - run: pnpm exec playwright test tests/browser/three-scene.spec.ts --grep "3D dice settles|3D simultaneous"
-        if: inputs.browser_suite == 'all'
+        if: steps.validation.outputs.suite == 'all'
         env:
           CI: true
-      - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "browser authority 8 independent"
+      - run: pnpm exec playwright test -c playwright.relay.config.ts --grep "server authority 8 independent"
+        if: steps.validation.outputs.suite != 'ability-interactions'
         env:
           CI: true
           RELAY_SMOKE: '1'
+      - run: pnpm exec playwright test tests/browser/egg-character-info.spec.ts tests/browser/ability-reveal-intro.spec.ts
+        if: steps.validation.outputs.suite == 'ability-interactions'
+        env:
+          CI: true
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

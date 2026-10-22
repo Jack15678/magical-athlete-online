@@ -5,16 +5,16 @@
       "round": 1,
       "placements": [
         {
-          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:1:0",
-          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-          "characterId": "coach",
+          "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:1:0",
+          "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+          "characterId": "hare",
           "rank": 1,
           "points": 3
         },
         {
-          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:1:0",
-          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
-          "characterId": "hypnotist",
+          "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:1:0",
+          "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
+          "characterId": "flip-flop",
           "rank": 2,
           "points": 1
         }
@@ -24,16 +24,16 @@
       "round": 2,
       "placements": [
         {
-          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:2:0",
-          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+          "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:2:0",
+          "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
           "characterId": "blunderdog",
           "rank": 1,
           "points": 4
         },
         {
-          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:2:0",
-          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-          "characterId": "copycat",
+          "racerId": "b2349c7e-c012-45df-81b2-545db6624918:2:0",
+          "playerId": "b2349c7e-c012-45df-81b2-545db6624918",
+          "characterId": "centaur",
           "rank": 2,
           "points": 2
         }
@@ -43,16 +43,16 @@
       "round": 3,
       "placements": [
         {
-          "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:3:0",
-          "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
-          "characterId": "doppelgangster",
+          "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:3:0",
+          "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
+          "characterId": "gunk",
           "rank": 1,
           "points": 5
         },
         {
-          "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:3:0",
-          "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
-          "characterId": "magical-athlete",
+          "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:3:0",
+          "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+          "characterId": "mastermind",
           "rank": 2,
           "points": 3
         }
@@ -62,16 +62,16 @@
       "round": 4,
       "placements": [
         {
-          "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:4:0",
-          "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-          "characterId": "penguin",
+          "racerId": "b2349c7e-c012-45df-81b2-545db6624918:4:0",
+          "playerId": "b2349c7e-c012-45df-81b2-545db6624918",
+          "characterId": "mush",
           "rank": 1,
           "points": 6
         },
         {
-          "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:4:0",
-          "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
-          "characterId": "nepo-baby",
+          "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:4:0",
+          "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+          "characterId": "penguin",
           "rank": 2,
           "points": 4
         }
@@ -83,37 +83,37 @@
       "round": 1,
       "characters": [
         "flip-flop",
-        "hypnotist",
-        "coach"
+        "genius",
+        "hare"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 2,
       "characters": [
-        "genius",
         "blunderdog",
-        "copycat"
+        "centaur",
+        "inchworm"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 3,
       "characters": [
-        "magical-athlete",
-        "doppelgangster",
-        "dicemonger"
+        "gunk",
+        "duelist",
+        "mastermind"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 4,
       "characters": [
-        "nepo-baby",
-        "gloth",
+        "stepdad",
+        "mush",
         "penguin"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "phase": "finished",
@@ -122,16 +122,16 @@
           "round": 1,
           "placements": [
             {
-              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:1:0",
-              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-              "characterId": "coach",
+              "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:1:0",
+              "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+              "characterId": "hare",
               "rank": 1,
               "points": 3
             },
             {
-              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:1:0",
-              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
-              "characterId": "hypnotist",
+              "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:1:0",
+              "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
+              "characterId": "flip-flop",
               "rank": 2,
               "points": 1
             }
@@ -141,16 +141,16 @@
           "round": 2,
           "placements": [
             {
-              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:2:0",
-              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
+              "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:2:0",
+              "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
               "characterId": "blunderdog",
               "rank": 1,
               "points": 4
             },
             {
-              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:2:0",
-              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-              "characterId": "copycat",
+              "racerId": "b2349c7e-c012-45df-81b2-545db6624918:2:0",
+              "playerId": "b2349c7e-c012-45df-81b2-545db6624918",
+              "characterId": "centaur",
               "rank": 2,
               "points": 2
             }
@@ -160,16 +160,16 @@
           "round": 3,
           "placements": [
             {
-              "racerId": "0b16c1f0-187e-42eb-b622-be65df0328bc:3:0",
-              "playerId": "0b16c1f0-187e-42eb-b622-be65df0328bc",
-              "characterId": "doppelgangster",
+              "racerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3:3:0",
+              "playerId": "799152b6-0ac6-4b79-bc1b-59bcb60bcfb3",
+              "characterId": "gunk",
               "rank": 1,
               "points": 5
             },
             {
-              "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:3:0",
-              "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
-              "characterId": "magical-athlete",
+              "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:3:0",
+              "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+              "characterId": "mastermind",
               "rank": 2,
               "points": 3
             }
@@ -179,23 +179,23 @@
           "round": 4,
           "placements": [
             {
-              "racerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68:4:0",
-              "playerId": "4d4a21a3-6c97-4477-9f89-8894f5b2eb68",
-              "characterId": "penguin",
+              "racerId": "b2349c7e-c012-45df-81b2-545db6624918:4:0",
+              "playerId": "b2349c7e-c012-45df-81b2-545db6624918",
+              "characterId": "mush",
               "rank": 1,
               "points": 6
             },
             {
-              "racerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d:4:0",
-              "playerId": "cf3fbc2b-5ca0-4f8f-a4fa-7d4172e8cd8d",
-              "characterId": "nepo-baby",
+              "racerId": "48c03571-84b4-497f-b9ad-30fa05f307a1:4:0",
+              "playerId": "48c03571-84b4-497f-b9ad-30fa05f307a1",
+              "characterId": "penguin",
               "rank": 2,
               "points": 4
             }
           ]
         }
       ],
-      "steps": 425
+      "steps": 315
     }
   ],
   "errors": [],

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { applyGameAction, createGame, effectivePowers, enqueueMove, enqueueWarp, resolveTasks, startGame } from '../src/engine/index.js';
-import { roomRules, SECOND_WIND_RULES_VERSION } from '../src/engine/runtime.js';
+import { roomRules, SECOND_WIND_RULES_VERSION, WURSTII_V1_RULES_VERSION } from '../src/engine/runtime.js';
 import { CHARACTERS, characterPool } from '../src/shared/characters.js';
 import { WURSTII_CHARACTERS } from '../src/shared/wurstii.js';
 import { Avatar } from '../src/client/avatars.js';
@@ -29,8 +29,8 @@ function warp(s:GameState,i:number,n:number){s.flags.awaitRoll=false;s.queue=[];
 function firstFinisher(s:GameState,i=2){racer(s,i).finished=true;racer(s,i).rank=1;racer(s,i).position=30;s.flags.placements=[{racerId:`r${i}`,playerId:`p${i}`,characterId:racer(s,i).characterId,rank:1,points:3}];}
 
 test('Wurstii A contains exactly the selected 30 distinct named cards and playable pools',()=>{
-  assert.equal(WURSTII_CHARACTERS.length,30);assert.equal(CHARACTERS.length,102);
-  assert.equal(new Set(CHARACTERS.map(c=>c.id)).size,102);
+  assert.equal(WURSTII_CHARACTERS.length,30);assert.equal(CHARACTERS.length,151);
+  assert.equal(new Set(CHARACTERS.map(c=>c.id)).size,151);
   assert.equal(new Set(WURSTII_CHARACTERS.map(c=>c.nameZh)).size,30);
   assert.deepEqual(['original','second-wind','mixed','wurstii','all'].map(p=>characterPool(p as any).length),[36,36,72,66,102]);
   for(const c of WURSTII_CHARACTERS){assert.match(c.nameZh,/[\u4e00-\u9fff]/);assert(c.ability&&c.sources.length);assert.equal(c.edition,'wurstii');assert.equal(c.verified,false);assert.ok(renderToStaticMarkup(createElement(Avatar,{id:c.id})).includes(`/avatars/wurstii/${c.id}.png`));}
@@ -184,10 +184,31 @@ test('Null suppresses new modifiers, choices, jumps and end reactions, then rest
   const l=fixture(['lakitu','null','magikarp'],[10,0,21]);begin(l);assert(!l.pending);racer(l,1).position=20;begin(l);assert.equal(pendingKind(l),card('lakitu'));
   const y=fixture(['yoshi','null','magikarp'],[10,0,0]);end(y,2);assert.equal(racer(y).position,10);assert.deepEqual(effectivePowers(y,racer(y)),[]);
 });
-test('current practice has102 cards while persisted Second Wind practice stays at72 and rejects new IDs',()=>{
+test('practice follows enabled packs while persisted Wurstii and Second Wind games keep their catalogs',()=>{
   const players=standard('magikarp').players.slice(0,1);
-  const current=createGame(players,1,'practice');startGame(current);assert.equal(current.draft!.market.length,102);
+  const current=createGame(players,1,'practice');startGame(current);assert.equal(current.draft!.market.length,72);
+  const expanded=createGame(players,1,'practice','all');startGame(expanded);assert.equal(expanded.draft!.market.length,102);
+  const frozen=createGame(players,1,'practice');frozen.rulesVersion=WURSTII_V1_RULES_VERSION;roomRules(frozen).startGame(frozen);assert.equal(frozen.draft!.market.length,102);
   const old=createGame(players,1,'practice');old.rulesVersion=SECOND_WIND_RULES_VERSION;roomRules(old).startGame(old);assert.equal(old.draft!.market.length,72);
   assert.throws(()=>roomRules(old).applyGameAction(old,'p0',{type:'practice-team',characterIds:[card('mario'),'coach','legs','blimp']}),/4张不同/);
   assert.equal(old.phase,'draft');
+});
+
+test('Mario and Frogger follower previews retain Extra Mile Gluebert movement penalties',()=>{
+  for(const id of ['mario','frogger']){
+    const s=fixture([id,'suckerfish','extra-mile-gluebert','magikarp'],[3,3,5,20]);
+    enqueueMove(s,'r0',3,'main');resolveTasks(s);
+    assert.equal(s.pending?.kind,'suckerfish');assert.match(s.pending!.title,/第3格 → 第6格/);
+    assert(!s.pending!.title.includes('wurstii-'));choose(s,'use');
+    assert.equal(racer(s).position,6);assert.equal(racer(s,1).position,6);
+  }
+});
+
+test('Mr Fox can block Wurstii starting placement, passive bonuses and first-turn extras before they apply',()=>{
+  const placed=fixture(['tails','extra-mile-mr-fox','magikarp'],[0,20,25]);before(placed);
+  assert.equal(placed.pending?.kind,'em-fox');choose(placed,'block');assert.equal(racer(placed).position,0);
+  const bonus=fixture(['rockford','extra-mile-mr-fox','magikarp'],[1,20,25]);begin(bonus);roll(bonus,3);
+  assert.equal(bonus.pending?.kind,'em-fox');choose(bonus,'block');assert.equal(racer(bonus).position,4);
+  const extra=fixture(['knuckles','extra-mile-mr-fox','magikarp'],[1,20,25]);racer(extra).flags.turnsTaken=1;end(extra);
+  assert.equal(extra.pending?.kind,'em-fox');choose(extra,'block');assert.equal(racer(extra).flags.wurstiiExtraTurns,undefined);assert.equal(extra.currentRacerId,'r1');
 });

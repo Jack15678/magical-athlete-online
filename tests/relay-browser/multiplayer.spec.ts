@@ -1,11 +1,25 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
-import type { GameAction, Room } from '../../src/shared/types.js';
+import type { GameAction, Room, RoomView } from '../../src/shared/types.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const url=process.env.RELAY_URL??'http://127.0.0.1:8787';
 const smoke=process.env.RELAY_SMOKE==='1';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await boundedRead(page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))),'capture-frame read');await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
+async function skipQueuedPlayback(page:Page){
+  const started=Date.now();let attempts=0,clicked=false;
+  const skip=page.getByRole('button',{name:'跳过动画',exact:true});
+  await expect(async()=>{
+    if(await skip.isVisible()){
+      // An optional control may disappear naturally during actionability checks.
+      // Recheck it promptly instead of spending 15s waiting for it to reappear.
+      try{attempts++;await skip.click({timeout:1_000});clicked=true;}
+      catch(error){if(await skip.isVisible())throw error;}
+    }
+    await expect(skip).toBeHidden({timeout:1_000});
+  }).toPass({timeout:20_000,intervals:[100,250,500]});
+  return{elapsedMs:Date.now()-started,attempts,clicked};
+}
 async function boundedRead<T>(operation:Promise<T>,label:string,timeoutMs=20_000):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
   try{return await Promise.race([operation,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error(`${label} exceeded ${timeoutMs}ms`)),timeoutMs);})]);}
@@ -23,23 +37,139 @@ function publicRoom(room:Room){
     pending:pending?{id:pending.id,kind:pending.kind,playerId:pending.playerId,racerId:pending.racerId,title:pending.title,optionCount:pending.options.length}:undefined,
     logs:game.logs.slice(-12).map(({id,type,text,source,targets,cause})=>({id,type,text,source,targets,cause})),results:game.results};
 }
-async function saved(page:Page,code:string):Promise<Room>{
-  // Transfer the game's documented JSON format rather than Playwright's deeply
-  // nested evaluation-value encoding (which can reject large event histories).
-  const json=await boundedRead(page.evaluate(async code=>{
-    const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('magical-athlete-browser-authority-v1',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
-    try{return await new Promise<string>((resolve,reject)=>{const r=db.transaction('rooms').objectStore('rooms').get(code);r.onsuccess=()=>resolve(JSON.stringify(r.result.room));r.onerror=()=>reject(r.error);});}finally{db.close();}
-  },code),'authority archive read');
-  return JSON.parse(json) as Room;
+// Read only the actual authenticated snapshots received by each player. The
+// server's deck, random state and private pending context never enter this test.
+const snapshots=new Map<string,Map<string,RoomView>>();
+type VersionedViews=Map<number,Map<string,RoomView>>;
+const snapshotVersions=new Map<string,VersionedViews>();
+const snapshotWaits=new Map<string,ReturnType<typeof snapshotWait>&{initialCandidateVersion:number;rebasedVersions:number[]}>();
+function rememberSnapshot(known:Map<string,RoomView>,versions:VersionedViews,view:RoomView):void{
+  if((known.get(view.selfId)?.version??0)<=view.version)known.set(view.selfId,view);
+  const peers=versions.get(view.version)??new Map<string,RoomView>();peers.set(view.selfId,view);versions.set(view.version,peers);
+  // An actor may already have received a later frame when its earlier choice is
+  // selected. Keep a bounded history so that exact authorized version survives.
+  if(versions.size>64)versions.delete(Math.min(...versions.keys()));
+}
+function latestView(known:Map<string,RoomView>|undefined):RoomView|undefined{
+  return known?.size?[...known.values()].reduce((a,b)=>a.version>b.version?a:b):undefined;
+}
+function completeViews(candidate:RoomView|undefined,versions:VersionedViews|undefined):{latest:RoomView;views:RoomView[]}|undefined{
+  if(!candidate)return;
+  const peers=new Map(versions?.get(candidate.version));peers.set(candidate.selfId,candidate);
+  const views=[...peers.values()].filter(view=>view.version===candidate.version);
+  // Public state needs no other browser. Only a private choice needs its actor's
+  // exact authorized view; unrelated slow peers must not block the rule driver.
+  if(candidate.waitingFor){
+    const acting=views.find(view=>view.selfId===candidate.waitingFor),pending=acting?.pending;
+    if(!pending||pending.playerId!==candidate.waitingFor)return;
+    if(candidate.waitingPrompt&&(pending.kind!==candidate.waitingPrompt.kind||pending.racerId!==candidate.waitingPrompt.racerId))return;
+  }
+  if(candidate.turnStage==='choice'&&!candidate.waitingFor)return;
+  return{latest:candidate,views};
+}
+function rebaseCandidate(initial:RoomView,known:Map<string,RoomView>|undefined,versions:VersionedViews|undefined):RoomView{
+  let candidate=initial;
+  while(candidate.waitingFor){
+    const acting=known?.get(candidate.waitingFor);
+    // Reconnection can skip a broadcast entirely. Advance only along the
+    // required actor's newer whole view, never an unrelated peer's latest frame.
+    // Every loop increases the version, so an actor handoff cannot cycle.
+    if(acting&&acting.version>candidate.version){candidate=acting;continue;}
+    const coherent=completeViews(candidate,versions);
+    // Prefer the complete authorized view itself over merging its private
+    // pending into another reader's public snapshot, even at the same version.
+    return coherent?.views.find(view=>view.selfId===candidate.waitingFor)??candidate;
+  }
+  return candidate;
+}
+function snapshotWait(candidate:RoomView,known:Map<string,RoomView>|undefined,versions:VersionedViews|undefined){
+  const peers=versions?.get(candidate.version),actor=candidate.waitingFor?known?.get(candidate.waitingFor):undefined;
+  return{candidateVersion:candidate.version,latestObservedVersion:latestView(known)?.version,candidatePhase:candidate.phase,candidateTurnStage:candidate.turnStage,
+    waitingActor:candidate.waitingFor,waitingKind:candidate.waitingPrompt?.kind,actorLatestVersion:actor?.version,
+    actorCandidateVersion:candidate.waitingFor?peers?.get(candidate.waitingFor)?.version:undefined,
+    requiredActorMissing:!!candidate.waitingFor&&!completeViews(candidate,versions),
+    peers:candidate.players.map(player=>({id:player.id,seat:player.seat+1,latestVersion:known?.get(player.id)?.version,candidateAvailable:peers?.has(player.id)??false}))};
+}
+async function saved(_page:Page,code:string):Promise<Room>{
+  await expect.poll(()=>!!latestView(snapshots.get(code))).toBe(true);
+  // Start from public progress, then advance only when the required actor has a
+  // newer whole view. An unrelated fast peer cannot keep moving this target.
+  let candidate=latestView(snapshots.get(code))!;
+  const initialCandidateVersion=candidate.version,rebasedVersions:number[]=[];
+  let coherent:ReturnType<typeof completeViews>;
+  await expect.poll(()=>{
+    const next=rebaseCandidate(candidate,snapshots.get(code),snapshotVersions.get(code));
+    if(next.version>candidate.version)rebasedVersions.push(next.version);
+    candidate=next;
+    coherent=completeViews(candidate,snapshotVersions.get(code));snapshotWaits.set(code,{...snapshotWait(candidate,snapshots.get(code),snapshotVersions.get(code)),initialCandidateVersion,rebasedVersions});
+    return!!coherent;
+  },{message:`authorized actor snapshot must arrive or advance beyond room version ${initialCandidateVersion}`}).toBe(true);
+  const {latest,views}=coherent!;
+  const pending=latest.waitingFor?views.find(view=>view.selfId===latest.waitingFor)!.pending:undefined;
+  const players=latest.players.map(player=>{const own=views.find(view=>view.selfId===player.id)?.players.find(p=>p.id===player.id);return {...player,hand:player.handCount===0?[]:own?.hand??[],selection:player.selected?(own?.selection?.length?own.selection:Array.from({length:latest.players.length===2?2:1},()=> 'locked')):[]};});
+  return {code,hostId:latest.hostId,ownerId:latest.ownerId,version:latest.version,mode:latest.mode,createdAt:latest.createdAt??0,updatedAt:0,maxPlayers:latest.maxPlayers,timeoutSeconds:latest.timeoutSeconds,deadline:latest.deadline,game:{mode:latest.mode,phase:latest.phase,round:latest.round,players,deck:[],discard:[],draft:latest.draft,racers:latest.racers,baseTurnOrder:latest.baseTurnOrder,turn:0,turnCount:0,currentRacerId:latest.currentRacerId,pending,queue:[],logs:latest.logs,results:latest.results,rngState:0,randomLog:[],lastRoll:latest.lastRoll,track:latest.track,flags:{needsBegin:latest.turnStage==='starting',continuation:latest.turnStage==='resolving',awaitRoll:latest.turnStage==='roll'}}} as Room;
 }
 
-for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
+test('snapshot aggregation waits only for its required private actor and never combines independent versions',()=>{
+  const players=[{id:'a',seat:0},{id:'b',seat:1},{id:'slow',seat:2}] as RoomView['players'];
+  const view=(selfId:string,version:number,actor:string):RoomView=>({selfId,version,players,turnStage:'choice',waitingFor:actor,...(selfId===actor?{pending:{id:'choice-'+version,playerId:actor,kind:'alchemist',options:[]}}:{})}) as RoomView;
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();
+  for(const id of ['a','b','slow'])rememberSnapshot(known,versions,view(id,1,'a'));
+  expect(completeViews(latestView(known),versions)?.latest.version).toBe(1);
+  rememberSnapshot(known,versions,view('a',2,'b'));const fixed=latestView(known)!;expect(completeViews(fixed,versions)).toBeUndefined();
+  rememberSnapshot(known,versions,view('a',3,'a'));expect(completeViews(fixed,versions)).toBeUndefined();
+  rememberSnapshot(known,versions,view('b',2,'b'));
+  const complete=completeViews(fixed,versions)!;expect(complete.latest.version).toBe(2);expect(complete.views.find(v=>v.selfId==='b')?.pending?.id).toBe('choice-2');
+  expect(known.get('slow')?.version).toBe(1);expect(snapshotWait(fixed,known,versions).requiredActorMissing).toBe(false);
+  rememberSnapshot(known,versions,view('b',4,'b'));expect(rebaseCandidate(fixed,known,versions).version).toBe(4);
+});
+
+test('snapshot aggregation advances a missing private version 70 to its actor complete version 71 after reconnect',()=>{
+  const players=[{id:'host',seat:0},{id:'copycat',seat:5}] as RoomView['players'];
+  const candidate={selfId:'host',version:70,players,phase:'race',turnStage:'choice',waitingFor:'copycat',currentRacerId:'old-racer',logs:[{id:10,type:'system',text:'old public state'}]} as RoomView;
+  const authorized={...candidate,selfId:'copycat',version:71,currentRacerId:'new-racer',logs:[{id:11,type:'system',text:'reconnected complete state'}],pending:{id:'copycat-71',playerId:'copycat',kind:'copycat',title:'Copycat',optional:false,options:[]}} as RoomView;
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();rememberSnapshot(known,versions,candidate);rememberSnapshot(known,versions,authorized);
+  expect(completeViews(candidate,versions)).toBeUndefined();
+  const rebased=rebaseCandidate(candidate,known,versions);expect(rebased).toBe(authorized);expect(rebased.version).toBe(71);
+  const complete=completeViews(rebased,versions)!;expect(complete.latest.currentRacerId).toBe('new-racer');expect(complete.latest.logs[0]?.id).toBe(11);expect(complete.latest.pending?.id).toBe('copycat-71');
+});
+
+test('snapshot aggregation follows a monotonic actor handoff chain without chasing an unrelated newer peer',()=>{
+  const players=['host','first','second','third','unrelated'].map((id,seat)=>({id,seat})) as RoomView['players'];
+  const view=(selfId:string,version:number,actor:string):RoomView=>({selfId,version,players,phase:'race',turnStage:'choice',waitingFor:actor,...(selfId===actor?{pending:{id:`choice-${actor}-${version}`,playerId:actor,kind:'copycat',options:[]}}:{})}) as RoomView;
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map(),candidate=view('host',70,'first');rememberSnapshot(known,versions,candidate);
+  for(const frame of [view('first',71,'second'),view('second',72,'third'),view('third',72,'third'),view('unrelated',99,'unrelated')])rememberSnapshot(known,versions,frame);
+  const rebased=rebaseCandidate(candidate,known,versions);expect(rebased.version).toBe(72);expect(rebased.selfId).toBe('third');expect(rebased.pending?.id).toBe('choice-third-72');
+  expect(latestView(known)?.version).toBe(99);expect(completeViews(rebased,versions)?.latest).toBe(rebased);
+  const publicProgress={...rebased,version:73,waitingFor:undefined,pending:undefined,turnStage:'roll' as const};expect(rebaseCandidate(publicProgress,known,versions)).toBe(publicProgress);
+});
+
+test('snapshot aggregation uses public progress immediately and keeps private history bounded',()=>{
+  const known=new Map<string,RoomView>(),versions:VersionedViews=new Map();
+  for(let version=1;version<=70;version++)rememberSnapshot(known,versions,{selfId:'public-reader',version,players:[{id:'slow',seat:0}],phase:'race',turnStage:'roll'} as RoomView);
+  const latest=latestView(known)!;expect(versions.size).toBe(64);expect(completeViews(latest,versions)?.latest.version).toBe(70);
+  expect(snapshotWait(latest,known,versions).peers[0]?.latestVersion).toBeUndefined();
+});
+
+test('playback skip accepts natural completion while its optional button is moving and disappears',async({page})=>{
+  await page.setContent('<style>@keyframes slide{from{transform:translateX(0)}to{transform:translateX(100px)}}#skip{animation:slide 1s linear infinite}</style><button id="skip" aria-label="跳过动画">跳过</button><button id="action">掷骰子</button>');
+  await page.evaluate(()=>setTimeout(()=>document.getElementById('skip')?.remove(),150));
+  const started=Date.now();await skipQueuedPlayback(page);
+  expect(Date.now()-started).toBeLessThan(5_000);
+  await expect(page.getByRole('button',{name:'掷骰子',exact:true})).toBeEnabled();
+});
+
+for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?'one race, host/guest recovery, privacy and layout':'four races, host recovery, privacy and rematch'}`,async({browser})=>{
   // CI smoke completes one full race on eight isolated software WebGL clients.
   // The default manual mode retains the complete four-race game and rematch.
   if(process.env.CI&&n===8)test.setTimeout(900_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
+  const playbackControls={reads:0,attempts:0,clicked:0,elapsedMs:0,maxMs:0};
   let latestPublicRoom:ReturnType<typeof publicRoom>|undefined;
   const uiSnapshots:unknown[]=[];
+  type UIAction={sequence:number;requestId:string;type:GameAction['type'];expectedVersion:number;acknowledgedAt?:number;result?:{ok:boolean;version?:number;error?:string}};
+  const uiActions=new Map<Page,UIAction[]>();
+  let activeCode:string|undefined;
   const startedAt=Date.now();let bodyFailed=false,lastPrintedRound=-1;
   let checkpoint={stage:'setup',phase:'lobby',round:0,step:0,action:'open-contexts',version:0,logId:0,elapsedMs:0};
   const mark=(stage:string,action:string,room?:Room,step=checkpoint.step)=>{checkpoint={stage,action,phase:room?.game.phase??checkpoint.phase,round:room?.game.round??checkpoint.round,step,version:room?.version??checkpoint.version,logId:room?.game.logs.at(-1)?.id??checkpoint.logId,elapsedMs:Date.now()-startedAt};};
@@ -61,11 +191,13 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
     uiSnapshots.push({elapsedMs:Date.now()-startedAt,step:checkpoint.step,seat,action,ui});if(uiSnapshots.length>20)uiSnapshots.shift();
   };
   const observe=(page:Page)=>{
+    const actions:UIAction[]=[];uiActions.set(page,actions);let sequence=0;
     page.on('pageerror',e=>errors.push(e.stack??e.message));
     page.on('websocket',ws=>{
       expect(ws.url()).not.toMatch(/token=|playerId=/);
+      ws.on('framesent',frame=>{try{const message=JSON.parse(String(frame.payload));if(message.type==='action'&&message.requestId&&message.envelope){actions.push({sequence:++sequence,requestId:message.requestId,type:message.envelope.action.type,expectedVersion:message.envelope.expectedVersion});if(actions.length>40)actions.shift();}}catch{/* Raw heartbeat frames are not actions. */}});
       ws.on('framereceived',frame=>{
-        try{const message=JSON.parse(String(frame.payload));if(message.type!=='snapshot')return;
+        try{const message=JSON.parse(String(frame.payload));if(message.type==='ack'){const action=actions.find(action=>action.requestId===message.requestId);if(action){action.acknowledgedAt=Date.now();action.result={ok:!!message.result.ok,version:message.result.version,error:message.result.error};}return;}if(message.type!=='snapshot')return;const view=message.room as RoomView;const known=snapshots.get(view.code)??new Map<string,RoomView>(),versions=snapshotVersions.get(view.code)??new Map<number,Map<string,RoomView>>();rememberSnapshot(known,versions,view);snapshots.set(view.code,known);snapshotVersions.set(view.code,versions);
           for(const p of message.room.players)if(p.id!==message.room.selfId){if(p.hand!==undefined||p.selection!==undefined)errors.push('Other player private hand or selection leaked.');}
         }catch{/* Protocol errors are separately surfaced by the actual UI. */}
       });
@@ -81,7 +213,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
     const host=pages[0]!;
     mark('setup','create-room');
     await host.goto(url);await host.getByLabel('你的昵称').fill('浏览器计算房主');await host.getByLabel('房间人数上限').selectOption(String(n));await host.getByLabel('每次操作时限').selectOption('0');
-    await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;
+    await host.getByRole('button',{name:'创建房间，召集朋友'}).click();await expect(host).toHaveURL(/\/room\/[A-Z2-9]{6}$/);const code=host.url().split('/').at(-1)!;activeCode=code;
     await expect(host.getByText('已连接',{exact:true})).toBeVisible();
     for(let i=1;i<n;i++){
       mark('setup',`join-${i}`);
@@ -118,7 +250,7 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
         const duplicate=await contexts[0]!.newPage();observe(duplicate);await duplicate.goto(`${url}/room/${code}`);await expect(duplicate.getByText('已连接',{exact:true})).toBeVisible();await duplicate.close();
         const before=(await saved(host,code)).game;
         mark('host-recovery','host-offline',room,steps);
-        await host.goto('about:blank');await expect(pages[1]!.getByText('计算房主网页离线，等待其返回。',{exact:false})).toBeVisible();
+        await host.goto('about:blank');await expect(pages[1]!.getByText('已连接',{exact:true})).toBeVisible();
         mark('host-recovery','host-return',room,steps);
         await host.goto(`${url}/room/${code}`);await expect(host.getByText('已连接',{exact:true})).toBeVisible();
         const after=(await saved(host,code)).game;
@@ -139,14 +271,29 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
       const actionLabel=action.type==='choose'?`choose-${g.pending!.kind}-${action.optionId}`:action.type;
       mark('submit',actionLabel,room,steps);
       const p=pages[ids.indexOf(playerId)]!;await synced(p,room.version);
-      if(process.env.CI&&n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
-      if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click();
-      else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click();
-      else await p.getByRole('button',{name:'掷骰子',exact:true}).click();
+      // This suite checks the live protocol, not the duration of an accumulated
+      // visual chain. Skills retain a 1.5s reading minimum even at 4x speed; a
+      // player may legitimately have more than 15s of earlier events queued.
+      // Use the actual local skip control before the actual action control.
+      // No action is forced and the server acknowledgement is still required.
+      const skipped=await skipQueuedPlayback(p);
+      playbackControls.reads++;playbackControls.attempts+=skipped.attempts;playbackControls.clicked+=Number(skipped.clicked);playbackControls.elapsedMs+=skipped.elapsedMs;playbackControls.maxMs=Math.max(playbackControls.maxMs,skipped.elapsedMs);
+      if(n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
+      const beforeAction=uiActions.get(p)!.at(-1)?.sequence??0;
+      if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click({timeout:15_000});
+      else if(action.type==='next')await p.getByRole('button',{name:'前往下一场',exact:true}).click({timeout:15_000});
+      else await p.getByRole('button',{name:'掷骰子',exact:true}).click({timeout:15_000});
       mark('confirm',actionLabel,room,steps);
-      await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThan(room.version);
+      // A system turn-start can already advance past room.version while click
+      // waits for animation. Confirm this real UI action's own acknowledgement.
+      let confirmed:UIAction|undefined;
+      await expect.poll(()=>{confirmed=uiActions.get(p)!.find(sent=>sent.sequence>beforeAction&&sent.type===action.type&&sent.result);return!!confirmed;},{message:`${actionLabel} must receive its own UI action acknowledgement`}).toBe(true);
+      expect(confirmed!.result!.ok,confirmed!.result!.error??actionLabel).toBe(true);
+      expect(confirmed!.result!.version).toBeDefined();
+      await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThanOrEqual(confirmed!.result!.version!);
     }
     const finalRoom=await saved(host,code);mark(smoke?'round-complete':'finished',smoke?'assert-one-result':'assert-four-results',finalRoom,steps);progress();
+    console.log(`[relay-${n}] playback-controls ${JSON.stringify(playbackControls)}`);
     expect(finalRoom.game.results).toHaveLength(smoke?1:4);expect(hostRecovered).toBe(true);expect(guestRecovered).toBe(true);expect(raceShot).toBe(true);expect(errors).toEqual([]);
     await host.screenshot({path:`test-results/browser-authority/${smoke?'round-1':'final'}-${n}.png`,fullPage:true});
     if(!smoke){
@@ -158,10 +305,15 @@ for(const n of [2,6,8])test(`browser authority ${n} independent players: ${smoke
     for(const p of pages)expect(await boundedRead(p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'layout-width read')).toBe(true);
   }catch(error){
     bodyFailed=true;
+    const observed=activeCode?latestView(snapshots.get(activeCode)):undefined;
     if(n===8)writeFileSync('test-results/browser-authority/diagnostics8.json',JSON.stringify({
       capturedAt:new Date().toISOString(),checkpoint:{...checkpoint,elapsedMs:Date.now()-startedAt},
       failure:{name:error instanceof Error?error.name:'Error',message:error instanceof Error?error.message.split('\n')[0]:String(error).split('\n')[0]},
-      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,
+      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,playbackControls,
+      snapshotWait:activeCode?snapshotWaits.get(activeCode):undefined,
+      observedSnapshots:observed?snapshotWait(observed,snapshots.get(observed.code),snapshotVersions.get(observed.code)):undefined,
+      lastAcknowledgement:[...uiActions.values()].flat().filter(action=>action.acknowledgedAt!==undefined).sort((a,b)=>a.acknowledgedAt!-b.acknowledgedAt!).at(-1),
+      uiActions:pages.map((page,seat)=>({seat:seat+1,actions:uiActions.get(page)?.slice(-6)})),
       limitations:'UI snapshots are cached before actions with a 2s read limit; failure capture does not query potentially frozen browser pages. No tokens, deck, RNG or private hands are included.',
     },null,2));
     console.error(`[relay-${n}] original-error ${error instanceof Error?error.stack??error.message:String(error)}\n[relay-${n}] last-checkpoint ${JSON.stringify({...checkpoint,elapsedMs:Date.now()-startedAt})}`);

@@ -1,0 +1,30 @@
+{
+  "id": "leaf-catfish",
+  "node": "toy_leaf-catfish",
+  "url": "/models/leaf/leaf-catfish.glb",
+  "bytes": 47308,
+  "triangles": 2144,
+  "draws": 3,
+  "bounds": [
+    0.53264,
+    0.50406,
+    0.6
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "long",
+  "editableSource": "assets/blender/leaf/leaf-catfish.blend",
+  "referenceChecked": true,
+  "reference": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+  "referenceFile": "PNG_Images_-_Leaf's_Fan_Expansion.zip / Gamepiece images / catfish",
+  "referenceDate": "2026-10-22",
+  "recognition": "blue catfish, curled upright tail, pale belly and long white whiskers",
+  "inferred": "Author transparent gamepiece PNGs inform silhouettes/colors/props. Unseen back and side details and joints are project interpretations, not author-approved exact sculpts."
+}

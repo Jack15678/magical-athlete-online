@@ -1,0 +1,31 @@
+{
+  "renderedFrames": 1066,
+  "calls": 342,
+  "triangles": 145310,
+  "geometries": 146,
+  "textures": 122,
+  "environment": true,
+  "loadedModels": 8,
+  "loadedModelNames": [
+    "toy_leaf-catfish",
+    "toy_leaf-dark-horse",
+    "toy_leaf-kangaroo",
+    "toy_leaf-race-car",
+    "toy_leaf-triangle-man",
+    "toy_leaf-spiteful-spirit",
+    "toy_leaf-toucan",
+    "toy_leaf-filmmaker"
+  ],
+  "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "pixelRatio": 1,
+  "shadows": true,
+  "toneMapping": 4,
+  "exposure": 1.1,
+  "colorSpace": "srgb",
+  "samples": 80,
+  "medianFrameMs": 9.5,
+  "p95FrameMs": 11.699999809265137,
+  "maxFrameMs": 13.299999713897705,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+  "caveat": "Measured in local headless Edge at the stated viewport; mobile is a viewport/layout check, not a physical phone performance measurement. Forced invalidate samples actual WebGL scene frames without claiming idle demand rendering is continuous."
+}

@@ -4,6 +4,7 @@ import { build } from 'vite';
 // Keep the real scene, shaders, rules and assets intact; expose observability
 // from the same R3F store that renders the screenshots.
 await build({
+  build: { outDir: process.env.ART_QA_OUTDIR ?? 'dist/client' },
   plugins: [{
     name: 'art-qa-camera-observability',
     enforce: 'pre',

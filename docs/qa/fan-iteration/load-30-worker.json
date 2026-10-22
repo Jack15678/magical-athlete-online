@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-22T06:11:11.508Z",
+  "backend": "local workerd + SQLite Durable Objects + real WebSocket",
+  "rooms": 30,
+  "clients": 60,
+  "durationMs": 10000,
+  "elapsedMs": 14836,
+  "actions": 832,
+  "snapshots": 2316,
+  "ackMs": {
+    "p50": 178.64,
+    "p95": 447.77,
+    "max": 562.64
+  },
+  "maxHarnessRssMiB": 103.7,
+  "capacity": {
+    "used": 30,
+    "limit": 30
+  },
+  "errors": [],
+  "phases": [
+    "race"
+  ],
+  "notes": "Memory is the Node load harness; workerd process memory is measured separately. This local result does not measure production-region latency.",
+  "capacityAfterClose": {
+    "used": 0,
+    "limit": 30
+  },
+  "workerdObservedResources": [
+    {
+      "pid": 11764,
+      "rssMiB": 89.8,
+      "timing": "idle after benchmark, not peak"
+    },
+    {
+      "pid": 62768,
+      "rssMiB": 289.0,
+      "timing": "idle after benchmark, not peak"
+    }
+  ],
+  "platformLogErrors": []
+}

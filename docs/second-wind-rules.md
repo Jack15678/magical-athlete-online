@@ -15,7 +15,7 @@
 
 `characters.ts` 导出 `ORIGINAL_CHARACTERS`、完整 `CHARACTERS` 和 `characterPool('original'|'second-wind'|'mixed')`。完整36张续作记录在 `second-wind.ts`，包括稳定ID、中英文名、版本、来源/定位/访问日期、触发时点、可选性、目标、次数、持续时间、插画URL和核验状态。
 
-每次新局记录 `characterPool` 和 `rulesVersion=cmyk-base-aug2026-sw-transcript-v1`。旧存档缺版本时绑定 `legacy-base-v1` 并通过 `engine/runtime.ts` 单一版本登记继续使用保存的旧引擎 `legacy-v1.ts`；未知版本拒绝套用当前规则，保留存档待对应引擎恢复。牌库与蛋候选补充都沿用本局牌池；练习模式一直提供完整72张选四张。赛道仍是明确的现有赛道配置 Mild/Wild/Mild/Wild。官方合盒次序是 Mild Mile → Wild Wilds → Twisty Twirl → Whirly World；因新两条赛道布局与格子规则未核实，未按名称猜测实现。
+每次新局记录 `characterPool` 和 `rulesVersion`，可执行规则标识与旧版本映射以 `src/engine/runtime.ts` 为准。旧存档缺版本时绑定 `legacy-base-v1` 并通过 `engine/runtime.ts` 单一版本登记继续使用保存的旧引擎 `legacy-v1.ts`；未知版本拒绝套用当前规则，保留存档待对应引擎恢复。牌库与蛋候选补充都沿用本局牌池；练习模式一直提供完整72张选四张。赛道仍是明确的现有赛道配置 Mild/Wild/Mild/Wild。官方合盒次序是 Mild Mile → Wild Wilds → Twisty Twirl → Whirly World；因新两条赛道布局与格子规则未核实，未按名称猜测实现。
 
 玩家ID用于身份、分数和重连；`Racer.identityPlayerId`保留选手创建来源，`Racer.playerId`是当前控制者，`Racer.id`是场上实例，`characterId`是印刷角色定义。Switcharoo只交换当前控制者和已用牌归属，不交换位置或实例ID。Re-Runner记录后续额外参赛条目，并在每场创建额外实例；固定行动列表不限定每玩家两名。
 
@@ -30,7 +30,7 @@ Cheatah设定值只保留在权威`flags.cheatahSecret`和pending.context，公�
 以下是可运行实现中的暂定解释或尚缺权威依据的交互，不能标记官方已核验：
 
 1. Bite Mark的转录文字未说明还原时点；实现保留狼人形态至本场结束，没有编造“掷3～6自动还原”。是否需要不同持续时间，待官方正文/双面卡确认。
-2. Mr. Dice Guy六骰恰好1～6各一次时，没有重复合法点数。当前保留规则队列并暂停本场，显示准确的待核实原因；不编造跳过或重新投掷的处理。
+2. Mr. Dice Guy六骰恰好1～6各一次时的官方处理尚未核实。2026-10-22用户授权采用明确项目房规：公开六骰后等待当前控制者整组重掷，不跳过主要移动、不提前消费额外回合。此房规不会把官方核验状态改为已完成。
 3. Show-Off累加时哪些骰触发观察者，以及与Magician、Critic、Dicemonger、Nemesis、Inchworm等在追加中如何衔接，仍缺续作官方说明。当前先完成继续/停止，保留最后骰面与累计移动距离分别记录；Party Pooper会处理每颗追加骰。
 4. 多个来源同时提供“以另一方式代替主移动”时，目前提供主移动能力选择；是否应顺序叠加、取代或限制，待官方裁定。多个被动加减与多来源复制已有实现，但这不等于所有72×72交互均已核验。
 5. Doppelgängster自冲线、多个复制的Doppelgängster、它获得的能力是否包含对方已获得能力、与Mastermind同时结束的优先关系，仍需逐项取得权威例证。当前按首个冲线者淘汰（包含自己）、每场一次、持续获得实际能力处理。
@@ -48,7 +48,9 @@ Cheatah设定值只保留在权威`flags.cheatahSecret`和pending.context，公�
 
 ## 扩展压力检查
 
-最终后端压力检查使用续作/混合牌池、2/3/8人、各30种种子，共180局，由只读取玩家投影的 AI 决策，并随每次操作更新公开版本。结果：169局完整四场，最长1264次操作；6局进入明确的 Mr. Dice Guy 六骰各异待核实暂停；5局达到3000次模拟操作限额，但仍存在合法操作；没有异常、缺失合法操作或内存溢出。限额案例包括 Soulmate 与复制其能力的 Understudy 在绊倒格形成重复传送/恢复、Diva 与绊倒格形成跨回合交换、Null/Stunner/Hopfrog 组合持续行动。这里没有给真实比赛添加任意回合数终止规则；跨回合闭环的官方处理仍需复核。Cheatah 的设定和猜测使用不同公开种子，不读取秘密队列，已避免此前测试策略恒定设1、猜1造成的固定策略停滞。结果保存在 `docs/qa/second-wind/seeded-public-ai-sweep.json`，可用 `pnpm exec tsx scripts/audit-second-wind-matches.ts` 重跑。
+2026-10-21后端压力基线使用续作/混合牌池、2/3/8人、各30种种子，共180局，由只读取玩家投影的 AI 决策，并随每次操作更新公开版本。结果：169局完整四场，最长1264次操作；6局进入明确的 Mr. Dice Guy 六骰各异待核实暂停；5局达到3000次模拟操作限额，但仍存在合法操作；没有异常、缺失合法操作或内存溢出。限额案例包括 Soulmate 与复制其能力的 Understudy 在绊倒格形成重复传送/恢复、Diva 与绊倒格形成跨回合交换、Null/Stunner/Hopfrog 组合持续行动。这里没有给真实比赛添加任意回合数终止规则；跨回合闭环的官方处理仍需复核。Cheatah 的设定和猜测使用不同公开种子，不读取秘密队列，已避免此前测试策略恒定设1、猜1造成的固定策略停滞。结果保存在 `docs/qa/second-wind/seeded-public-ai-sweep.json`，可用 `pnpm exec tsx scripts/audit-second-wind-matches.ts` 重跑。
+
+2026-10-22用户明确授权循环冲突裁决后，当前v2采用“完整规则状态重复、期间没有随机及可改变选择”精确检测；成立则本场和局，保留已获名次和积分，不给未完赛者补名次或额外奖励，正常进入后续分赛。Mr. Dice Guy六骰各异则等待控制者整组重掷。原作/续作/混合45局现全部完成四场，其中1次整组六骰重掷、1场强制循环和局，无暂停、操作限额或异常。两者均明确标为项目房规。复现序列、保守检测边界和不误报用例见[本轮规则复核](rule-review-2026-10-22.md)。
 
 ## 新增36张清单
 
@@ -92,3 +94,7 @@ Cheatah设定值只保留在权威`flags.cheatahSecret`和pending.context，公�
 | `tail` | Tail | 尾巴 | SW-34 | [插画](https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Tail.png) |
 | `the-hose` | The Hose | 水管 | SW-35 | [插画](https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/The%20Hose.png) |
 | `understudy` | Understudy | 替补演员 | SW-36 | [插画](https://johnnlds.github.io/Magical-Athlete-Racers/images/expansion/Understudy.png) |
+
+## 2026-10-22 针对玩家反馈的复核
+
+继父左右目标、交换袋鼠空目标、水管独立能力骰与绊倒、吸盘鱼实际移动预览已单独复核、修复并覆盖回归，详见[本轮规则复核](./rule-review-2026-10-22.md)。继父的“左邻”按固定选手实例顺序判断，允许自己的另一名选手；不是玩家列表的屏幕左侧。新增与复制的能力也沿用该派生关系。旧规则存档通过版本登记保留既有实现。

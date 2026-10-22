@@ -1,0 +1,51 @@
+{
+  "algorithm": "ChaCha20 / RFC 8439",
+  "entropy": "Web Crypto getRandomValues: 256-bit key + 96-bit nonce per new game",
+  "boundedMapping": "32-bit rejection sampling",
+  "cachedWords": 16,
+  "deterministicPublicFixture": true,
+  "node": "v24.19.0",
+  "runs": [
+    {
+      "draws": 1000000,
+      "elapsedMs": 114.14340000000001,
+      "microsecondsPerDie": 0.11414340000000002,
+      "faces": [
+        167000,
+        166510,
+        167026,
+        166087,
+        166489,
+        166888
+      ]
+    },
+    {
+      "draws": 1000000,
+      "elapsedMs": 109.4408,
+      "microsecondsPerDie": 0.10944079999999999,
+      "faces": [
+        167240,
+        166743,
+        166717,
+        167001,
+        166447,
+        165852
+      ]
+    },
+    {
+      "draws": 1000000,
+      "elapsedMs": 105.62369999999999,
+      "microsecondsPerDie": 0.10562369999999999,
+      "faces": [
+        166711,
+        166277,
+        167324,
+        166636,
+        166388,
+        166664
+      ]
+    }
+  ],
+  "seedMicroseconds": 8.180000000000405,
+  "limitations": "Timing is from this machine; these finite histograms are a smoke check, not a proof of uniformity or cryptographic security. Exact range-boundary and RFC/OpenSSL comparisons are covered by tests/random.test.ts."
+}

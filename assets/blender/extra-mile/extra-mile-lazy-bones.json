@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-lazy-bones",
+  "node": "toy_extra-mile-lazy-bones",
+  "url": "/models/extra-mile/extra-mile-lazy-bones.glb",
+  "bytes": 45196,
+  "triangles": 1796,
+  "draws": 3,
+  "bounds": [
+    0.6,
+    0.78654,
+    0.55561
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-lazy-bones.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white skeleton reclining in a red armchair, visible ribs and long shin bones",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

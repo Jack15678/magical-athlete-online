@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { SECOND_WIND_CHARACTERS } from '../shared/second-wind.js';
 import { WURSTII_CHARACTERS } from '../shared/wurstii.js';
+import { SECOND_WIND_CHARACTERS } from '../shared/second-wind.js';
+import { FAN_CHARACTERS } from '../shared/fan-expansions.js';
 import { SECOND_WIND_PORTRAITS_A } from './second-wind-portraits-a.js';
 import { SECOND_WIND_PORTRAITS_B } from './second-wind-portraits-b.js';
 import { SECOND_WIND_PORTRAITS_C } from './second-wind-portraits-c.js';
@@ -51,10 +52,12 @@ const portraits: Record<string, ReactNode> = {
 };
 
 const secondWindIds = new Set(SECOND_WIND_CHARACTERS.map(character => character.id));
-const wurstiiIds = new Set(WURSTII_CHARACTERS.map(character => character.id));
-const allPortraits: Record<string, ReactNode> = { ...portraits, ...SECOND_WIND_PORTRAITS_A, ...SECOND_WIND_PORTRAITS_B, ...SECOND_WIND_PORTRAITS_C };
-export const AVATAR_IDS = [...Object.keys(allPortraits), ...wurstiiIds];
+const allPortraits = { ...portraits, ...SECOND_WIND_PORTRAITS_A, ...SECOND_WIND_PORTRAITS_B, ...SECOND_WIND_PORTRAITS_C };
+const fanAvatarPacks=new Map(FAN_CHARACTERS.map(character=>[character.id,character.edition==='leaf'?'leaf':'extra-mile']));
+export const AVATAR_IDS = [...Object.keys(allPortraits),...fanAvatarPacks.keys(),...WURSTII_CHARACTERS.map(c=>c.id)];
 export function Avatar({ id, className = '' }: { id: string; className?: string }) {
-  if (wurstiiIds.has(id)) return <img className={`avatar ${className}`} src={`/avatars/wurstii/${id}.png`} width="120" height="120" style={{ objectFit: 'contain' }} loading="lazy" decoding="async" draggable={false} alt="" aria-hidden="true" />;
+  if (WURSTII_CHARACTERS.some(c=>c.id===id)) return <img className={`avatar ${className}`} src={`/avatars/wurstii/${id}.png`} width="120" height="120" style={{ objectFit: 'contain' }} loading="lazy" decoding="async" draggable={false} alt="" aria-hidden="true" />;
+  const pack=fanAvatarPacks.get(id);
+  if(pack)return <img className={`avatar fan-avatar ${className}`} src={`/models/${pack}/avatars/${id}.png?v=mouth-surface-v2-20261022`} width={192} height={192} alt="" aria-hidden="true" draggable={false} />;
   return <svg className={`avatar${secondWindIds.has(id) ? ' sw-avatar' : ''} ${className}`} viewBox="0 0 120 120" fill="none" stroke={ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{allPortraits[id] ?? <><circle cx="60" cy="58" r="42" fill={yellow} /><Eyes /><path d="M43 79q17 16 35-2" /></>}</svg>;
 }

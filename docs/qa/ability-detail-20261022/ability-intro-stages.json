@@ -1,0 +1,32 @@
+{
+  "stages": [
+    "desktop-entry-and-mobile-reduced-entry-before-effects-or-choice",
+    "skip-entry-preserves-pre-race-effect-then-choice",
+    "confirmed-egg-grant-public-on-both-clients",
+    "filmmaker-public-count-only-then-reveal-dismissed",
+    "duplicate-and-refresh-do-not-replay"
+  ],
+  "revealEvents": [
+    [
+      {
+        "eventId": "4",
+        "text": "✦蛋 · 1号能力获得者抽到新能力大长腿↗来源：蛋 · 大长腿卡持续至本场结束之后可点头像查看当前能力 ↗"
+      },
+      {
+        "eventId": "5",
+        "text": "✦电影制作人 · 2号手机朋友抽到私人手牌抽到 7 张私人手牌来源：电影制作人赛前抽牌手牌保留至本场结束 · 牌名仅本人可见之后可点头像查看当前能力 ↗"
+      }
+    ],
+    [
+      {
+        "eventId": "4",
+        "text": "✦蛋 · 1号能力获得者抽到新能力大长腿↗来源：蛋 · 大长腿卡持续至本场结束之后可点头像查看当前能力 ↗"
+      },
+      {
+        "eventId": "5",
+        "text": "✦电影制作人 · 2号手机朋友抽到私人手牌抽到 7 张私人手牌来源：电影制作人赛前抽牌手牌保留至本场结束 · 牌名仅本人可见之后可点头像查看当前能力 ↗"
+      }
+    ]
+  ],
+  "pageErrors": []
+}

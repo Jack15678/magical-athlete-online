@@ -12,6 +12,7 @@ const PING_INTERVAL_MS = 10_000;
 const PONG_TIMEOUT_MS = 25_000;
 
 export async function prepareBrowserRoom(meta: RelayMetadata): Promise<void> {
+  if(meta.authorityMode==='worker')return;
   if (!navigator.locks) throw Error('当前浏览器不支持安全的计算页面锁。请使用新版Chrome、Edge或Firefox，并通过HTTPS打开网站。');
   await navigator.locks.request(lockName(meta.code), { ifAvailable: true }, async lock => {
     if (!lock) throw Error('本房间已有计算页面，请回到原标签页。');
@@ -51,6 +52,8 @@ export class BrowserRelayConnection implements RoomConnection {
   private tickBusy = false;
   private replies = new Map<string, AwaitingReply>();
   private community = new CommunityFeed();
+  private chatHydrating=true;
+  private chatSyncIds=new Set<string>();
   private communityReplies = new Map<string, {resolve: (reply: ChatReply | RenameReply) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout>}>();
   subscribeCommunity = this.community.subscribe;
   sendChat(message: ChatSend): Promise<ChatReply> { return this.communityRequest({type: 'chat-send', requestId: crypto.randomUUID(), ...message}) as Promise<ChatReply>; }
@@ -108,7 +111,7 @@ export class BrowserRelayConnection implements RoomConnection {
     this.open(false);
   }
   acknowledgeEvents(cursor:number){this.eventClient.acknowledge(cursor);}
-  private readEvents(afterId:number):Promise<PublicEventBatch>{
+  readEvents(afterId:number):Promise<PublicEventBatch>{
     const requestId=crypto.randomUUID();
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{this.eventReplies.delete(requestId);reject(Error('动画记录同步超时，请重新连接。'));},10_000);
@@ -204,7 +207,10 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private receive(message: RelayServerMessage) {
     if (message.type === 'chat') {
-      this.community.update({messages: message.messages, latestId: message.latestId});
+      const synchronized=!!message.requestId&&this.chatSyncIds.delete(message.requestId);
+      const history=this.chatHydrating||synchronized;
+      this.community.update({messages: message.messages, latestId: message.latestId},history?'history':message.result?'update':'live');
+      this.chatHydrating=false;
       const pending = message.requestId ? this.communityReplies.get(message.requestId) : undefined;
       if (pending && message.requestId && message.result) { clearTimeout(pending.timer); this.communityReplies.delete(message.requestId); pending.resolve(message.result); }
     } else if (message.type === 'rename-result') {
@@ -212,10 +218,12 @@ export class BrowserRelayConnection implements RoomConnection {
       if (message.result.ok) this.community.update({name: message.result.name, renameRemaining: message.result.remaining});
       if (pending) { clearTimeout(pending.timer); this.communityReplies.delete(message.requestId); pending.resolve(message.result); }
     } else if (message.type === 'room-closed') {
-      if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.roomClosedMessage=message.reason==='host-away'?'房主连续离开超过30分钟，房间已关闭。':ROOM_CLOSED; this.finishClosed(); }
+      if (message.code === this.identity.roomCode) { this.roomExpired = message.reason === 'expired'; this.roomClosedMessage=message.reason==='host-away'?'房主离线保留期限已到，房间已关闭。':ROOM_CLOSED; this.finishClosed(); }
     } else if (message.type === 'auth-ok') {
       this.authenticated = true; this.reconnectDelay = 700; this.metadata = message.meta;
-      this.community.update({connected: true}); this.communityRoster(message.meta); this.send({type: 'chat-sync', afterId: 0});
+      this.chatHydrating=true;this.chatSyncIds.clear();
+      this.community.update({connected: true}); this.communityRoster(message.meta);
+      const chatRequestId=crypto.randomUUID();this.chatSyncIds.add(chatRequestId);this.send({type:'chat-sync',requestId:chatRequestId,afterId:0});
       this.lastPongAt = Date.now(); this.ping(this.lastPongAt);
       this.authorityOnline = message.authorityOnline; this.authorityRole = message.authority;
       if (this.requestedRole && (!message.authority || !this.authority)) { this.fail('中继未确认本页的计算资格，已停止计算。'); return; }
@@ -239,7 +247,7 @@ export class BrowserRelayConnection implements RoomConnection {
       if (this.latestRoom && message.room.version < this.latestRoom.version) return;
       const snapshotRequestId = (message as typeof message & { requestId?: string }).requestId;
       if (snapshotRequestId && snapshotRequestId === this.syncRequestId) this.synchronized = true;
-      this.latestRoom = { ...message.room, hosting: 'browser', authorityId: this.metadata?.authorityId, authorityOnline: this.authorityOnline };
+      this.latestRoom = { ...message.room, hosting: this.metadata?.authorityMode==='worker'?'worker':'browser', authorityId: this.metadata?.authorityId, authorityOnline: this.authorityOnline };
       if(message.room.closedAt)this.onSnapshot(this.latestRoom);else this.eventClient.receive(this.latestRoom);
       if (message.room.closedAt) { this.roomClosed = true; this.onStatus('closed', ROOM_CLOSED); return; }
       this.reportStatus();
@@ -298,7 +306,7 @@ export class BrowserRelayConnection implements RoomConnection {
   }
   private async tryAuthority() {
     const meta = this.metadata;
-    if (this.disposed || this.blocked || this.unavailableAuthority || this.authority || this.tryingLock || !this.authenticated || meta?.authorityId !== this.identity.playerId) return;
+    if (meta?.authorityMode==='worker'||this.disposed || this.blocked || this.unavailableAuthority || this.authority || this.tryingLock || !this.authenticated || meta?.authorityId !== this.identity.playerId) return;
     if (!navigator.locks) { this.unavailableAuthority = true; this.onStatus('error', '当前浏览器不支持计算页面锁，请回到原计算房主浏览器。'); return; }
     this.tryingLock = true;
     try {

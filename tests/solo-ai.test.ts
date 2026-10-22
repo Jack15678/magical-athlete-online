@@ -88,7 +88,7 @@ test('Browser authority automatically advances setup and AI without timeouts; pe
   assert.equal(authority.view('p0').results.length,4);assert(!authority.view('p0').logs.some(e=>e.type==='timeout'));authority.dispose();
 });
 
-test('All 102 printed characters can complete a solo practice race, including no-target powers',()=>{
+test('All playable characters can complete a solo practice race, including no-target powers',()=>{
   for(const character of CHARACTERS){
     let now=2000,room=createBrowserRoom(metadata(1),19,now);room.game.phase='selection';room.game.draft=undefined;room.game.round=1;
     room.game.players[0]!.hand=[character.id];room.game.players[0]!.selection=[];

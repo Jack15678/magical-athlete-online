@@ -19,13 +19,16 @@ export function cameraStep(distance: number, zoom: number, delta: number, reduce
   if (distance <= 0) return 1;
   if (reducedMotion) return 1;
   const dt = Math.min(Math.max(0, delta), .05);
-  return Math.min(1 - Math.exp(-dt * 4.8), 720 * dt / (Math.max(3, zoom) * distance));
+  const pixels = Math.max(3, zoom) * distance;
+  // A modest cruise boost between the slow landing and distant-travel limits.
+  const cruise = Math.max(0, Math.min(1, (pixels - 40) / 160, (1200 - pixels) / 400));
+  return Math.min(1 - Math.exp(-dt * (4.8 + 1.2 * cruise)), (720 + 240 * cruise) * dt / pixels);
 }
 
 /** Only public, already-confirmed presentation data enters the camera. */
-export function actionFocus(beat: PresentationBeat, racers: Racer[], queue: PresentationBeat[] = []): CameraFocus {
-  const chain = queue.filter(value => value.chainId && value.chainId === beat.chainId);
-  const beats = chain.length ? chain : [beat];
+export function actionFocus(beat: PresentationBeat, racers: Racer[], _queue: PresentationBeat[] = []): CameraFocus {
+  // Future reactions wait their turn: the camera follows the effect being shown.
+  const beats = [beat];
   const ids = [...new Set(beats.flatMap(value => [value.source, ...value.targets]).filter((id): id is string => !!id))];
   const positions = ids.flatMap(id => {
     const motions = beats.flatMap(value => value.motions).filter(value => value.racerId === id);
@@ -34,6 +37,15 @@ export function actionFocus(beat: PresentationBeat, racers: Racer[], queue: Pres
     return racer ? [racer.position] : [];
   });
   return { state: 'action', ids, positions, chainId: beat.chainId ?? beat.key };
+}
+
+/** Between actions, stay with the last public actor until my next turn starts. */
+export function idleFollowFocus(room: RoomView, racers: Racer[], lastAction?: CameraFocus | null): CameraFocus {
+  const current = racers.find(racer => racer.id === room.currentRacerId);
+  if (current?.playerId === room.selfId && !current.finished && !current.eliminated) return ownFocus(room, racers);
+  const lastSource = lastAction?.ids[0] ?? room.logs.findLast(event => ['die', 'roll', 'ability-dice', 'multi-dice', 'power', 'copy', 'transform', 'control', 'mount', 'move', 'warp', 'trip'].includes(event.type) && event.source)?.source;
+  const actor = racers.find(racer => racer.id === lastSource) ?? current;
+  return actor ? { state: 'action', ids: [actor.id], positions: [actor.position], chainId: lastAction?.chainId } : ownFocus(room, racers);
 }
 
 export function ownFocus(room: RoomView, racers: Racer[]): CameraFocus {

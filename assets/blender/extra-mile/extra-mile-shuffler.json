@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-shuffler",
+  "node": "toy_extra-mile-shuffler",
+  "url": "/models/extra-mile/extra-mile-shuffler.glb",
+  "bytes": 50984,
+  "triangles": 2272,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.75971,
+    0.21947
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-shuffler.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white playing card with black spade, blue limbs and red card stack",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

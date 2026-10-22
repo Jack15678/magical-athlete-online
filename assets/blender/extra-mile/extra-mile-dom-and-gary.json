@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-dom-and-gary",
+  "node": "toy_extra-mile-dom-and-gary",
+  "url": "/models/extra-mile/extra-mile-dom-and-gary.glb",
+  "bytes": 45844,
+  "triangles": 3348,
+  "draws": 4,
+  "bounds": [
+    0.6,
+    0.70208,
+    0.31455
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-dom-and-gary.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "orange cat with curled tail and separate small grey mouse companion",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-dom-and-gary.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

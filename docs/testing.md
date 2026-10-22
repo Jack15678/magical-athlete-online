@@ -1,5 +1,11 @@
 # 测试与验收记录
 
+## 能力相互作用与详情专项（2026-10-22）
+
+本轮按用户要求采用能力专项，不重复八人完整对局。`pnpm test:abilities`覆盖相关基础/扩展技能、嵌套复制、私密信息投影、旧版本、循环保护、详情与演出；网页只运行 `egg-character-info.spec.ts` 和 `ability-reveal-intro.spec.ts`，检查详情优先级、公开获得提示及入场先于赛前能力。结果与边界见[复制裁定](copy-ability-rulings.md)和[详情排版验收](ability-detail-layout-2026-10-22.md)。
+
+CI保留类型检查、生产构建和Worker打包预演。提交消息带独立行 `Validation-Scope: ability-interactions` 时，自动检查使用上述专项替代八人对局；没有此标记时仍默认一场八人检查。手动运行可选择 `ability-interactions`、`eight-only` 或 `all`，手动选择优先。标记仅选择公开检查范围，不代表测试已通过。
+
 更新：2026-10-21。此处区分实际执行结果、测试覆盖范围与尚未完成的公网验收。浏览器房主是主路线，Node/SQLite与Tailscale为备用；两种模式共用同一规则引擎。
 
 本轮微缩玩具运动会美术升级的同镜头前后截图、加长起点、开赛巡礼、桌面/手机视口与性能检查详见[美术打磨报告](toy-diorama.md)。

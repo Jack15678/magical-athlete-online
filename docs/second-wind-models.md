@@ -10,7 +10,7 @@
 - 游戏模型分别请求 `/models/second-wind/{id}.glb`，根节点 `toy_{id}`；统一 **+Y 向上、+Z 正面、地面原点、米制**，宽/深均不超过 0.6，高不超过 0.98。保留旧 36 个模型与其加载流程。
 - 游戏头像改为与旧角色一致的二维卡通 SVG，由 `second-wind-portraits-a/b/c.tsx` 分别绘制并经 `Avatar` 统一显示在圆框中；`/avatars/second-wind/{id}.svg` 为同源导出的矢量文件。`/models/second-wind/avatars/{id}.png` 保留为模型预览，192×192，不再作为界面头像。商业角色原图只用于本地核对，没有随发布资源再分发原卡面。
 
-36 名角色加 2 个模块共 **1,570,536 字节 GLB**、**126,714 三角形**；最大单角色 **5,168 三角形**，最多 **9 次材质绘制**。15 种共享的无纹理 Principled BSDF 玩具材质，所有资源自包含；单角色约 17–61 KB，只有参赛时才需要加载完整模型。移动端可沿用现有关闭投影、降低特效和减少动态效果的设置。
+36 名角色加 2 个模块共 **1,572,948 字节 GLB**、**127,026 三角形**；最大单角色 **5,168 三角形**，最多 **9 次材质绘制**。15 种共享的无纹理 Principled BSDF 玩具材质，所有资源自包含；单角色约 17–61 KB，只有参赛时才需要加载完整模型。移动端可沿用现有关闭投影、降低特效和减少动态效果的设置。
 
 ### 变身与坐骑
 
@@ -77,7 +77,7 @@
 
 [源文件审计](./evidence/second-wind/source-audit.json)实际逐一打开 38 份 Blender 源文件，核对命名可编辑零件、NLA 动作和导出网格闭合性；所有游戏网格开放边、游离边均为 0。审计包含源文件与 GLB 的 SHA-256，测试检查其对应的确实是当前交付资源。曲线转网格的端盖顶点在导出前焊接，避免只有坐标重合、拓扑仍断开的假封口。
 
-2026-10-21 最终模型检查 **41/41 通过**，详见[测试输出](./evidence/second-wind/model-tests.txt)。正、侧、背三个最终视图均已实际渲染并逐格检查；模型预览 PNG 由同一最终正视图生成。游戏中的二维卡通 SVG 另行逐角色绘制，已在[新旧头像对照图](./qa/second-wind/cartoon-avatar-contact-sheet.png)检查大厅及手机小尺寸，并通过 `tests/avatars.test.ts` 检查 72 个 ID 和同源导出资源。
+2026-10-22 模型检查 **42/42 通过**，详见[测试输出](./evidence/second-wind/model-tests.txt)。本轮只修正交换袋鼠偏移的口鼻，新增对称鼻孔及曲面微笑线，其他37份GLB的哈希未变；修正后的[脸部近景](./evidence/second-wind/switcharoo-after-face.png)、[实际游戏](./evidence/second-wind/switcharoo-game-desktop.png)及[手机](./evidence/second-wind/switcharoo-game-mobile.png)另存。总览源与该角色源已同步。此前36个模型的三视图用于整体构造检查，其中交换袋鼠仍是修正前版本，应以新的单角色图和GLB为准；旧PNG模型缩略图不用于游戏头像。游戏中的二维卡通 SVG 另行逐角色绘制，已在[新旧头像对照图](./qa/second-wind/cartoon-avatar-contact-sheet.png)检查大厅及手机小尺寸，并通过 `tests/avatars.test.ts` 检查 72 个 ID 和同源导出资源。
 
 模型三视图使用导出游戏网格渲染：[正面](./evidence/second-wind/all-36-front.png)、[侧面](./evidence/second-wind/all-36-side.png)、[背面](./evidence/second-wind/all-36-back.png)。这些是模型检查图；网页联机、手机视口、动画绑定和技能特效的验收属于整体游戏验收，不能用离线渲染代替。
 

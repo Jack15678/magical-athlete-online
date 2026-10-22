@@ -1,0 +1,203 @@
+{
+  "pool": "fans",
+  "results": [
+    {
+      "round": 1,
+      "placements": [
+        {
+          "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:1:0",
+          "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+          "characterId": "baba-yaga",
+          "rank": 1,
+          "points": 3
+        },
+        {
+          "racerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30:1:0",
+          "playerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30",
+          "characterId": "coach",
+          "rank": 2,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "placements": [
+        {
+          "racerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d:2:0",
+          "playerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d",
+          "characterId": "heckler",
+          "rank": 1,
+          "points": 4
+        },
+        {
+          "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:2:0",
+          "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+          "characterId": "extra-mile-snub",
+          "rank": 2,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "placements": [
+        {
+          "racerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d:3:0",
+          "playerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d",
+          "characterId": "le-saboteur",
+          "rank": 1,
+          "points": 5
+        },
+        {
+          "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:3:0",
+          "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+          "characterId": "nemesis",
+          "rank": 2,
+          "points": 3
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "placements": [
+        {
+          "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:4:0",
+          "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+          "characterId": "nepo-baby",
+          "rank": 1,
+          "points": 6
+        },
+        {
+          "racerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30:4:0",
+          "playerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30",
+          "characterId": "party-pooper",
+          "rank": 2,
+          "points": 4
+        }
+      ]
+    }
+  ],
+  "summaries": [
+    {
+      "round": 1,
+      "characters": [
+        "coach",
+        "baba-yaga",
+        "extra-mile-witch-hazel"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-fan-v3"
+    },
+    {
+      "round": 2,
+      "characters": [
+        "hotel",
+        "extra-mile-snub",
+        "heckler"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-fan-v3"
+    },
+    {
+      "round": 3,
+      "characters": [
+        "leaf-filmmaker",
+        "nemesis",
+        "le-saboteur"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-fan-v3"
+    },
+    {
+      "round": 4,
+      "characters": [
+        "party-pooper",
+        "nepo-baby",
+        "leaf-zombie"
+      ],
+      "rulesVersion": "cmyk-base-aug2026-fan-v3"
+    },
+    {
+      "phase": "finished",
+      "results": [
+        {
+          "round": 1,
+          "placements": [
+            {
+              "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:1:0",
+              "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+              "characterId": "baba-yaga",
+              "rank": 1,
+              "points": 3
+            },
+            {
+              "racerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30:1:0",
+              "playerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30",
+              "characterId": "coach",
+              "rank": 2,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "round": 2,
+          "placements": [
+            {
+              "racerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d:2:0",
+              "playerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d",
+              "characterId": "heckler",
+              "rank": 1,
+              "points": 4
+            },
+            {
+              "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:2:0",
+              "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+              "characterId": "extra-mile-snub",
+              "rank": 2,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "round": 3,
+          "placements": [
+            {
+              "racerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d:3:0",
+              "playerId": "1fbd4de5-2b0c-47e1-b73e-7bde65096f0d",
+              "characterId": "le-saboteur",
+              "rank": 1,
+              "points": 5
+            },
+            {
+              "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:3:0",
+              "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+              "characterId": "nemesis",
+              "rank": 2,
+              "points": 3
+            }
+          ]
+        },
+        {
+          "round": 4,
+          "placements": [
+            {
+              "racerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb:4:0",
+              "playerId": "45888a78-2c1f-41bb-819c-e7e8159cd5fb",
+              "characterId": "nepo-baby",
+              "rank": 1,
+              "points": 6
+            },
+            {
+              "racerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30:4:0",
+              "playerId": "fd44d74d-3d76-4e1f-93e0-47734d669a30",
+              "characterId": "party-pooper",
+              "rank": 2,
+              "points": 4
+            }
+          ]
+        }
+      ],
+      "steps": 349
+    }
+  ],
+  "errors": [],
+  "limitations": "Browser mobile viewport, not physical device GPU. Public-view legal intents sent through actual server-authoritative Durable Object WebSockets."
+}

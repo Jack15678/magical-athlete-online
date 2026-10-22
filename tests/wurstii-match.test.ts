@@ -5,6 +5,7 @@ import { systemRoomAction } from '../src/engine/runtime.js';
 import { decideAI } from '../src/engine/ai.js';
 import { createBrowserRoom, projectRoom } from '../src/shared/room-core.js';
 import { WURSTII_CHARACTERS } from '../src/shared/wurstii.js';
+import { legacyRoomConfig } from '../src/shared/room-config.js';
 import { Rooms } from '../src/server/rooms.js';
 import { Store } from '../src/server/store.js';
 import type { CharacterPool, Player, Room } from '../src/shared/types.js';
@@ -19,16 +20,41 @@ function step(room:Room){
   const action=decideAI(projectRoom(room,playerId,{authorityId:'p0',authorityOnline:true}));
   assert(action,`no legal action: ${s.phase}/${s.pending?.kind}`);applyGameAction(s,playerId,action);room.version++;
 }
-for(const pool of ['wurstii','all'] as const)for(const count of [2,4,8])test(`${pool} ${count} players complete four races, with choices restored from JSON`,()=>{
+for(const pool of ['wurstii','all'] as const)for(const count of [2,4,8])test(`${pool} ${count} players restore choices and ${pool==='wurstii'&&count===4?'preserve the upstream Huge Baby diagnostic pause':'complete four races'}`,()=>{
   const room=roomFor(count,pool);startGame(room.game);let steps=0,restores=0;
-  while(room.game.phase!=='finished'){
+  while(room.game.phase!=='finished'&&room.game.phase!=='paused'){
     assert(++steps<10000,`stalled ${pool}/${count}/${room.game.phase}/${room.game.pending?.kind}`);
     step(room);
     if(room.game.pending&&restores++<5)room.game=JSON.parse(JSON.stringify(room.game));
   }
+  // Upstream fan-v3 intentionally preserves diagnostic pauses instead of
+  // forcing a result. Seed7097 reaches Huge Baby at12 / arrow11 in race2;
+  // replaying this state with upstream 571b0cb produces the same pause.
+  if(pool==='wurstii'&&count===4){
+    assert.equal(room.game.phase,'paused');assert.equal(room.game.round,2);
+    assert.equal((room.game.flags.ruleHold as {kind:string}).kind,'resolution-diagnostic');
+    assert.equal(room.game.racers.find(r=>r.characterId==='huge-baby')?.position,12);
+    assert.equal(room.game.racers.find(r=>r.characterId==='cheerleader')?.position,11);
+    assert(room.game.queue.length);return;
+  }
+  assert.equal(room.game.phase,'finished');
   assert.equal(room.game.results.length,4);assert(room.game.players.every(p=>p.score>=0));
   assert(room.game.results.every(r=>r.placements.length<=2));
   assert(room.game.players.flatMap(p=>p.used).some(id=>id.startsWith('wurstii-')));
+});
+
+test('all five packs retain config through three races and diagnose mutual power reactions in race four',()=>{
+  const room=roomFor(4);room.game.config=legacyRoomConfig('all');
+  room.game.config.characterPacks['extra-mile']=true;room.game.config.characterPacks['leaf-fan']=true;
+  startGame(room.game);assert.equal(room.game.deck.length+room.game.draft!.market.length,151);
+  let steps=0;while(room.game.phase!=='finished'&&room.game.phase!=='paused'){assert(++steps<10000);step(room);}
+  // Game and Watch + Scoocher form a repeated reaction on wild arrows.
+  // Keep fan-v3's diagnostic pause and continuation, without inventing a winner.
+  assert.equal(room.game.results.length,3);assert.equal(room.game.round,4);assert.equal(room.game.phase,'paused');
+  assert.equal((room.game.flags.ruleHold as {kind:string}).kind,'resolution-diagnostic');assert(room.game.queue.length);
+  assert(room.game.racers.some(r=>r.characterId==='wurstii-mr-game-and-watch'));
+  assert(room.game.racers.some(r=>r.characterId==='scoocher'));
+  assert.deepEqual(JSON.parse(JSON.stringify(room)).game.config,room.game.config);
 });
 
 for(const track of ['mild','wild'] as const)test(`all30 Wurstii roles can finish solo ${track} practice without a target`,()=>{

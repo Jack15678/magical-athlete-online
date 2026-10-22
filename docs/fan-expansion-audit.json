@@ -1,0 +1,2414 @@
+{
+  "verifiedAt": "2026-10-22",
+  "engineVersion": "cmyk-base-aug2026-fan-v3",
+  "sources": {
+    "verifiedAt": "2026-10-22",
+    "extraMile": {
+      "webCount": 32,
+      "pdfFrontCount": 33,
+      "excludedPdfOnly": "Groundhogs Day / DÉJÀ MOVE",
+      "isolated": [
+        "extra-mile-box"
+      ]
+    },
+    "leaf": {
+      "count": 18,
+      "ready": 18,
+      "missing": [],
+      "acquisition": "BGG downloads returned403; user provided original files459312/459301/459299; fullPDF andPNG read2026-10-22"
+    }
+  },
+  "files": [
+    {
+      "file": "ExtraMile.pdf",
+      "bytes": 21141125,
+      "sha256": "1aa7b8aaa25fc363cd0fc672cde2a8fe61cf40a6ce4e88ca48b853cb95ed9c9e"
+    },
+    {
+      "file": "Printable_Cards_-_Leafs_Fan_Expansion.pdf",
+      "bytes": 1423068,
+      "sha256": "093cad1f28c76d772dd68516a56c5138e88bb943f97f7fc49a2830cc17196edd"
+    },
+    {
+      "file": "Rulebook_-_Leafs_Fan_Expansion.pdf",
+      "bytes": 1147647,
+      "sha256": "2018e28fd463af8e0b740ae98071593342e1c789b88c06a06998a1639b633da6"
+    },
+    {
+      "file": "PNG_Images_-_Leaf's_Fan_Expansion.zip",
+      "bytes": 2282380,
+      "sha256": "a8296688a4a18a611efc83cf97a4fa2b7cfb52382111f0914129f6a3b0eb811f"
+    }
+  ],
+  "characters": [
+    {
+      "id": "extra-mile-broken-clock",
+      "nameEn": "Broken Clock",
+      "nameZh": "坏时钟",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主移动掷两骰；不同取较低值，相同取两骰总和。",
+      "timing": [
+        "main-roll"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Broken Clock",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Broken Clock",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-02",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Broken%20Clock.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-cletus",
+      "nameEn": "Cletus",
+      "nameZh": "克莱特斯",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "可代替主移动选择3格内另一选手，双方分别掷对抗骰：同点淘汰目标；自己高则重新进行正常主移动；对方高则对方前进1。",
+      "timing": [
+        "main-replacement",
+        "contest-roll"
+      ],
+      "optional": true,
+      "targets": "other-within-3",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Cletus",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Cletus",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-03",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Cletus.png",
+      "adaptation": "对抗骰不触发仅主移动骰能力；双方控制者均须点击。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": true,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": true,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-doc-paradox",
+      "nameEn": "Doc Paradox",
+      "nameZh": "悖论博士",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "从终点倒向起点比赛；与其他选手同格时传回终点，并从此主移动增加3。",
+      "timing": [
+        "before-race",
+        "stop",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Doc Paradox",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Doc Paradox",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-04",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Doc%20Paradox.png",
+      "adaptation": "数字适配：倒向起点完赛；倒向主移动的距离仍先应用通常加减；每次重置累计+3。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": true
+      }
+    },
+    {
+      "id": "extra-mile-doctor-dice",
+      "nameEn": "Doctor Dice",
+      "nameZh": "骰子医生",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "不会绊倒。主移动前可传到一名倒地选手的格子并使其起身；向后传送时本次主移动+2。",
+      "timing": [
+        "before-main",
+        "trip"
+      ],
+      "optional": true,
+      "targets": "tripped-other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Doctor Dice",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Doctor Dice",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-05",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Doctor%20Dice.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-dom-and-gary",
+      "nameEn": "Dom and Gary",
+      "nameZh": "多姆与加里",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "加里从第4格开始，总在多姆之前行动；多姆越过或与加里同格会淘汰加里并获得主移动+2；加里前二完赛时拿走该名次积分。",
+      "timing": [
+        "before-race",
+        "pass",
+        "stop",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "extra-pawn",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Dom and Gary",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Dom and Gary",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-06",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Dom%20and%20Gary.png",
+      "adaptation": "数字适配：加里由多姆控制者操作但不为玩家计分，其拿走的名次积分退出本局。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": true,
+        "copiesAbilities": false,
+        "multiplePawns": true,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-echo",
+      "nameEn": "Echo",
+      "nameZh": "回声",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "可代替掷骰，按前一名行动选手主移动的实际移动格数移动。",
+      "timing": [
+        "main-replacement"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Echo",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / Echo",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-07",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Echo.png",
+      "adaptation": "PDF写previous racer moved，网页写rolled；采用PDF。首次行动无前次记录时正常掷骰；传送不算移动。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-gingy",
+      "nameEn": "Gingy",
+      "nameZh": "姜饼人",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "有4点生命；其他选手单独落到自己的格子时失去1生命，主移动永久+1；生命归零淘汰。",
+      "timing": [
+        "stop",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "arriving-other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Gingy",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Gingy",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-08",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Gingy.png",
+      "limit": "4生命",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": true,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-gluebert",
+      "nameEn": "Gluebert",
+      "nameZh": "胶水伯特",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "同格其他选手主移动-2；其他选手越过自己时，该次移动少1格。",
+      "timing": [
+        "main-modifier",
+        "passed"
+      ],
+      "optional": false,
+      "targets": "other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Gluebert",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Gluebert",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-09",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Gluebert.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-heads",
+      "nameEn": "Heads",
+      "nameZh": "硬币头",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "每次自己掷骰后可使用骰子底面的点数（七减当前面）。",
+      "timing": [
+        "any-roll"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Heads",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Heads",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-10",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Heads.png",
+      "adaptation": "每颗骰只翻一次；翻面在强制重掷检查之前，固定点数后不再翻回。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-honey-pot",
+      "nameEn": "Honey Pot",
+      "nameZh": "蜜罐",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "赛前向公共蜜罐加入等于场次的积分，并标记一格；选手落上后掷骰领取至多相应点数，自己每发出1分前进1格。",
+      "timing": [
+        "before-race",
+        "stop",
+        "ability-roll"
+      ],
+      "optional": false,
+      "targets": "marked-space",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Honey Pot",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Honey Pot",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-11",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Honey%20Pot.png",
+      "adaptation": "数字适配：蜜罐由公共供应补充，不扣控制者积分；余额不足只发余额；每名蜜罐独立标记，共享本场蜜罐。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": true,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-king-pete",
+      "nameEn": "King Pete",
+      "nameZh": "皮特国王",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "其他选手掷出5或6时，该次主移动少1格，自己前进1格。",
+      "timing": [
+        "any-roll"
+      ],
+      "optional": false,
+      "targets": "other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "King Pete",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / King Pete",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-12",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/King%20Pete.png",
+      "adaptation": "数字适配：主骰扣当前主移动；能力骰与对抗骰无主移动可扣，仍触发国王前进。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-lazy-bones",
+      "nameEn": "Lazy Bones",
+      "nameZh": "懒骨头",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "未掷到6前不能离开起点；掷到6时传到领跑者所在格，并立即再行动一回合。",
+      "timing": [
+        "main-roll"
+      ],
+      "optional": false,
+      "targets": "lead",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Lazy Bones",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Lazy Bones",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-13",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Lazy%20Bones.png",
+      "adaptation": "数字适配：锁在起点仅限制自己的主移动；首次掷6后解除，随后每次主骰6仍执行传送和额外回合。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-marksman",
+      "nameEn": "Marksman",
+      "nameZh": "神射手",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主移动前可对3格之外的目标逐次掷骰累加；总和等于目标所在格则淘汰，否则超出后目标前进1。",
+      "timing": [
+        "before-main",
+        "ability-roll"
+      ],
+      "optional": true,
+      "targets": "other-beyond-3",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Marksman",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / Marksman",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-14",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Marksman.png",
+      "adaptation": "数字适配：连续单骰累加，达到或超过目标格号即结束；每颗骰都等待操作者。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": true,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-moneybags",
+      "nameEn": "Moneybags",
+      "nameZh": "钱袋先生",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "可支付1积分代替掷骰，以自己选择的1至8格为主移动距离。",
+      "timing": [
+        "main-replacement"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Moneybags",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Moneybags",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-15",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Moneybags.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-mr-fox",
+      "nameEn": "Mr. Fox",
+      "nameZh": "狐狸先生",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "每场至多3次，在公开技能生效前阻止该次能力。",
+      "timing": [
+        "reaction"
+      ],
+      "optional": true,
+      "targets": "public-power",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Mr. Fox",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Mr. Fox",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-16",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Mr.%20Fox.png",
+      "adaptation": "数字适配：按本场固定顺序响应，一个阻止成功即关闭窗口；阻止不再互相阻止；已付款和已花次数不返还。持续能力按单次可观察激活开启窗口。",
+      "limit": "每场3次",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": true,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-oddball",
+      "nameEn": "Oddball",
+      "nameZh": "怪球",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "自己主骰偶数时本次主移动-2，奇数时+3。",
+      "timing": [
+        "main-roll",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Oddball",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Oddball",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-17",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Oddball.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-pooh",
+      "nameEn": "Pooh",
+      "nameZh": "维尼",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "同一回合内多个能力发生后，自己前进1；倒地后立即起身。",
+      "timing": [
+        "power-done",
+        "trip"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Pooh",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Pooh",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-18",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Pooh.png",
+      "adaptation": "数字适配：本回合第二次及之后每次能力完成均前进1；自己的该次响应不继续触发自己。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-robin-hood",
+      "nameEn": "Robin Hood",
+      "nameZh": "罗宾汉",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "自己越过或与领跑者同格时，从其拿1积分给末位玩家，然后自己前进2。",
+      "timing": [
+        "pass",
+        "stop"
+      ],
+      "optional": false,
+      "targets": "lead,last",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Robin Hood",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / Robin Hood",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-19",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Robin%20Hood.png",
+      "adaptation": "数字适配：并列领先或末位按本场固定顺序取第一名不同选手；不足1分不转移，仍移动2格。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-saint-nick",
+      "nameEn": "Saint Nick",
+      "nameZh": "圣尼克",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "自己单独落到有其他选手的格子时，每名其他选手使自己前进1格；之后那些选手的控制者依次掷骰，1至3后退1格、4至6前进2格。",
+      "timing": [
+        "stop",
+        "ability-roll"
+      ],
+      "optional": false,
+      "targets": "co-located-others",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Saint Nick",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Saint Nick",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-20",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Saint%20Nick.png",
+      "adaptation": "按选手实例计数与逐个掷骰，同玩家的两个选手仍分别执行；自身额外移动完成及连锁后才开始送礼骰。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": true,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-school-bully",
+      "nameEn": "School Bully",
+      "nameZh": "校园恶霸",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主骰3使所有其他选手倒地；他们下一次主移动可掷恢复骰，1至3可起身并按该骰移动，恶霸前进2。",
+      "timing": [
+        "main-roll",
+        "recovery-roll"
+      ],
+      "optional": true,
+      "targets": "all-others",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "School Bully",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / School Bully",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-21",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/School%20Bully.png",
+      "adaptation": "PDF明确恢复成功后按该骰移动，网页省略，采用PDF；4至6只起身而失去主移动。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-scout",
+      "nameEn": "Scout",
+      "nameZh": "童子军",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主骰确定后、移动前可向前或向后传送1格。",
+      "timing": [
+        "main-roll"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Scout",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Scout",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-22",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Scout.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-shuffler",
+      "nameEn": "Shuffler",
+      "nameZh": "洗牌师",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "赛前将本场所有选手印刷能力洗牌重新分配；自己独自末位时可再次洗牌。",
+      "timing": [
+        "before-race",
+        "turn-start"
+      ],
+      "optional": true,
+      "targets": "all-racers",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Shuffler",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Shuffler",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-23",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Shuffler.png",
+      "adaptation": "数字适配：重新分配能力不改控制者、位置与棋子；既有赛前窗口不重新打开，已建立对象与资源仍绑定实例。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": true,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-silly-goose",
+      "nameEn": "Silly Goose",
+      "nameZh": "傻鹅",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主骰1至6分别改为移动-3、0、2、5、7、10格。",
+      "timing": [
+        "main-roll"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Silly Goose",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Silly Goose",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-24",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Silly%20Goose.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-snake-eyes",
+      "nameEn": "Snake Eyes",
+      "nameZh": "蛇眼",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "赛前选择冠军并下注；猜中获得下注额3倍积分，否则失去下注额。",
+      "timing": [
+        "before-race",
+        "race-end"
+      ],
+      "optional": false,
+      "targets": "chosen-racer",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Snake Eyes",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / Snake Eyes",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-25",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Snake%20Eyes.png",
+      "adaptation": "数字适配：下注额限当前玩家积分，不预扣；结束按净增3倍或扣注额结算；和局视为未猜中。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-snub",
+      "nameEn": "Snub",
+      "nameZh": "落选仔",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主移动增加本批选秀中在自己之前被选出的角色数量。",
+      "timing": [
+        "draft",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Snub",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Snub",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-26",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Snub.png",
+      "adaptation": "记录本批选秀选择前的全桌选牌数；练习自由组队顺序视为该次选牌顺序。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-terrible-toddler",
+      "nameEn": "Terrible Toddler",
+      "nameZh": "可怕幼童",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "主骰1或2时，在主移动前额外掷一骰，使自己周围不超过该骰距离的所有选手倒地。",
+      "timing": [
+        "main-roll",
+        "ability-roll"
+      ],
+      "optional": false,
+      "targets": "within-range",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Terrible Toddler",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Terrible Toddler",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-27",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Terrible%20Toddler.png",
+      "adaptation": "anyone包含自己；额外范围骰不触发主移动专属能力。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-thief",
+      "nameEn": "Thief",
+      "nameZh": "盗贼",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "赛前秘密指定另一选手；本场结束公开目标，偷取该选手本场获得的积分。",
+      "timing": [
+        "before-race",
+        "race-end"
+      ],
+      "optional": false,
+      "targets": "secret-other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Thief",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p5 / Thief",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-28",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Thief.png",
+      "adaptation": "秘密目标保存在GameState私有flags，不能放Racer公共flags。数字适配按目标实例的正向积分收入记账，最多偷其控制者当前剩余积分。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": true,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-toll-troll",
+      "nameEn": "Toll Troll",
+      "nameZh": "收费巨魔",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "赛前标记一格，任何选手停在该格自己获得1积分。",
+      "timing": [
+        "before-race",
+        "stop"
+      ],
+      "optional": false,
+      "targets": "marked-space",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Toll Troll",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p7 / Toll Troll",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-29",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Toll%20Troll.png",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-totally-fair-ref",
+      "nameEn": "Totally Fair Ref",
+      "nameZh": "绝对公平裁判",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "其他选手从非领先位置进入领先时倒地。",
+      "timing": [
+        "move"
+      ],
+      "optional": false,
+      "targets": "new-leader",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Totally Fair Ref",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p1 / Totally Fair Ref",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-30",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Totally%20Fair%20Ref.png",
+      "adaptation": "数字适配：从不在并列领先变为并列领先也算进入；同组同时到达合并检查。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-whisper",
+      "nameEn": "Whisper",
+      "nameZh": "低语",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "自己停到被占用格时，移动到前后最近空格；别人落到自己的格子时，自己前进至下个空格。",
+      "timing": [
+        "stop"
+      ],
+      "optional": true,
+      "targets": "nearest-empty",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Whisper",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Whisper",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-31",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Whisper.png",
+      "adaptation": "等距两个空格由控制者选择；以正常移动结算经过和停格触发。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "extra-mile-witch-hazel",
+      "nameEn": "Witch Hazel",
+      "nameZh": "女巫海泽尔",
+      "translation": "本项目译名",
+      "edition": "extra-mile",
+      "ability": "可把非负主移动距离分为自己前进和另一名选手后退；先完成自身移动及连锁，再对所选目标后退。",
+      "timing": [
+        "main-allocation"
+      ],
+      "optional": true,
+      "targets": "one-other",
+      "scope": "按选手实例；其他选手包含同一玩家的另一选手。",
+      "duration": "本次效果；生命、次数与永久加值保存至本场结束",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/?v=13",
+          "title": "Extra Mile 作者角色网页",
+          "locator": "Witch Hazel",
+          "accessed": "2026-10-22",
+          "version": "v13，32名名单"
+        },
+        {
+          "url": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+          "title": "Extra Mile 作者卡面PDF",
+          "locator": "PDF p3 / Witch Hazel",
+          "accessed": "2026-10-22",
+          "version": "2026-10-22下载，8页33张正面"
+        }
+      ],
+      "testId": "EM-32",
+      "verified": true,
+      "verification": "作者网页与PDF卡面交叉核对；规则采用PDF优先",
+      "imageUrl": "https://johnnlds.github.io/Magical-Athlete-Racers/images/extra-mile/Witch%20Hazel.png",
+      "adaptation": "PDF明确one other racer，网页写other racers；查未发现作者勘误，采用PDF单目标。全给自身或全给目标均可；负主移动不分配。",
+      "limit": "按每个独立触发分别结算",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": true,
+        "allocatesMovement": true,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-catfish",
+      "nameEn": "Catfish",
+      "nameZh": "鲶鱼",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "侧躺比赛且不会绊倒。另一名选手从自己身后移动到自己前方时，自己前进1格。",
+      "timing": [
+        "pass",
+        "trip-immunity"
+      ],
+      "optional": false,
+      "targets": "another-racer-passes",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [
+        "tripped"
+      ],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡01 Catfish；Rulebook p1；ZIP Card images/01 Catfish.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-01",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "不含从同格出发或停在同格；按选手而非控制者判断。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/01 Catfish.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-crash-dummy",
+      "nameEn": "Crash Dummy",
+      "nameZh": "碰撞假人",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "主移动+2；主移动停在至少有另一名选手的格子时，同格所有选手（含自己）先绊倒，再结算其他落格能力。赛前自己绊倒。",
+      "timing": [
+        "before-race",
+        "main-modifier",
+        "main-stop"
+      ],
+      "optional": false,
+      "targets": "all-sharing-racers",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [
+        "tripped"
+      ],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡02 Crash Dummy；Rulebook p1；ZIP Card images/02 Crash Dummy.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-02",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "主移动才引发碰撞；同一玩家的另一名选手仍受影响。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/02 Crash Dummy.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-dark-horse",
+      "nameEn": "Dark Horse",
+      "nameZh": "黑马",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "回合开始时独自末位，本回合主移动掷骰的距离翻倍。",
+      "timing": [
+        "turn-start",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡03 Dark Horse；Rulebook p1；ZIP Card images/03 Dark Horse.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-03",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "回合开始快照判定；并列末位不翻倍。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/03 Dark Horse.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-kangaroo",
+      "nameEn": "Kangaroo",
+      "nameZh": "袋鼠",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "任一选手结束移动，恰停在自己正前方1格时，自己前进2格。",
+      "timing": [
+        "stop"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡04 Kangaroo；Rulebook p1；ZIP Card images/04 Kangaroo.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-04",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "适用所有移动；非只限主移动；自身移动不触发自己。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/04 Kangaroo.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-loan-shark",
+      "nameEn": "Loan Shark",
+      "nameZh": "高利贷鲨",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "赛前给每个对手的选手牌放1枚积分筹码；与仍持有该筹码的选手同格时取走它；比赛结束时未取走的筹码归持牌者。",
+      "timing": [
+        "before-race",
+        "stop",
+        "race-end"
+      ],
+      "optional": false,
+      "targets": "opponent-racers",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡05 Loan Shark；Rulebook p1；ZIP Card images/05 Loan Shark.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-05",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "双选手模式不放在同一控制者的另一张牌上；每张牌最多取回本能力放的1枚。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/05 Loan Shark.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-lonely-wolf",
+      "nameEn": "Lonely Wolf",
+      "nameZh": "孤狼",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "回合开始时与另一名选手同格，本次主移动+2；否则+1。此能力不触发小挪挪。",
+      "timing": [
+        "turn-start",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡06 Lonely Wolf；Rulebook p1；ZIP Card images/06 Lonely Wolf.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-06",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "在回合开始、掷骰前判定同格；小挪挪Scoocher例外是作者规则。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/06 Lonely Wolf.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-nepo-baby",
+      "nameEn": "Nepo Baby",
+      "nameZh": "关系户宝宝",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "本局此前每枚冠军奖杯或亚军绶带，使自己的主移动+1。",
+      "timing": [
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡07 Nepo Baby；Rulebook p1；ZIP Card images/07 Nepo Baby.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-07",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "只数本控制者在此前各场获得的第一、第二名，不数积分总额。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/07 Nepo Baby.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-philanthropist",
+      "nameEn": "Philanthropist",
+      "nameZh": "慈善家",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "主移动掷2骰，选择1骰供自己主移动，并将另一骰交给另一选手；该选手下一次主移动不掷骰而使用赠骰，若该回合跳过掷骰，回合末弃掉赠骰。",
+      "timing": [
+        "main-roll",
+        "choose-die",
+        "choose-target",
+        "next-main"
+      ],
+      "optional": false,
+      "targets": "another-racer",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡08 Philanthropist；Rulebook p1；ZIP Card images/08 Philanthropist.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-08",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "赠骰是公开已知点数；不当作接受者新掷出的骰；同玩家另一选手是合法目标。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/08 Philanthropist.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-race-car",
+      "nameEn": "Race Car",
+      "nameZh": "赛车",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "赛前获得2分；主移动掷骰后、移动前，可以每回合最多花1分令该次主移动+3。",
+      "timing": [
+        "before-race",
+        "main-roll-final",
+        "main-modifier"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p1，卡09 Race Car；Rulebook p1；ZIP Card images/09 Race Car.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-09",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "扣减实际积分且服务端校验余额；并非额外掷骰。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/09 Race Car.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-revolutionary",
+      "nameEn": "Revolutionary",
+      "nameZh": "革命家",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "回合开始时独自末位，主移动掷骰前传送到当前领先选手所在格。",
+      "timing": [
+        "turn-start",
+        "warp"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡10 Revolutionary；Rulebook p2；ZIP Card images/10 Revolutionary.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-10",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "并列领先者同格；并列末位不触发。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/10 Revolutionary.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-sole-survivor",
+      "nameEn": "Sole Survivor",
+      "nameZh": "唯一幸存者",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "本场比赛中此选手自己每获得1分，主移动+1；每次从未绊倒变为绊倒，获得1分。",
+      "timing": [
+        "score",
+        "trip",
+        "main-modifier"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [
+        "tripped"
+      ],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡11 Sole Survivor；Rulebook p2；ZIP Card images/11 Sole Survivor.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-11",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "仅本场此选手的入账，不能计同一玩家另一名选手所得；包含星格、高利贷鲨等来源。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/11 Sole Survivor.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-sore-loser",
+      "nameEn": "Sore Loser",
+      "nameZh": "输不起",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "比赛结束时自己独自末位，获得3分。",
+      "timing": [
+        "race-end"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡12 Sore Loser；Rulebook p2；ZIP Card images/12 Sore Loser.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-12",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "按实际位置判断独自末位；真正循环判和不追加赛末奖励。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/12 Sore Loser.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-spiteful-spirit",
+      "nameEn": "Spiteful Spirit",
+      "nameZh": "怨灵",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "自己从绊倒起身时，前进1格并绊倒所有其他选手。",
+      "timing": [
+        "recover"
+      ],
+      "optional": false,
+      "targets": "all-other-racers",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [
+        "tripped"
+      ],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡13 Spiteful Spirit；Rulebook p2；ZIP Card images/13 Spiteful Spirit.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-13",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "其他选手包括同一控制者的另一名选手；由同一规则队列按序结算。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/13 Spiteful Spirit.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-toucan",
+      "nameEn": "Toucan",
+      "nameZh": "巨嘴鸟",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "主移动骰掷出2时，可以将该骰点调整为1～6任意值，并按调整后的值进行主移动。",
+      "timing": [
+        "main-roll-final",
+        "adjust-die"
+      ],
+      "optional": true,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡14 Toucan；Rulebook p2；ZIP Card images/14 Toucan.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-14",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "调整不算再次掷骰；三角人等只看真实掷出值的能力不因调整触发。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/14 Toucan.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-triangle-man",
+      "nameEn": "Triangle Man",
+      "nameZh": "三角人",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "任何原因掷出的实体骰面为3时，自己前进1格，先于该骰的正常移动；多骰中的每个3分别触发。",
+      "timing": [
+        "raw-die"
+      ],
+      "optional": false,
+      "targets": "self",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡15 Triangle Man；Rulebook p2；ZIP Card images/15 Triangle Man.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-15",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "对抗、技能、主移动、重掷均适用，调整成3不触发；自己的主骰3先前进1再主移动3。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/15 Triangle Man.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": true,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": false,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-zombie",
+      "nameEn": "Zombie",
+      "nameZh": "僵尸",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "赛前可以选择此前一场比赛失利的角色，本场使用其能力，仍使用自己的棋子，并获得所复制能力的赛前效果。",
+      "timing": [
+        "before-race",
+        "copy"
+      ],
+      "optional": true,
+      "targets": "previous-race-loser",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡16 Zombie；Rulebook p2；ZIP Card images/16 Zombie.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-16",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "项目数字化裁定：失利指该场未获冠军奖杯或亚军绶带；保留独立角色ID与棋子身份。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/16 Zombie.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": true,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": true,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-thespian",
+      "nameEn": "Thespian",
+      "nameZh": "戏剧演员",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "每次主移动掷骰前，弃掉未选角色牌堆顶牌，直到自己下个回合前拥有该牌的能力。忽略复制牌的赛前能力。",
+      "timing": [
+        "before-main",
+        "copy",
+        "discard"
+      ],
+      "optional": false,
+      "targets": "unchosen-deck",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡17 Thespian；Rulebook p2；ZIP Card images/17 Thespian.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-17",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "上一张已展示复制牌在下次换牌时回公共弃牌堆；牌堆耗尽则洗公共弃牌堆。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/17 Thespian.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": false,
+        "elimination": false,
+        "copiesAbilities": true,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    },
+    {
+      "id": "leaf-filmmaker",
+      "nameEn": "Filmmaker",
+      "nameZh": "电影制作人",
+      "translation": "本项目译名",
+      "edition": "leaf",
+      "ability": "赛前从未选角色牌堆抽7张私人手牌；每次主移动掷骰前弃1张，从此直到自己下个回合前拥有其能力。忽略复制牌的赛前能力。",
+      "timing": [
+        "before-race",
+        "before-main",
+        "secret-choice",
+        "copy",
+        "discard"
+      ],
+      "optional": false,
+      "targets": "own-secret-hand",
+      "scope": "按稳定选手ID与当前控制者ID分别判定；非官方粉丝扩展",
+      "duration": "本场；临时复制能力持续到自身下回合换牌",
+      "statuses": [],
+      "sources": [
+        {
+          "url": "https://boardgamegeek.com/filepage/327878/leafs-fan-expansion-for-magical-athlete",
+          "title": "Leaf作者原始Printable Cards / Rulebook / PNG Images",
+          "locator": "Printable正面p3，卡18 Filmmaker；Rulebook p2；ZIP Card images/18 Filmmaker.png",
+          "accessed": "2026-10-22",
+          "version": "用户提供作者3份原始文件，2026-10-22核验"
+        }
+      ],
+      "testId": "LEAF-18",
+      "verified": true,
+      "verification": "已实际读取原始Printable卡面、两页Rulebook与PNG卡面；机制测试见leaf-expansion.test.ts",
+      "adaptation": "手牌仅当前控制者可见；公开展示已弃并正在复制的牌；上一张展示牌换牌时才回公共弃牌堆。",
+      "artworkReference": "PNG Images ZIP / Gamepiece images/18 Filmmaker.png",
+      "limit": "每个独立合法触发分别处理；无统一技能次数上限",
+      "mechanics": {
+        "requiresRoll": false,
+        "requiresTargetChoice": false,
+        "allocatesMovement": false,
+        "waitsForOtherController": false,
+        "reactionWindow": false,
+        "secretInformation": true,
+        "elimination": false,
+        "copiesAbilities": true,
+        "multiplePawns": false,
+        "specialVictory": false
+      }
+    }
+  ]
+}

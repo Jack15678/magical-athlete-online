@@ -1,0 +1,29 @@
+{
+  "id": "extra-mile-oddball",
+  "node": "toy_extra-mile-oddball",
+  "url": "/models/extra-mile/extra-mile-oddball.glb",
+  "bytes": 45392,
+  "triangles": 2044,
+  "draws": 3,
+  "bounds": [
+    0.6,
+    0.77903,
+    0.52258
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-oddball.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "white baseball, red stitching, thick black spectacles and buck teeth",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts."
+}

@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-22T06:08:44.459Z",
+  "backend": "local workerd + SQLite Durable Objects + real WebSocket",
+  "rooms": 30,
+  "clients": 60,
+  "durationMs": 10000,
+  "elapsedMs": 15398,
+  "actions": 390,
+  "snapshots": 1020,
+  "ackMs": {
+    "p50": 127.6,
+    "p95": 310.82,
+    "max": 426.47
+  },
+  "maxHarnessRssMiB": 94.8,
+  "capacity": {
+    "used": 30,
+    "limit": 30
+  },
+  "errors": [
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout",
+    "Error: worker ack timeout"
+  ],
+  "phases": [
+    "draft"
+  ],
+  "notes": "Memory is the Node load harness; workerd process memory is measured separately. This local result does not measure production-region latency."
+}

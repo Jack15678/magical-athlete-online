@@ -1,0 +1,25 @@
+{
+  "renderedFrames": 127,
+  "calls": 183,
+  "triangles": 89496,
+  "geometries": 59,
+  "textures": 41,
+  "environment": true,
+  "loadedModels": 2,
+  "loadedModelNames": [
+    "toy_banana",
+    "toy_coach"
+  ],
+  "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A788) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "pixelRatio": 1,
+  "shadows": true,
+  "toneMapping": 4,
+  "exposure": 1.1,
+  "colorSpace": "srgb",
+  "samples": 80,
+  "medianFrameMs": 10.199999809265137,
+  "p95FrameMs": 12.400000095367432,
+  "maxFrameMs": 14.599999904632568,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+  "caveat": "Measured in local headless Edge at the stated viewport; mobile is a viewport/layout check, not a physical phone performance measurement. Forced invalidate samples actual WebGL scene frames without claiming idle demand rendering is continuous."
+}

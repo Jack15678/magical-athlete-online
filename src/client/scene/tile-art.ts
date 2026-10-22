@@ -9,8 +9,6 @@ export function specialTileTexture(kind: 'star' | 'trip' | 'arrow', move: number
   const paper = kind === 'star' ? '#fff8bc' : kind === 'trip' ? '#fff1d7' : backward ? '#f1e1ff' : '#e1fff0';
   const background = kind === 'star' ? '#ffd34f' : kind === 'trip' ? '#ef7463' : backward ? '#bf94eb' : '#69d0b6';
   context.fillStyle = background; context.fillRect(0, 0, 512, 512);
-  context.strokeStyle = ink; context.lineWidth = 10;
-  context.strokeRect(12, 12, 488, 488);
   // Edge stripes remain visible even with the maximum crowd in the middle.
   context.save(); context.beginPath(); context.rect(20, 20, 472, 472); context.clip();
   context.strokeStyle = ink; context.globalAlpha = .14; context.lineWidth = 17;
@@ -38,8 +36,7 @@ export function specialTileTexture(kind: 'star' | 'trip' | 'arrow', move: number
     context.font = `950 ${text.length > 2 ? 39 : 48}px "Microsoft YaHei",sans-serif`; context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(text, x + width / 2, y + 38);
   };
   const value = kind === 'star' ? '+1' : kind === 'trip' ? '绊倒' : `${(move ?? 0) > 0 ? '+' : ''}${move ?? 0}`;
-  badge(String(index), 24, 24, 86); badge(value, 356, 24, 132, true);
-  badge(value, 24, 416, 132, true); badge(String(index), 402, 416, 86);
+  badge(String(index).padStart(2, '0'), 24, 24, 86); badge(value, 356, 416, 132, true);
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
   return texture;
 }

@@ -1,7 +1,8 @@
 import { publicEventBatch } from '../shared/public-events.js';
+import { secureRandomSeed, type RandomSeed } from '../shared/random.js';
 import { immediateRoomAction } from '../shared/automation.js';
-import { personalRoom, roomExpiry } from '../shared/room-lifecycle.js';
-import { automaticRoomAction as automaticAction } from '../engine/runtime.js';
+import { personalRoom, roomExpiry, roomExpiryMessage } from '../shared/room-lifecycle.js';
+import { timeoutRoomAction as timeoutAction } from '../engine/runtime.js';
 import { createBrowserRoom, projectRoom, reconcileRoster, reduceRoomAction, setRoomDeadline, validateActionEnvelope, validateMetadata } from '../shared/room-core.js';
 import type { ActionEnvelope, ActionReply, Room, RoomView } from '../shared/types.js';
 import type { RelayMetadata } from '../shared/relay.js';
@@ -12,9 +13,9 @@ interface StoredRoom { code: string; authorityId: string; room: Room }
 interface Receipt { code: string; playerId: string; actionId: string; request: string; result: ActionReply }
 export interface AuthorityOptions {
   /** Test-only substitution; production uses the current origin's IndexedDB. */
-  indexedDB?: IDBFactory; databaseName?: string; now?: () => number; randomSeed?: () => number;
+  indexedDB?: IDBFactory; databaseName?: string; now?: () => number; randomSeed?: () => RandomSeed;
 }
-function entropy(): number { return crypto.getRandomValues(new Uint32Array(1))[0]!; }
+const entropy = secureRandomSeed;
 function storageError(error: unknown): Error {
   const detail = error instanceof Error ? error.message : String(error ?? '');
   return Error(`主持设备未能保存本次操作，尚未确认成功。请检查浏览器存储后重试。${detail ? `（${detail}）` : ''}`);
@@ -48,12 +49,12 @@ export class BrowserAuthority {
     this.db.onversionchange=() => this.dispose();
   }
   private now(): number { return (this.options.now ?? Date.now)(); }
-  private seed(): number { return (this.options.randomSeed ?? entropy)(); }
+  private seed(): RandomSeed { return (this.options.randomSeed ?? entropy)(); }
   static create(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,true,options); }
   static load(meta: RelayMetadata, options: AuthorityOptions = {}): Promise<BrowserAuthority> { return this.initialize(meta,false,options); }
   private static async initialize(meta: RelayMetadata, allowCreate: boolean, options: AuthorityOptions): Promise<BrowserAuthority> {
     validateMetadata(meta); const factory=options.indexedDB ?? globalThis.indexedDB;
-    if ((options.now ?? Date.now)() >= roomExpiry(meta)) throw Error('房主离开超过30分钟，房间已关闭。');
+    if ((options.now ?? Date.now)() >= roomExpiry(meta)) throw Error(roomExpiryMessage(meta));
     if (!factory) throw Error('这个浏览器无法使用本地存档，不能主持比赛。请使用允许 IndexedDB 的正常浏览窗口。');
     const db=await open(factory,options.databaseName ?? AUTHORITY_DATABASE);
     try {
@@ -175,7 +176,7 @@ export class BrowserAuthority {
         if(record.room.closedAt!==undefined){save(record,false);return;}
         const immediate=immediateRoomAction(record.room,now);
         if(!immediate && (record.room.deadline===null||record.room.deadline>now)){save(record,false);return;}
-        const next=immediate??automaticAction(record.room.game);
+        const next=immediate??timeoutAction(record.room.game);
         if(!next){save(record,false);return;}
         this.perform(record,receipts,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:record.room.version,action:next.action},!immediate,(updated,result)=>save(updated,result.ok));
       });

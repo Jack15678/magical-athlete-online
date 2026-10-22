@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-22",
+  "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2",
+  "typecheck": "passed: client/server and Worker",
+  "unitTests": { "passed": 546, "failed": 0, "skipped": 0, "includesModelTests": 42 },
+  "build": "passed; existing large Three.js chunk warning",
+  "workerDryRun": "passed; no production deployment",
+  "browser": {
+    "athleteFeedbackDiceCamera": { "passed": 6, "failed": 0 },
+    "athleteFeedbackChatAvatar": { "passed": 2, "failed": 0 },
+    "existingPresentationSequence": { "passed": 4, "failed": 0 },
+    "dedicatedArtCamera": { "skipped": 1, "reason": "Existing test requires a separate art-observability build; not counted as passed." },
+    "authenticatedRelay": { "passed": 4, "failed": 0, "fullMatches": ["second-wind: four races", "mixed: four races"], "alsoChecks": ["practice edition/search filtering", "mobile transformed form and transferred mount"] }
+  },
+  "publicViewAI": {
+    "targeted45": { "completedFourRaces": 45, "paused": 0, "limits": 0, "failures": 0, "summary": "rules-public-ai-45.json" },
+    "expanded180": { "completedFourRaces": 180, "paused": 0, "limits": 0, "failures": 0, "summary": "rules-public-ai-180.json" }
+  },
+  "limitations": ["Mobile browser viewports and compact visible areas, not physical mobile GPU or real soft-keyboard testing.", "Second Wind complete official rulebook remains unavailable; user-authorized loop and six-distinct-dice adjudications are explicit project rules.", "Samples exercise known interactions and do not prove every possible character combination or random distribution."]
+}

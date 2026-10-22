@@ -11,8 +11,10 @@ import { Store } from './store.js';
 import { Rooms } from './rooms.js';
 import { systemRoomAction as systemAction } from '../engine/runtime.js';
 import type { ActionEnvelope, Identity } from '../shared/types.js';
+import { validateRoomConfig } from '../shared/room-config.js';
 
 const action=z.discriminatedUnion('type',[
+  z.object({type:z.literal('configure'),config:z.unknown().transform(value=>validateRoomConfig(value))}).strict(),
   z.object({type:z.literal('ready'),ready:z.boolean()}).strict(),z.object({type:z.literal('start')}).strict(),
   z.object({type:z.literal('draft'),characterId:z.string().max(50)}).strict(),z.object({type:z.literal('select'),characterIds:z.array(z.string().max(50)).min(1).max(2)}).strict(),z.object({type:z.literal('practice-team'),characterIds:z.array(z.string().max(50)).length(4)}).strict(),
   z.object({type:z.literal('roll')}).strict(),z.object({type:z.literal('choose'),choiceId:z.string().max(100),optionId:z.string().max(100)}).strict(),
@@ -37,8 +39,8 @@ export function createApplication(dbPath=resolve(process.env.DATA_DIR??'data','r
   const resuming=new Set<string>();let closing=false;
   const scheduleContinuation=(code:string)=>{if(closing||rooms.expire(code))return;const current=rooms.rooms.get(code);if(resuming.has(code)||!current||current.closedAt!==undefined||!systemAction(current.game))return;resuming.add(code);setImmediate(()=>{resuming.delete(code);if(closing||rooms.expire(code))return;const room=rooms.rooms.get(code);if(!room||room.closedAt!==undefined)return;const next=systemAction(room.game);if(!next)return;const result=rooms.act(code,next.playerId,{actionId:crypto.randomUUID(),expectedVersion:room.version,action:next.action});if(result.ok){broadcast(code);scheduleContinuation(code);}});};
   app.get('/api/health',(_req,res)=>res.json({ok:true,storage:'sqlite',version:'0.1.0'}));
-  app.get('/api/rooms',(_req,res,next)=>{try{res.json({rooms:rooms.list()});}catch(e){next(e);}});
-  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional(),characterPool:z.enum(['original','second-wind','mixed','wurstii','all']).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount,b.characterPool));}catch(e){next(e);}});
+  app.get('/api/rooms',(_req,res,next)=>{try{res.json({rooms:rooms.list(),capacity:rooms.capacity()});}catch(e){next(e);}});
+  app.post('/api/rooms',(req,res,next)=>{try{const b=z.object({name:nickname,maxPlayers:z.number().int().min(2).max(8).default(8),timeoutSeconds:z.union([z.literal(0),z.number().int().min(30).max(600)]).optional(),mode:z.enum(['multiplayer','practice','ai']).optional(),aiCount:z.number().int().min(1).max(7).optional(),characterPool:z.enum(['original','second-wind','mixed','wurstii','all']).optional(),config:z.unknown().optional().transform(value=>value===undefined?undefined:validateRoomConfig(value)),requestId:z.string().regex(/^[a-zA-Z0-9_-]{16,100}$/).optional()}).strict().parse(req.body);res.status(201).json(rooms.create(b.name,b.maxPlayers,b.timeoutSeconds,b.mode,b.aiCount,b.characterPool,b.config,b.requestId));}catch(e){next(e);}});
   app.post('/api/rooms/:code/join',(req,res,next)=>{try{const b=z.object({name:nickname,role:z.enum(['player','spectator']).optional()}).strict().parse(req.body);const r=rooms.join(String(req.params.code),b.name,b.role);res.status(201).json(r);broadcast(r.identity.roomCode);}catch(e){next(e);}});
   app.post('/api/rooms/:code/resume-status',(req,res,next)=>{try{
     const i=identity.parse(req.body) as Identity;if(i.roomCode!==String(req.params.code).toUpperCase())throw Error('房间身份不匹配。');

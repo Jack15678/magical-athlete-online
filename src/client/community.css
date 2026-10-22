@@ -5,3 +5,23 @@ html[data-chat-choice="true"] .room-community.in-race.is-open{bottom:calc(48dvh 
 @media(max-width:650px){html[data-chat-choice="true"] .room-community.in-race.is-open{bottom:calc(43dvh + 24px + var(--chat-keyboard-offset,0px));}.room-community.in-race.is-open .room-chat{height:min(290px,36dvh);max-height:max(140px,calc(100dvh - 215px - var(--chat-keyboard-offset,0px)))}html[data-view="race"] .floating-roll{bottom:calc(max(17px,env(safe-area-inset-bottom)) + var(--chat-keyboard-offset,0px))}html[data-view="race"] .floating-choice.choice-panel{bottom:calc(max(14px,env(safe-area-inset-bottom)) + var(--chat-keyboard-offset,0px));max-height:min(43dvh,calc(50dvh - var(--chat-keyboard-offset,0px) / 2))}html[data-chat-choice="true"] .room-community.in-race.is-open .room-chat{max-height:max(140px,calc(55dvh - 48px - var(--chat-keyboard-offset,0px)))}}
 .room-chat .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 html[data-chat-choice="true"] .room-community.in-race{bottom:calc(var(--chat-skill-height,48dvh) + 24px + var(--chat-keyboard-offset,0px))}html[data-chat-choice="true"] .room-community.in-race.is-open{bottom:calc(var(--chat-skill-height,48dvh) + 24px + var(--chat-keyboard-offset,0px))}@media(max-width:650px){html[data-chat-choice="true"] .room-community.in-race.is-open .room-chat{max-height:max(140px,calc(100dvh - var(--chat-skill-height,43dvh) - 48px - var(--chat-keyboard-offset,0px)))}}
+
+/* This body portal always uses the visual viewport, independent of scene transforms. */
+body>.room-community{position:fixed;top:auto;right:auto;margin:0;transform:none;translate:none;rotate:none;scale:none;max-width:calc(100vw - 24px);isolation:isolate}
+.chat-notice-region{position:absolute;left:0;bottom:calc(100% + 10px);width:min(310px,calc(100vw - 32px));pointer-events:auto}
+.chat-notice{position:relative;display:grid;gap:4px;width:100%;padding:12px 14px;text-align:left;color:#25464c;background:#fffdf4;border:2px solid #537969;border-radius:14px 14px 14px 4px;box-shadow:0 5px 22px #23494135;animation:chat-notice-arrive .18s ease-out;overflow-wrap:anywhere}
+.chat-notice strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-notice span{font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}.chat-notice small{font-size:10px;color:#637961}
+.chat-toggle:has(.chat-unread){border:2px solid #b6573d;background:#fff2d6;box-shadow:0 4px 18px #b6573d35}
+@keyframes chat-notice-arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.chat-notice{animation:none}}
+@media(max-width:650px){body>.room-community.is-open{right:8px;max-width:none}.chat-notice-region{width:min(310px,calc(100vw - 28px))}}
+
+.chat-notice-region{display:flex;flex-direction:column;gap:8px;max-height:calc(100dvh - 220px);overflow:hidden;padding:3px;pointer-events:none}
+.chat-notice{flex:none;pointer-events:auto;border-width:1px;padding:10px 12px;animation-duration:var(--chat-notice-enter,220ms);will-change:transform,opacity}
+.chat-notice.is-leaving{animation:chat-notice-leave var(--chat-notice-exit,220ms) ease-in forwards;pointer-events:none}
+@keyframes chat-notice-leave{to{opacity:0;transform:translateY(-8px)}}
+html[data-chat-choice="true"] .chat-notice-region{max-height:max(80px,calc(100dvh - var(--chat-skill-height,48dvh) - 170px))}
+html[data-motion="reduce"] .chat-notice{animation:none!important;will-change:auto}
+html[data-motion="reduce"] .chat-notice.is-leaving{opacity:0}
+@media(prefers-reduced-motion:reduce){.chat-notice{animation:none!important;will-change:auto}.chat-notice.is-leaving{opacity:0}}
+@media(max-width:650px){.chat-notice-region{gap:6px;max-height:calc(100dvh - 205px)}.chat-notice{padding:8px 10px}.chat-notice span{font-size:12px;-webkit-line-clamp:2}}

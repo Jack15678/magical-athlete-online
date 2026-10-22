@@ -142,9 +142,9 @@ test('race reveal reconstructs the start; a new round waits for the current boar
   const raced = view(2, [{ id: 1, type: 'reveal', text: '运动员揭示' }, { id: 2, type: 'power', text: '技能发动', source: 'a' }, motion(3, ['a'], [0], [3])], [racer('a', 3), racer('b')]);
   let state = receiveRoom(createPlayback(selection), raced);
   assert.equal(state.racers[0]?.position, 0);
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   state = receiveRoom(state, { ...raced, version: 3, round: 2, phase: 'selection' });
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   assert.equal(state.round, 1);
   while (state.queue.length) state = completeBeat(state);
   assert.equal(state.queue.length, 0);
@@ -349,7 +349,7 @@ test('a batched next race preserves the preceding final motion and reconstructs 
   state = completeBeat(state);
   assert.equal(state.round, 2);
   assert.equal(state.confirmed.track, 'wild');
-  assert.deepEqual(state.queue.map(beat => beat.kind), ['skill', 'move']);
+  assert.deepEqual(state.queue.map(beat => beat.kind), ['intro', 'skill', 'move']);
   assert.equal(state.racers[0]!.position, 0);
   while (state.queue.length) state = completeBeat(state);
   assert.deepEqual(state.racers, nextRacers);
@@ -377,7 +377,7 @@ test('an entire later race already at results still replays after the preceding 
   state = completeBeat(state);
   assert.equal(state.round, 2);
   assert.equal(state.racers[0]!.position, 0);
-  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [4, 5, 6]);
+  assert.deepEqual(state.queue.flatMap(beat => beat.events.map(event => event.id)), [3, 4, 5, 6]);
   while (state.queue.length) state = completeBeat(state);
   assert.equal(state.confirmed.phase, 'results');
   assert.deepEqual(state.racers, next.racers);
@@ -404,4 +404,24 @@ test('a mastermind prediction becomes persistent only after its own reveal beat 
   state = completeBeat(state); assert.equal(state.racers[0]!.flags.prediction, 'b');
   state = completeBeat(state); assert.equal(state.racers[0]!.flags.prediction, 'b');
   const resumed = createPlayback(state.confirmed); assert.equal(resumed.racers[0]!.flags.prediction, 'b');
+});
+
+
+test('public ability dice and six-dice batches are shown before their effects to every viewer',()=>{
+  const events:GameEvent[]=[{id:1,type:'ability-dice',source:'b',faces:[4],cause:'nemesis',text:'宿敌跟掷4'},motion(2,['b'],[0],[4]),{id:3,type:'multi-dice',source:'a',faces:[1,2,2,4,4,6],cause:'mr-dice-guy',text:'六颗主骰'},{id:4,type:'ability-dice',source:'b',faces:[3],cause:'the-hose',text:'水管范围3'},{id:5,type:'trip',source:'b',targets:['a'],text:'绊倒'}];
+  for(const selfId of ['pa','pb','spectator']){
+    const state=receiveRoom(createPlayback({...view(),selfId}),{...view(2,events),selfId});
+    assert.deepEqual(state.queue.map(beat=>beat.kind),['dice','move','dice','dice','trip']);
+    assert.equal(state.queue[0]!.face,4);assert.deepEqual(state.queue[2]!.faces,[1,2,2,4,4,6]);assert.equal(state.queue[3]!.face,3);
+    assert(beatDuration(state.queue[2]!,{speed:8,reducedMotion:true})>=1800);
+    assert(beatDuration(state.queue[0]!,{speed:8})>=1800);
+  }
+  assert.equal(confirmedFace({id:1,type:'die',source:'a',faces:[5],cause:'show-off',text:'显摆精追加掷出5'}),5);
+});
+
+test('project cycle decisions receive a readable public skill beat before the result screen',()=>{
+  for(const type of ['loop','cycle-draw']){
+    const state=receiveRoom(createPlayback(view()),view(2,[{id:1,type,source:'b',cause:'forced-cycle',text:'循环按项目房规处理'}]));
+    assert.equal(state.queue[0]?.kind,'skill');assert(beatDuration(state.queue[0]!,{speed:8})>=1500);
+  }
 });

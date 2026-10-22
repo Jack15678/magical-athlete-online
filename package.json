@@ -14,6 +14,7 @@
     "build": "vite build && tsc -p tsconfig.server.json && node scripts/build-browser.mjs",
     "start": "node dist/server/server/index.js",
     "test": "tsx --test tests/*.test.ts tests/host.test.mjs",
+    "test:abilities": "tsx --test tests/copy-ability-interactions.test.ts tests/character-abilities.test.ts tests/character-context.test.ts tests/ability-projection.test.ts tests/egg-info.test.ts tests/rules-version.test.ts tests/forced-cycle.test.ts tests/abilities.test.ts tests/second-wind.test.ts tests/fan-expansions.test.ts tests/leaf-expansion.test.ts tests/presentation.test.ts tests/ability-reveal.test.ts",
     "test:e2e": "playwright test",
     "build:avatars": "tsx scripts/export-second-wind-avatars.ts",
     "build:browser": "node scripts/build-browser.mjs",

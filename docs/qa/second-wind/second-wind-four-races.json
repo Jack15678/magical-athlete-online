@@ -5,16 +5,16 @@
       "round": 1,
       "placements": [
         {
-          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:1:0",
-          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-          "characterId": "hopfrog",
+          "racerId": "81c975a2-44b1-4265-8848-cdbdb57087a7:1:0",
+          "playerId": "81c975a2-44b1-4265-8848-cdbdb57087a7",
+          "characterId": "diva",
           "rank": 1,
           "points": 3
         },
         {
-          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:1:0",
-          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-          "characterId": "blunderdog",
+          "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:1:0",
+          "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+          "characterId": "hotel",
           "rank": 2,
           "points": 1
         }
@@ -24,16 +24,16 @@
       "round": 2,
       "placements": [
         {
-          "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:2:0",
-          "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
-          "characterId": "diva",
+          "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:2:0",
+          "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+          "characterId": "kingtripper",
           "rank": 1,
           "points": 4
         },
         {
-          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:2:0",
-          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-          "characterId": "mush",
+          "racerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890:2:0",
+          "playerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890",
+          "characterId": "party-pooper",
           "rank": 2,
           "points": 2
         }
@@ -43,16 +43,16 @@
       "round": 3,
       "placements": [
         {
-          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:3:0",
-          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-          "characterId": "mole",
+          "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:3:0",
+          "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+          "characterId": "magical-athlete",
           "rank": 1,
           "points": 5
         },
         {
-          "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:3:0",
-          "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-          "characterId": "nepo-baby",
+          "racerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890:3:0",
+          "playerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890",
+          "characterId": "soulmate",
           "rank": 2,
           "points": 3
         }
@@ -60,60 +60,45 @@
     },
     {
       "round": 4,
-      "placements": [
-        {
-          "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:4:0",
-          "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-          "characterId": "penguin",
-          "rank": 1,
-          "points": 6
-        },
-        {
-          "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:4:0",
-          "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
-          "characterId": "switcharoo",
-          "rank": 2,
-          "points": 4
-        }
-      ]
+      "placements": []
     }
   ],
   "summaries": [
     {
       "round": 1,
       "characters": [
-        "hopfrog",
-        "blunderdog",
-        "cheatah"
+        "hog-knight",
+        "hotel",
+        "diva"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 2,
       "characters": [
-        "hotel",
-        "mush",
-        "diva"
+        "party-pooper",
+        "kingtripper",
+        "null"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 3,
       "characters": [
-        "mole",
-        "nepo-baby",
-        "null"
+        "soulmate",
+        "magical-athlete",
+        "stepdad"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "round": 4,
       "characters": [
-        "penguin",
-        "show-off",
+        "spoilsport",
+        "tail",
         "switcharoo"
       ],
-      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v1"
+      "rulesVersion": "cmyk-base-aug2026-sw-transcript-v2"
     },
     {
       "phase": "finished",
@@ -122,16 +107,16 @@
           "round": 1,
           "placements": [
             {
-              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:1:0",
-              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-              "characterId": "hopfrog",
+              "racerId": "81c975a2-44b1-4265-8848-cdbdb57087a7:1:0",
+              "playerId": "81c975a2-44b1-4265-8848-cdbdb57087a7",
+              "characterId": "diva",
               "rank": 1,
               "points": 3
             },
             {
-              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:1:0",
-              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-              "characterId": "blunderdog",
+              "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:1:0",
+              "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+              "characterId": "hotel",
               "rank": 2,
               "points": 1
             }
@@ -141,16 +126,16 @@
           "round": 2,
           "placements": [
             {
-              "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:2:0",
-              "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
-              "characterId": "diva",
+              "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:2:0",
+              "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+              "characterId": "kingtripper",
               "rank": 1,
               "points": 4
             },
             {
-              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:2:0",
-              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-              "characterId": "mush",
+              "racerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890:2:0",
+              "playerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890",
+              "characterId": "party-pooper",
               "rank": 2,
               "points": 2
             }
@@ -160,16 +145,16 @@
           "round": 3,
           "placements": [
             {
-              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:3:0",
-              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-              "characterId": "mole",
+              "racerId": "51907c2d-1169-4627-aebe-438541b55bf2:3:0",
+              "playerId": "51907c2d-1169-4627-aebe-438541b55bf2",
+              "characterId": "magical-athlete",
               "rank": 1,
               "points": 5
             },
             {
-              "racerId": "95434b0b-3598-4296-8e5d-c6750459fc87:3:0",
-              "playerId": "95434b0b-3598-4296-8e5d-c6750459fc87",
-              "characterId": "nepo-baby",
+              "racerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890:3:0",
+              "playerId": "92e0c3d3-3cb8-4b20-b854-8ff864e4d890",
+              "characterId": "soulmate",
               "rank": 2,
               "points": 3
             }
@@ -177,25 +162,10 @@
         },
         {
           "round": 4,
-          "placements": [
-            {
-              "racerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07:4:0",
-              "playerId": "fff3c3d2-fbc8-46bb-a4a0-30f8aca5af07",
-              "characterId": "penguin",
-              "rank": 1,
-              "points": 6
-            },
-            {
-              "racerId": "14d79a05-2ece-491f-923b-1f8c091b1c43:4:0",
-              "playerId": "14d79a05-2ece-491f-923b-1f8c091b1c43",
-              "characterId": "switcharoo",
-              "rank": 2,
-              "points": 4
-            }
-          ]
+          "placements": []
         }
       ],
-      "steps": 400
+      "steps": 321
     }
   ],
   "errors": [],

@@ -1,0 +1,31 @@
+{
+  "id": "extra-mile-totally-fair-ref",
+  "node": "toy_extra-mile-totally-fair-ref",
+  "url": "/models/extra-mile/extra-mile-totally-fair-ref.glb",
+  "bytes": 50080,
+  "triangles": 3512,
+  "draws": 3,
+  "bounds": [
+    0.6,
+    0.86143,
+    0.50779
+  ],
+  "pivotY": 0,
+  "animations": [
+    "idle",
+    "move",
+    "skill",
+    "fall",
+    "recover"
+  ],
+  "bones": 5,
+  "motionProfile": "biped",
+  "editableSource": "assets/blender/extra-mile/extra-mile-totally-fair-ref.blend",
+  "referenceChecked": true,
+  "reference": "https://johnnlds.github.io/Magical-Athlete-Racers/ExtraMile.pdf",
+  "referenceDate": "2026-10-22",
+  "recognition": "grey dog referee, striped black/white shirt and black cap",
+  "inferred": "Single-view card artwork informs the silhouette and identifying props. Side/back surfaces and joint placement are original project interpretations, not author-approved sculpts.",
+  "avatar": "/models/extra-mile/avatars/extra-mile-totally-fair-ref.png",
+  "mouthSurfaceVersion": "surface-mouth-v2"
+}

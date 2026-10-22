@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Rooms } from '../src/server/rooms.js';
 import { Store } from '../src/server/store.js';
-import { PERSONAL_ROOM_AWAY_MS, roomExpiry } from '../src/shared/room-lifecycle.js';
+import { PERSONAL_ROOM_AWAY_MS, PRACTICE_OWNER_AWAY_MS, roomExpiry } from '../src/shared/room-lifecycle.js';
 import type { ActionEnvelope, GameMode } from '../src/shared/types.js';
 
 function fixture(mode:GameMode='ai'){
@@ -33,13 +33,13 @@ test('personal rooms close exactly thirty minutes after owner departure regardle
     assert.throws(()=>rooms.get(identity.roomCode),/房间已关闭/);assert.equal(rooms.closed(identity.roomCode)?.reason,'host-away');
   }finally{env.store.close();}
 });
-test('returning before the deadline cancels closure and the next departure starts a new thirty minutes',()=>{
+test('returning before the deadline cancels closure and the next departure starts a new ten minutes',()=>{
   const env=fixture('practice');try{
     const {rooms,identity,clock}=env;rooms.presence(identity.roomCode,identity.playerId,true);rooms.presence(identity.roomCode,identity.playerId,false);
-    clock.now+=PERSONAL_ROOM_AWAY_MS-1;rooms.presence(identity.roomCode,identity.playerId,true);
-    clock.now+=PERSONAL_ROOM_AWAY_MS;rooms.tick();assert.equal(rooms.get(identity.roomCode).hostLeftAt,undefined);
-    rooms.presence(identity.roomCode,identity.playerId,false);const next=clock.now;assert.equal(roomExpiry(rooms.get(identity.roomCode)),next+PERSONAL_ROOM_AWAY_MS);
-    clock.now+=PERSONAL_ROOM_AWAY_MS;rooms.tick();assert.equal(rooms.closed(identity.roomCode)?.closedAt,clock.now);
+    clock.now+=PRACTICE_OWNER_AWAY_MS-1;rooms.presence(identity.roomCode,identity.playerId,true);
+    clock.now+=PRACTICE_OWNER_AWAY_MS;rooms.tick();assert.equal(rooms.get(identity.roomCode).hostLeftAt,undefined);
+    rooms.presence(identity.roomCode,identity.playerId,false);const next=clock.now;assert.equal(roomExpiry(rooms.get(identity.roomCode)),next+PRACTICE_OWNER_AWAY_MS);
+    clock.now+=PRACTICE_OWNER_AWAY_MS;rooms.tick();assert.equal(rooms.closed(identity.roomCode)?.closedAt,clock.now);
   }finally{env.store.close();}
 });
 test('restart preserves absence and counts downtime from the separately persisted owner heartbeat',()=>{

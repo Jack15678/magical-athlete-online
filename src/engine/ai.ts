@@ -6,6 +6,14 @@ import type { GameAction, Racer, RoomView } from '../shared/types.js';
 const strength:Record<string,number>={legs:10,hare:8,blimp:8,'lovable-loser':7,alchemist:7,'rocket-scientist':7,magician:7,'party-animal':6,coach:6,'flip-flop':6,genius:5,hypnotist:5,'third-wheel':5,cheerleader:5,suckerfish:5,sisyphus:3};
 const value=(id:string)=>strength[id]??4;
 const active=(r:Racer)=>!r.finished&&!r.eliminated;
+/** This projection already accounts for Null and public copied powers. Never
+ * inspect authoritative state or a private deck to predict an AI hazard. */
+function publicPowers(r:Racer):string[]{
+  const state=r.flags.publicAbilities as {powers?:unknown}|undefined;
+  if(Array.isArray(state?.powers))return state.powers.filter((power):power is string=>typeof power==='string');
+  return [...new Set([String(r.flags.power??r.flags.copiedPower??r.characterId),...((r.flags.acquiredPowers??[]) as string[])])];
+}
+
 /** A reproducible public-only seed varies secret/guess decisions without reading
  * another player's choice, the private queue, or the authoritative RNG state. */
 function publicChoice(view: RoomView, salt: string, count: number): number {
@@ -23,6 +31,19 @@ function repeatedFollow(view:RoomView,r:Racer):boolean {
   const journeys=view.logs.slice(boundary+1).filter(e=>e.type==='move'&&e.targets?.some(id=>id===r.id||companions.has(id)));
   const last=journeys.at(-1);if(!last)return false;
   return journeys.slice(0,-1).some(e=>e.source===last.source&&e.cause===last.cause&&JSON.stringify(e.targets)===JSON.stringify(last.targets)&&JSON.stringify(e.before)===JSON.stringify(last.before)&&JSON.stringify(e.after)===JSON.stringify(last.after));
+}
+function repeatedTrip(view:RoomView,r:Racer,target:Racer):boolean {
+  // Reconstruct only public positions back to this racer's earlier trip. If
+  // the same target was tripped on this exact board and nobody made progress,
+  // let an AI decline the optional repeat. This never changes a human choice
+  // or declares a rules draw; fresh movement and phase changes reset the hint.
+  const now=new Map(view.racers.map(item=>[item.id,item.position])),positions=new Map(now);
+  for(let i=view.logs.length-1;i>=0;i--){
+    const event=view.logs[i]!;if(['phase','reveal','finish','eliminate','cycle-draw'].includes(event.type))break;
+    if(event.type==='trip'&&event.source===r.id&&event.targets?.includes(target.id)&&view.logs[i-1]?.cause==='kingtripper'&&[...now].every(([id,position])=>positions.get(id)===position))return true;
+    if(['move','warp','place'].includes(event.type)&&event.before&&event.targets)event.targets.forEach((id,index)=>{const before=event.before?.[index];if(before!==undefined)positions.set(id,before);});
+  }
+  return false;
 }
 export function decideAI(view:RoomView):GameAction|undefined {
   const self=view.players.find(p=>p.id===view.selfId);if(!self)return;
@@ -51,7 +72,7 @@ export function decideAI(view:RoomView):GameAction|undefined {
       case 'tail': if (has('use')) pick = 'use'; break;
       case 'diva': {const target = targets.filter(t => t.id !== r?.id).sort((a,b) => (r && r.position >= a.position ? a.position-b.position : b.position-a.position))[0]; if(target)pick=target.id; break;}
       case 'understudy': case 'soulmate': {const target = others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0]; if(target)pick=target.id;break;}
-      case 'kingtripper': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
+      case 'kingtripper': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target&&!(r&&has('skip')&&repeatedTrip(view,r,target)))pick=target.id;break;}
       case 'magical-last': {const target=targets.find(t=>t.playerId===self.id)??targets[0];if(target)pick=target.id;break;}
       case 'magical-lead': case 'magical-warp': {const target=others.toSorted((a,b)=>b.position-a.position)[0];if(target)pick=target.id;break;}
       case 'switcharoo': {const target=others.toSorted((a,b)=>value(b.characterId)-value(a.characterId))[0];if(target&&r&&value(target.characterId)>value(r.characterId))pick=target.id;break;}
@@ -65,7 +86,15 @@ export function decideAI(view:RoomView):GameAction|undefined {
         if((face<=3||exact)&&has('reroll'))pick='reroll';break;
       }
       case 'flip-flop':{const target=others.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position+3)pick=target.id;break;}
-      case 'hypnotist':{const target=others.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position)pick=target.id;break;}
+      case 'hypnotist':{
+        // Summoning an active Baba Yaga before my main move trips me, so an AI
+        // can keep voluntarily resetting the opponent forever. Decline that
+        // visible hazard; humans retain every legal target and the rules never
+        // mistake repeated voluntary choices for a forced cycle.
+        const immune=r&&publicPowers(r).some(power=>['leaf-catfish','extra-mile-doctor-dice'].includes(power));
+        const safe=others.filter(target=>immune||!publicPowers(target).includes('baba-yaga'));
+        const target=safe.sort((a,b)=>b.position-a.position)[0];if(target&&r&&target.position>r.position)pick=target.id;break;
+      }
       case 'third-wheel':{const positions=available.filter(x=>x!=='skip').map(Number).filter(Number.isFinite);const pos=Math.max(...positions);if(r&&pos>r.position)pick=String(pos);break;}
       case 'duelist':{
         // A public backward arrow can return both duelists to the exact square.
