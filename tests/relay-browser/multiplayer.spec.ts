@@ -7,16 +7,18 @@ const smoke=process.env.RELAY_SMOKE==='1';
 async function captureRace(page:Page,path:string){await page.getByTestId('board-3d').scrollIntoViewIfNeeded();await boundedRead(page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))),'capture-frame read');await page.getByTestId('board-3d').screenshot({path:path.replace(/\.png$/,'-board.png')});await page.screenshot({path,fullPage:true});}
 async function synced(page:Page,version:number){await expect.poll(async()=>Number(await page.locator('.game-shell').getAttribute('data-room-version'))).toBeGreaterThanOrEqual(version);}
 async function skipQueuedPlayback(page:Page){
+  const started=Date.now();let attempts=0,clicked=false;
   const skip=page.getByRole('button',{name:'跳过动画',exact:true});
   await expect(async()=>{
     if(await skip.isVisible()){
       // An optional control may disappear naturally during actionability checks.
       // Recheck it promptly instead of spending 15s waiting for it to reappear.
-      try{await skip.click({timeout:1_000});}
+      try{attempts++;await skip.click({timeout:1_000});clicked=true;}
       catch(error){if(await skip.isVisible())throw error;}
     }
     await expect(skip).toBeHidden({timeout:1_000});
   }).toPass({timeout:20_000,intervals:[100,250,500]});
+  return{elapsedMs:Date.now()-started,attempts,clicked};
 }
 async function boundedRead<T>(operation:Promise<T>,label:string,timeoutMs=20_000):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
@@ -162,6 +164,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
   // The default manual mode retains the complete four-race game and rematch.
   if(process.env.CI&&n===8)test.setTimeout(900_000);
   const contexts:BrowserContext[]=[],pages:Page[]=[],errors:string[]=[];
+  const playbackControls={reads:0,attempts:0,clicked:0,elapsedMs:0,maxMs:0};
   let latestPublicRoom:ReturnType<typeof publicRoom>|undefined;
   const uiSnapshots:unknown[]=[];
   type UIAction={sequence:number;requestId:string;type:GameAction['type'];expectedVersion:number;acknowledgedAt?:number;result?:{ok:boolean;version?:number;error?:string}};
@@ -273,7 +276,8 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
       // player may legitimately have more than 15s of earlier events queued.
       // Use the actual local skip control before the actual action control.
       // No action is forced and the server acknowledgement is still required.
-      await skipQueuedPlayback(p);
+      const skipped=await skipQueuedPlayback(p);
+      playbackControls.reads++;playbackControls.attempts+=skipped.attempts;playbackControls.clicked+=Number(skipped.clicked);playbackControls.elapsedMs+=skipped.elapsedMs;playbackControls.maxMs=Math.max(playbackControls.maxMs,skipped.elapsedMs);
       if(n===8)await cacheActingUI(p,ids.indexOf(playerId)+1,actionLabel);
       const beforeAction=uiActions.get(p)!.at(-1)?.sequence??0;
       if(action.type==='choose')await p.getByRole('region',{name:'待处理技能'}).getByRole('button',{name:g.pending!.options.find(o=>o.id===action.optionId)!.label,exact:true}).click({timeout:15_000});
@@ -289,6 +293,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
       await expect.poll(async()=>(await saved(host,code)).version).toBeGreaterThanOrEqual(confirmed!.result!.version!);
     }
     const finalRoom=await saved(host,code);mark(smoke?'round-complete':'finished',smoke?'assert-one-result':'assert-four-results',finalRoom,steps);progress();
+    console.log(`[relay-${n}] playback-controls ${JSON.stringify(playbackControls)}`);
     expect(finalRoom.game.results).toHaveLength(smoke?1:4);expect(hostRecovered).toBe(true);expect(guestRecovered).toBe(true);expect(raceShot).toBe(true);expect(errors).toEqual([]);
     await host.screenshot({path:`test-results/browser-authority/${smoke?'round-1':'final'}-${n}.png`,fullPage:true});
     if(!smoke){
@@ -304,7 +309,7 @@ for(const n of [2,6,8])test(`server authority ${n} independent players: ${smoke?
     if(n===8)writeFileSync('test-results/browser-authority/diagnostics8.json',JSON.stringify({
       capturedAt:new Date().toISOString(),checkpoint:{...checkpoint,elapsedMs:Date.now()-startedAt},
       failure:{name:error instanceof Error?error.name:'Error',message:error instanceof Error?error.message.split('\n')[0]:String(error).split('\n')[0]},
-      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,
+      pageErrorCount:errors.length,latestPublicRoom,uiSnapshots,playbackControls,
       snapshotWait:activeCode?snapshotWaits.get(activeCode):undefined,
       observedSnapshots:observed?snapshotWait(observed,snapshots.get(observed.code),snapshotVersions.get(observed.code)):undefined,
       lastAcknowledgement:[...uiActions.values()].flat().filter(action=>action.acknowledgedAt!==undefined).sort((a,b)=>a.acknowledgedAt!-b.acknowledgedAt!).at(-1),
